@@ -1,0 +1,50 @@
+/* The .fountain editor. Obsidian only styles its own markdown editor,
+   so this view sets up CodeMirror's look from Obsidian's theme variables. */
+
+.playwright-view {
+  padding: 0;
+  overflow: hidden;
+}
+
+.playwright-view .cm-editor {
+  height: 100%;
+  background: transparent;
+  color: var(--text-normal);
+  font-family: var(--font-text);
+  font-size: var(--font-text-size);
+}
+
+.playwright-view .cm-editor.cm-focused {
+  outline: none;
+}
+
+.playwright-view .cm-scroller {
+  line-height: var(--line-height-normal);
+}
+
+.playwright-view .cm-content {
+  max-width: var(--file-line-width);
+  margin: 0 auto;
+  padding: var(--file-margins);
+  caret-color: var(--caret-color);
+}
+
+.playwright-view .cm-cursor {
+  border-left-color: var(--caret-color);
+}
+
+.playwright-view .cm-selectionBackground,
+.playwright-view .cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--text-selection);
+}
+
+.playwright-view .cm-activeLine {
+  background: transparent;
+}
+
+.playwright-view .cm-gutters {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
