@@ -17,6 +17,11 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - Aiming to be a community plugin: follow Obsidian's plugin guidelines (no `innerHTML` with user content, use `registerEvent`/`register*` for cleanup, sentence case in UI text, no "Obsidian" in the plugin name).
 - Out of scope (don't build): index cards, rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), links, boneyard features, margin marks.
 
+## Parser
+
+- `src/fountain/parser.ts` is a port of fountain2pdf's `parser.py` and is shared by the editor and the PDF export. It must keep producing the same elements as `parser.py` (it matched it exactly on 10 real scripts when ported). The one intended difference: boneyard and notes are blanked, not cut, so source positions stay true.
+- `fountain2pdf/sample.fountain` is a good manual test script.
+
 ## PDF export design
 
 - Styles are plain data. Built-in styles (`modern`, `apt`, `samuel_french`) are TS modules; user styles are JSON files in a vault folder that `extends` another style and override only grouped camelCase fields (`character.bold`). Invalid style files report the field and reason.

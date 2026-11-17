@@ -18,15 +18,20 @@
   outline: none;
 }
 
+/* Centre the line numbers and text together, so the numbers sit beside the text. */
 .playwright-view .cm-scroller {
+  justify-content: center;
   line-height: var(--line-height-normal);
 }
 
 .playwright-view .cm-content {
-  max-width: var(--file-line-width);
-  margin: 0 auto;
   padding: var(--file-margins);
   caret-color: var(--caret-color);
+}
+
+/* Obsidian's "Readable line length" setting. */
+.playwright-view.is-readable-line-width .cm-content {
+  max-width: var(--file-line-width);
 }
 
 .playwright-view .cm-cursor {
@@ -47,4 +52,139 @@
   border: none;
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
+}
+
+.playwright-view .cm-gutters + .cm-content {
+  padding-left: var(--size-4-3);
+}
+
+/* --- Script formatting ---------------------------------------------------
+   Each line gets pw-line plus a class for what it is. Laid out as a stage
+   play: cues centred, stage directions indented and in italics. */
+
+.playwright-view .pw-title-page {
+  color: var(--text-muted);
+}
+
+.playwright-view .pw-title-key {
+  color: var(--text-faint);
+}
+
+.playwright-view .pw-section-1 {
+  text-align: center;
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.playwright-view .pw-section-2 {
+  text-align: center;
+  text-decoration: underline;
+}
+
+.playwright-view .pw-section-3 {
+  font-weight: var(--font-semibold);
+}
+
+.playwright-view .pw-scene-heading {
+  font-weight: var(--font-bold);
+}
+
+.playwright-view .pw-scene-number {
+  color: var(--text-muted);
+}
+
+.playwright-view .pw-character {
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.playwright-view .pw-parenthetical {
+  text-align: center;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.playwright-view .pw-dialogue {
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+.playwright-view .pw-action {
+  padding-left: 25%;
+  font-style: italic;
+}
+
+.playwright-view .pw-lyric {
+  padding-left: 10%;
+}
+
+/* Emphasis inside text that's already in italics shows upright. */
+.playwright-view .pw-action .pw-italic,
+.playwright-view .pw-parenthetical .pw-italic {
+  font-style: normal;
+}
+
+.playwright-view .pw-transition {
+  text-align: right;
+}
+
+.playwright-view .pw-centered {
+  text-align: center;
+}
+
+.playwright-view .pw-page-break {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.playwright-view .pw-preface-list-item {
+  padding-left: 1.5em;
+}
+
+.playwright-view .pw-breakdown-heading {
+  font-weight: var(--font-bold);
+}
+
+.playwright-view .pw-synopsis {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Inline emphasis and markup. */
+
+.playwright-view .pw-bold {
+  font-weight: var(--font-bold);
+}
+
+.playwright-view .pw-italic {
+  font-style: italic;
+}
+
+.playwright-view .pw-underline {
+  text-decoration: underline;
+}
+
+.playwright-view .pw-link {
+  color: var(--link-color);
+}
+
+.playwright-view .pw-marker {
+  color: var(--text-faint);
+}
+
+.playwright-view .pw-note {
+  color: var(--text-muted);
+  background-color: var(--text-highlight-bg);
+  border-radius: var(--radius-s);
+}
+
+.playwright-view .pw-boneyard {
+  color: var(--text-faint);
+}
+
+/* Text in a note or the boneyard isn't part of the script. */
+.playwright-view .pw-boneyard *,
+.playwright-view .pw-note * {
+  color: inherit;
 }

@@ -2,7 +2,8 @@ import { Annotation, Compartment, EditorState, type Extension } from "@codemirro
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { TextFileView, type WorkspaceLeaf } from "obsidian";
-import { onConfigChanged, showLineNumbers } from "../obsidianConfig";
+import { onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
+import { fountainFormatting } from "./formatting";
 
 export const VIEW_TYPE_FOUNTAIN = "playwright-fountain";
 
@@ -17,7 +18,7 @@ function lineNumberGutter(on: boolean): Extension {
 /**
  * The editor for .fountain files: a CodeMirror 6 editor of its own,
  * rather than Obsidian's markdown editor, so that only Fountain rules
- * apply. Formatting as you type will be added as editor extensions.
+ * apply. Formatting as you type comes from ./formatting.
  */
 export class FountainView extends TextFileView {
   private editor: EditorView;
@@ -26,13 +27,18 @@ export class FountainView extends TextFileView {
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
     this.contentEl.addClass("playwright-view");
+    this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
     this.editor = new EditorView({ parent: this.contentEl, state: this.createState("") });
     this.registerEvent(
       onConfigChanged(this.app, (key) => {
-        if (key !== "showLineNumber") return;
-        this.editor.dispatch({
-          effects: this.lineNumbers.reconfigure(lineNumberGutter(showLineNumbers(this.app))),
-        });
+        if (key === "showLineNumber") {
+          this.editor.dispatch({
+            effects: this.lineNumbers.reconfigure(lineNumberGutter(showLineNumbers(this.app))),
+          });
+        } else if (key === "readableLineLength") {
+          this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
+          this.editor.requestMeasure();
+        }
       }),
     );
   }
@@ -80,6 +86,7 @@ export class FountainView extends TextFileView {
       doc,
       extensions: [
         this.lineNumbers.of(lineNumberGutter(showLineNumbers(this.app))),
+        fountainFormatting(),
         history(),
         drawSelection(),
         highlightActiveLine(),

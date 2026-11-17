@@ -20,6 +20,11 @@ export function showLineNumbers(app: App): boolean {
   return vaultConfig(app).getConfig("showLineNumber") === true;
 }
 
+/** Obsidian's "Readable line length" setting. On unless turned off. */
+export function readableLineLength(app: App): boolean {
+  return vaultConfig(app).getConfig("readableLineLength") !== false;
+}
+
 /** Calls `callback` with the key of each Obsidian setting that changes. */
 export function onConfigChanged(app: App, callback: (key: string) => void): EventRef {
   return vaultConfig(app).on("config-changed", callback);

@@ -2,9 +2,9 @@
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
-> **Status:** early development. Nothing is released yet. Right now `.fountain` files open in a plain editor with line numbers.
+> **Status:** early development. Nothing is released yet. Right now `.fountain` files open in an editor that formats the script as you type, with line numbers. PDF export comes next.
 
-Line numbers follow Obsidian's own **Settings → Editor → Show line number**, so scripts and notes match.
+Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
 ## Planned for the first release
 
@@ -49,6 +49,9 @@ Layout:
 |---|---|
 | `src/main.ts` | Plugin entry point: registers the view, commands and ribbon button |
 | `src/editor/FountainView.ts` | The `.fountain` editor (CodeMirror 6) |
+| `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
+| `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
+| `src/fountain/inline.ts` | Inline emphasis and links |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |
 | `tests/` | vitest tests |
