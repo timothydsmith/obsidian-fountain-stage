@@ -2,7 +2,7 @@
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
-> **Status:** first release, 0.1.0. It's not in Obsidian's community plugin directory yet: see [Install](#install).
+It's in Obsidian's [community plugin directory](https://community.obsidian.md/plugins/fountain-stage): see [Install](#install).
 
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
@@ -128,16 +128,15 @@ PDFs use Times unless a style names a font family and your fonts folder (`Founta
 
 ## Install
 
-Fountain Stage isn't in Obsidian's community plugin directory yet. Install it from its GitHub releases, by hand or with BRAT. It needs Obsidian 1.8.7 or later, on desktop or mobile.
+Fountain Stage needs Obsidian 1.8.7 or later, on desktop or mobile.
 
-**By hand:**
-1. From the [latest release](https://github.com/timothydsmith/obsidian-fountain-stage/releases/latest), download `main.js`, `manifest.json` and `styles.css`.
-2. Put them in a folder called `fountain-stage` inside your vault's plugins folder: `<vault>/.obsidian/plugins/fountain-stage/`. The `.obsidian` folder is hidden on some systems.
-3. Restart Obsidian, then turn on **Fountain Stage** in **Settings → Community plugins**.
+1. In Obsidian, open **Settings → Community plugins**, and turn on community plugins if asked.
+2. Choose **Browse**, search for **Fountain Stage**, and choose **Install**.
+3. Choose **Enable**.
 
-To update, replace the three files with those from a newer release.
+Or open its page in the [community plugin directory](https://community.obsidian.md/plugins/fountain-stage). Obsidian offers updates in **Settings → Community plugins**.
 
-**With BRAT:** install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin, choose **Add beta plugin**, and enter `timothydsmith/obsidian-fountain-stage`. BRAT installs the latest release and keeps it up to date.
+**By hand:** from the [latest release](https://github.com/timothydsmith/obsidian-fountain-stage/releases/latest), download `main.js`, `manifest.json` and `styles.css`, and put them in a folder called `fountain-stage` inside your vault's plugins folder: `<vault>/.obsidian/plugins/fountain-stage/`. The `.obsidian` folder is hidden on some systems. Restart Obsidian, then turn on **Fountain Stage** in **Settings → Community plugins**.
 
 Only one plugin can open `.fountain` files at a time. If another Fountain plugin, such as **Fountain**, is on in a vault, turn it off there before turning on Fountain Stage.
 
