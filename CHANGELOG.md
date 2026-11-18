@@ -7,6 +7,11 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-18
+
+### Changed
+- Fountain Stage is now in Obsidian's community plugin directory, and the README's install steps use it.
+
 ## [0.1.0] - 2026-11-18
 
 The first release.
@@ -36,5 +41,6 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/timothydsmith/obsidian-fountain-stage/releases/tag/0.1.0

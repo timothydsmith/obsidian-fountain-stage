@@ -14,7 +14,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - **Mobile is in scope** (`isDesktopOnly: false`). Don't use Node or Electron APIs, the system filesystem, or system font lookup. Use Obsidian's vault APIs only.
 - **Editor settings follow Obsidian's**, not settings of our own. Line numbers use Obsidian's `showLineNumber`; the starting mode uses `defaultViewMode` and `livePreview`; mode hotkeys are those of Obsidian's own mode commands. Access to these unofficial vault-config APIs goes only through `src/obsidianConfig.ts`.
 - **CodeMirror is provided by Obsidian.** `@codemirror/*` and `@lezer/*` are external in esbuild and must never be bundled.
-- Aiming to be a community plugin: follow Obsidian's plugin guidelines (no `innerHTML` with user content, use `registerEvent`/`register*` for cleanup, sentence case in UI text, no "Obsidian" in the plugin name).
+- Published as a community plugin, so every release must still meet the rules: follow Obsidian's plugin guidelines (no `innerHTML` with user content, use `registerEvent`/`register*` for cleanup, sentence case in UI text, no "Obsidian" in the plugin name).
 - Out of scope (don't build): index cards, rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), links, boneyard features, margin marks.
 
 ## Parser
