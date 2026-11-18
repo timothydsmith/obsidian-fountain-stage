@@ -10,6 +10,11 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
 - Formatting as you type, following the Fountain spec.
 - Line numbers for every line of the file, shown in the editor when Obsidian's **Show line number** setting is on.
+- Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
+  - **Live Preview** formats the script as you type, with the markup shown faintly.
+  - **Source mode** is the plain text, unformatted.
+  - **Reading view** shows the formatted script without its markup, notes, synopses or boneyard, and can't be edited.
+- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Each script reopens where you left it.
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
@@ -114,6 +119,8 @@ Layout:
 | `src/main.ts` | Plugin entry point: registers the view, commands and ribbon button |
 | `src/editor/FountainView.ts` | The `.fountain` editor (CodeMirror 6) |
 | `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
+| `src/editor/reading.ts`, `src/fountain/reading.ts` | Reading view: what it hides, and hiding it |
+| `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
 | `src/export.ts` | Export to PDF in Obsidian: style picker and saving the PDF |

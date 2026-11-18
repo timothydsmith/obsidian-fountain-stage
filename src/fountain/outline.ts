@@ -1,0 +1,85 @@
+/**
+ * A script's outline: its sections (`#` acts, `##` scenes and deeper) and
+ * scene headings, nested the way they're written.
+ */
+
+import { parseInline } from "./inline";
+import { parseFountain } from "./parser";
+
+export interface OutlineItem {
+  kind: "section" | "scene";
+  /** The heading as it reads, without forcing marks or emphasis marks. */
+  text: string;
+  /** Section depth (1 for `#`). Scene headings sit one level below the section they're in. */
+  depth: number;
+  /** A scene heading's forced number, from `#2A#`. */
+  sceneNumber?: string;
+  /** The synopsis (`= …`) written straight after the heading, if any. */
+  synopsis?: string;
+  /** Source line, counting from 0. */
+  line: number;
+  children: OutlineItem[];
+}
+
+/** Text with its emphasis marks and link syntax taken out. */
+function plain(text: string): string {
+  let out = "";
+  let pos = 0;
+  for (const m of parseInline(text).markers) {
+    out += text.slice(pos, m.from);
+    pos = m.to;
+  }
+  return (out + text.slice(pos)).trim();
+}
+
+/** The outline of a script, as a tree of top-level items. */
+export function buildOutline(source: string): OutlineItem[] {
+  const script = parseFountain(source);
+  const lines = source.split("\n");
+  const roots: OutlineItem[] = [];
+  // Open sections, outermost first.
+  const stack: OutlineItem[] = [];
+  const items: OutlineItem[] = [];
+
+  for (const el of script.elements) {
+    if (el.type !== "section" && el.type !== "scene_heading") continue;
+    let item: OutlineItem;
+    if (el.type === "section") {
+      const depth = el.depth ?? 1;
+      while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
+      item = { kind: "section", text: plain(el.text), depth, line: el.line, children: [] };
+    } else {
+      const parent = stack[stack.length - 1];
+      item = { kind: "scene", text: plain(el.text), depth: (parent?.depth ?? 0) + 1, line: el.line, children: [] };
+      if (el.sceneNumber) item.sceneNumber = el.sceneNumber;
+    }
+    (stack[stack.length - 1]?.children ?? roots).push(item);
+    if (item.kind === "section") stack.push(item);
+    items.push(item);
+  }
+
+  // A synopsis belongs to the heading it follows, with only blank lines between.
+  for (const item of items) {
+    const synopsis: string[] = [];
+    for (let n = item.line + 1; n < lines.length; n++) {
+      if (script.lineRoles.get(n) === "synopsis") synopsis.push(plain(lines[n].trim().replace(/^=\s*/, "")));
+      else if (lines[n].trim() !== "" || synopsis.length > 0) break;
+    }
+    if (synopsis.length > 0) item.synopsis = synopsis.join(" ");
+  }
+  return roots;
+}
+
+/** The deepest item at or before `line`: the part of the script that line is in. */
+export function itemAt(outline: OutlineItem[], line: number): OutlineItem | undefined {
+  let found: OutlineItem | undefined;
+  const walk = (items: OutlineItem[]) => {
+    for (const item of items) {
+      if (item.line > line) return;
+      found = item;
+      walk(item.children);
+    }
+  };
+  walk(outline);
+  return found;
+}

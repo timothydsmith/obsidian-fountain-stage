@@ -1,9 +1,10 @@
 import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { Platform, TextFileView, type TFile, type WorkspaceLeaf } from "obsidian";
-import { onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
+import { type Menu, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
+import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { fountainFormatting } from "./formatting";
+import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
 
 export const VIEW_TYPE_FOUNTAIN = "playwright-fountain";
@@ -31,20 +32,39 @@ interface EphemeralState {
   focusOnMobile?: unknown;
 }
 
-/** Every line of the file is numbered, following Obsidian's "Show line number" setting. */
-function lineNumberGutter(on: boolean): Extension {
-  return on ? lineNumbers() : [];
+/**
+ * The view's mode, in the same shape as Obsidian's markdown view keeps it:
+ * `mode` is editing ("source") or reading ("preview"), and while editing,
+ * `source` picks source mode over Live Preview.
+ */
+interface ModeState {
+  mode?: unknown;
+  source?: unknown;
 }
+
+/** What changed in a script, for views that follow it, such as the outline. */
+export type ScriptChange = "text" | "position";
+
+/** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
+const TOGGLE_READING_COMMAND = "markdown:toggle-preview";
+const TOGGLE_SOURCE_COMMAND = "editor:toggle-source";
 
 /**
  * The editor for .fountain files: a CodeMirror 6 editor of its own,
  * rather than Obsidian's markdown editor, so that only Fountain rules
- * apply. Formatting as you type comes from ./formatting.
+ * apply. Like a note, it has three modes: Live Preview, which formats as
+ * you type (./formatting); source mode, plain text; and reading view,
+ * formatted without the markup and not editable (./reading).
  */
 export class FountainView extends TextFileView {
   private editor: EditorView;
   private lineNumbers = new Compartment();
+  private modeExtensions = new Compartment();
   private rememberTimer: number | null = null;
+  private listeners = new Set<(change: ScriptChange) => void>();
+  private reading: boolean;
+  private sourceMode: boolean;
+  private modeButton: HTMLElement;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -52,23 +72,50 @@ export class FountainView extends TextFileView {
     exportPdf: (view: FountainView) => void,
   ) {
     super(leaf);
+    this.reading = defaultViewMode(this.app) === "preview";
+    this.sourceMode = !livePreview(this.app);
+    // Actions are added right to left, so the mode button sits beside the menu, as for notes.
+    this.modeButton = this.addAction("book-open", "", (evt) => {
+      evt.preventDefault();
+      this.setMode(!this.reading, this.sourceMode);
+    });
     this.addAction("file-down", "Export to PDF", () => exportPdf(this));
     this.contentEl.addClass("playwright-view");
     this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
     this.editor = new EditorView({ parent: this.contentEl, state: this.createState("") });
+    this.showMode();
+
+    // Obsidian's hotkeys for reading view and source mode (Ctrl/Cmd+E for
+    // reading view, unless you've changed it) work here too.
+    this.scope = new Scope(this.app.scope);
+    for (const { modifiers, key } of hotkeysOf(this.app, TOGGLE_READING_COMMAND)) {
+      this.scope.register(modifiers, key, () => {
+        this.toggleReading();
+        return false;
+      });
+    }
+    for (const { modifiers, key } of hotkeysOf(this.app, TOGGLE_SOURCE_COMMAND)) {
+      this.scope.register(modifiers, key, () => {
+        if (this.reading) return true;
+        this.toggleSource();
+        return false;
+      });
+    }
+
     this.registerEvent(
       onConfigChanged(this.app, (key) => {
         if (key === "showLineNumber") {
-          this.editor.dispatch({
-            effects: this.lineNumbers.reconfigure(lineNumberGutter(showLineNumbers(this.app))),
-          });
+          this.editor.dispatch({ effects: this.lineNumbers.reconfigure(this.lineNumberGutter()) });
         } else if (key === "readableLineLength") {
           this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
           this.editor.requestMeasure();
         }
       }),
     );
-    this.registerDomEvent(this.editor.scrollDOM, "scroll", () => this.rememberPositionSoon());
+    this.registerDomEvent(this.editor.scrollDOM, "scroll", () => {
+      this.rememberPositionSoon();
+      this.notify("position");
+    });
   }
 
   getViewType(): string {
@@ -83,6 +130,81 @@ export class FountainView extends TextFileView {
     return "drama";
   }
 
+  getState(): Record<string, unknown> {
+    return { ...super.getState(), mode: this.reading ? "preview" : "source", source: this.sourceMode };
+  }
+
+  async setState(state: unknown, result: ViewStateResult): Promise<void> {
+    if (state && typeof state === "object") {
+      const { mode, source } = state as ModeState;
+      const reading = mode === "preview" ? true : mode === "source" ? false : this.reading;
+      this.setMode(reading, typeof source === "boolean" ? source : this.sourceMode);
+    }
+    await super.setState(state, result);
+  }
+
+  /** Switches between editing and reading view. */
+  toggleReading(): void {
+    this.setMode(!this.reading, this.sourceMode);
+  }
+
+  /** Switches between Live Preview and source mode, from reading view too. */
+  toggleSource(): void {
+    this.setMode(false, !this.sourceMode);
+  }
+
+  onPaneMenu(menu: Menu, source: string): void {
+    menu.addItem((item) =>
+      item
+        .setSection("pane")
+        .setTitle(this.reading ? "Editing view" : "Reading view")
+        .setIcon(this.reading ? "pencil" : "book-open")
+        .onClick(() => this.toggleReading()),
+    );
+    menu.addItem((item) =>
+      item
+        .setSection("pane")
+        .setTitle("Source mode")
+        .setIcon("code")
+        .setChecked(!this.reading && this.sourceMode)
+        .onClick(() => this.toggleSource()),
+    );
+    super.onPaneMenu(menu, source);
+  }
+
+  private setMode(reading: boolean, sourceMode: boolean): void {
+    if (reading === this.reading && sourceMode === this.sourceMode) return;
+    // Keep the same line at the top, though lines change height between modes.
+    const top = this.topOffset();
+    this.reading = reading;
+    this.sourceMode = sourceMode;
+    this.editor.dispatch({
+      effects: [this.modeExtensions.reconfigure(this.currentModeExtensions()), this.lineNumbers.reconfigure(this.lineNumberGutter())],
+    });
+    if (top !== undefined) this.editor.dispatch({ effects: EditorView.scrollIntoView(top, { y: "start", yMargin: 0 }) });
+    this.showMode();
+    this.app.workspace.requestSaveLayout();
+  }
+
+  /** Shows the current mode on the view and its mode button, which offers the other mode. */
+  private showMode(): void {
+    this.contentEl.toggleClass("is-reading", this.reading);
+    this.contentEl.toggleClass("is-source", !this.reading && this.sourceMode);
+    setIcon(this.modeButton, this.reading ? "pencil" : "book-open");
+    this.modeButton.setAttribute("aria-label", this.reading ? "Current view: reading\nClick to edit" : "Current view: editing\nClick to read");
+  }
+
+  /** Line numbers while editing, following Obsidian's "Show line number" setting. */
+  private lineNumberGutter(): Extension {
+    return showLineNumbers(this.app) && !this.reading ? lineNumbers() : [];
+  }
+
+  private currentModeExtensions(): Extension {
+    if (this.reading) return [fountainFormatting(), readingView()];
+    const spellcheck = EditorView.contentAttributes.of({ spellcheck: "true" });
+    return this.sourceMode ? spellcheck : [fountainFormatting(), spellcheck];
+  }
+
   getViewData(): string {
     return this.editor.state.doc.toString();
   }
@@ -93,6 +215,7 @@ export class FountainView extends TextFileView {
       // and go back to where you were in it.
       this.editor.setState(this.createState(data));
       this.restorePosition(this.file ? this.positions.get(this.file.path) : undefined);
+      this.notify("text");
       return;
     }
     const current = this.editor.state.doc.toString();
@@ -105,6 +228,7 @@ export class FountainView extends TextFileView {
 
   clear(): void {
     this.editor.setState(this.createState(""));
+    this.notify("text");
   }
 
   async onUnloadFile(file: TFile): Promise<void> {
@@ -162,6 +286,39 @@ export class FountainView extends TextFileView {
     if (s.focus && (!Platform.isMobile || s.focusOnMobile)) this.editor.focus();
   }
 
+  /**
+   * Calls `listener` when the script's text changes (as you type, or a
+   * different file loads) or you move through it. Returns a function that
+   * stops the calls.
+   */
+  subscribe(listener: (change: ScriptChange) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify(change: ScriptChange): void {
+    for (const listener of this.listeners) listener(change);
+  }
+
+  /** The line you're at, counting from 0: the cursor's while you're typing, otherwise the top line. */
+  currentLine(): number {
+    const doc = this.editor.state.doc;
+    const top = this.topOffset();
+    const pos = this.editor.hasFocus || top === undefined ? this.editor.state.selection.main.head : top;
+    return doc.lineAt(pos).number - 1;
+  }
+
+  /** Moves to a line, counting from 0: scrolled to the top, with the cursor at its start. */
+  revealLine(line: number): void {
+    const doc = this.editor.state.doc;
+    const from = doc.line(Math.min(Math.max(line + 1, 1), doc.lines)).from;
+    this.editor.dispatch({
+      selection: EditorSelection.cursor(from),
+      effects: EditorView.scrollIntoView(from, { y: "start", yMargin: 0 }),
+    });
+    if (!this.reading) this.editor.focus();
+  }
+
   /** The offset of the line at the top of the editor, or undefined while it isn't laid out. */
   private topOffset(): number | undefined {
     const { scrollDOM, documentPadding } = this.editor;
@@ -207,18 +364,19 @@ export class FountainView extends TextFileView {
     return EditorState.create({
       doc,
       extensions: [
-        this.lineNumbers.of(lineNumberGutter(showLineNumbers(this.app))),
-        fountainFormatting(),
+        this.lineNumbers.of(this.lineNumberGutter()),
+        this.modeExtensions.of(this.currentModeExtensions()),
         history(),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,
-        EditorView.contentAttributes.of({ spellcheck: "true" }),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         EditorView.updateListener.of((update) => {
           const external = update.transactions.some((tr) => tr.annotation(fromFile));
           if (update.docChanged && !external) this.requestSave();
           if (update.selectionSet) this.rememberPositionSoon();
+          if (update.docChanged) this.notify("text");
+          else if (update.selectionSet) this.notify("position");
         }),
       ],
     });

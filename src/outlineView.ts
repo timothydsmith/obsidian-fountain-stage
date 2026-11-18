@@ -1,0 +1,174 @@
+/** The script outline sidebar: the sections and scenes of the script you're in. */
+
+import { FileView, ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
+import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
+
+export const VIEW_TYPE_OUTLINE = "playwright-outline";
+
+/** How long after you stop typing the outline catches up. */
+const REFRESH_DELAY_MS = 300;
+
+export class OutlineView extends ItemView {
+  /** The script being outlined. */
+  private script: FountainView | null = null;
+  private unsubscribe: (() => void) | null = null;
+  private outline: OutlineItem[] = [];
+  private rows = new Map<OutlineItem, HTMLElement>();
+  private active: HTMLElement | null = null;
+  /** Collapsed items, by their path of headings, so they stay collapsed as you type. */
+  private collapsed = new Set<string>();
+  private refreshTimer: number | null = null;
+  private highlightFrame: number | null = null;
+
+  constructor(leaf: WorkspaceLeaf) {
+    super(leaf);
+  }
+
+  getViewType(): string {
+    return VIEW_TYPE_OUTLINE;
+  }
+
+  getDisplayText(): string {
+    return "Script outline";
+  }
+
+  getIcon(): string {
+    return "list-tree";
+  }
+
+  async onOpen(): Promise<void> {
+    this.contentEl.addClass("playwright-outline");
+    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
+    this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
+    this.app.workspace.onLayoutReady(() => this.follow());
+  }
+
+  async onClose(): Promise<void> {
+    this.setScript(null);
+  }
+
+  /** Follows the script you're in. Another file clears the outline; a sidebar leaves it as it is. */
+  private follow(): void {
+    const active = this.app.workspace.getActiveViewOfType(FountainView);
+    if (active) {
+      this.setScript(active);
+      return;
+    }
+    const stillOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).some((leaf) => leaf.view === this.script);
+    const otherFile = this.app.workspace.getActiveViewOfType(FileView);
+    if (!stillOpen || otherFile) this.setScript(null);
+  }
+
+  private setScript(script: FountainView | null): void {
+    if (script === this.script) return;
+    this.unsubscribe?.();
+    this.unsubscribe = null;
+    this.cancelTimers();
+    this.script = script;
+    if (script) {
+      this.unsubscribe = script.subscribe((change) => (change === "text" ? this.refreshSoon() : this.highlightSoon()));
+    }
+    this.refresh();
+  }
+
+  private refreshSoon(): void {
+    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
+    this.refreshTimer = window.setTimeout(() => {
+      this.refreshTimer = null;
+      this.refresh();
+    }, REFRESH_DELAY_MS);
+  }
+
+  private highlightSoon(): void {
+    if (this.highlightFrame !== null) return;
+    this.highlightFrame = window.requestAnimationFrame(() => {
+      this.highlightFrame = null;
+      this.highlight();
+    });
+  }
+
+  private cancelTimers(): void {
+    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
+    if (this.highlightFrame !== null) window.cancelAnimationFrame(this.highlightFrame);
+    this.refreshTimer = this.highlightFrame = null;
+  }
+
+  private refresh(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    this.rows.clear();
+    this.active = null;
+    if (!this.script?.file) {
+      this.outline = [];
+      contentEl.createDiv({ cls: "pane-empty", text: "Open a Fountain script to see its outline." });
+      return;
+    }
+    this.outline = buildOutline(this.script.getViewData());
+    if (this.outline.length === 0) {
+      contentEl.createDiv({ cls: "pane-empty", text: "No sections or scenes yet. Start a line with # for an act, ## for a scene, or INT. or EXT. for a scene heading." });
+      return;
+    }
+    this.renderItems(contentEl.createDiv({ cls: "playwright-outline-tree" }), this.outline, "");
+    this.highlight();
+  }
+
+  private renderItems(parentEl: HTMLElement, items: OutlineItem[], parentPath: string): void {
+    const seen = new Map<string, number>();
+    for (const item of items) {
+      // Two scenes can share a name, so the path counts repeats.
+      const count = (seen.get(item.text) ?? 0) + 1;
+      seen.set(item.text, count);
+      const path = `${parentPath}/${item.text}#${count}`;
+      const collapsed = this.collapsed.has(path);
+
+      const itemEl = parentEl.createDiv({ cls: "tree-item" });
+      itemEl.toggleClass("is-collapsed", collapsed);
+      const selfEl = itemEl.createDiv({ cls: "tree-item-self is-clickable" });
+      selfEl.addClass(item.kind === "scene" ? "playwright-outline-scene" : "playwright-outline-section");
+      this.rows.set(item, selfEl);
+
+      if (item.children.length > 0) {
+        selfEl.addClass("mod-collapsible");
+        const toggle = selfEl.createDiv({ cls: "tree-item-icon collapse-icon" });
+        toggle.toggleClass("is-collapsed", collapsed);
+        setIcon(toggle, "right-triangle");
+        toggle.addEventListener("click", (evt) => {
+          evt.stopPropagation();
+          const nowCollapsed = !this.collapsed.has(path);
+          if (nowCollapsed) this.collapsed.add(path);
+          else this.collapsed.delete(path);
+          itemEl.toggleClass("is-collapsed", nowCollapsed);
+          toggle.toggleClass("is-collapsed", nowCollapsed);
+        });
+      }
+
+      const inner = selfEl.createDiv({ cls: "tree-item-inner" });
+      if (item.sceneNumber) inner.createSpan({ cls: "playwright-outline-number", text: `${item.sceneNumber}. ` });
+      inner.createSpan({ text: item.text });
+      if (item.synopsis) inner.createDiv({ cls: "playwright-outline-synopsis", text: item.synopsis });
+      selfEl.addEventListener("click", () => this.reveal(item));
+
+      if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path);
+    }
+  }
+
+  private reveal(item: OutlineItem): void {
+    const script = this.script;
+    if (!script) return;
+    this.app.workspace.setActiveLeaf(script.leaf, { focus: true });
+    script.revealLine(item.line);
+  }
+
+  /** Marks the part of the script you're in. */
+  private highlight(): void {
+    if (!this.script) return;
+    const item = itemAt(this.outline, this.script.currentLine());
+    const row = item ? this.rows.get(item) ?? null : null;
+    if (row === this.active) return;
+    this.active?.removeClass("is-active");
+    row?.addClass("is-active");
+    row?.scrollIntoView({ block: "nearest" });
+    this.active = row;
+  }
+}

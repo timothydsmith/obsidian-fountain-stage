@@ -189,6 +189,20 @@
   color: inherit;
 }
 
+/* Reading view: not editable, so no cursor, and a page break is a rule. */
+.playwright-view.is-reading .cm-content {
+  caret-color: transparent;
+}
+
+.playwright-view.is-reading .cm-cursorLayer {
+  display: none;
+}
+
+.playwright-view.is-reading .pw-page-break {
+  color: transparent;
+  background: linear-gradient(var(--background-modifier-border), var(--background-modifier-border)) center / 100% 1px no-repeat;
+}
+
 /* PDF export style picker */
 .playwright-style-description {
   display: block;
@@ -206,4 +220,32 @@
 
 .playwright-settings-problem {
   color: var(--text-error);
+}
+
+/* Script outline sidebar */
+.playwright-outline {
+  padding: var(--size-4-2);
+}
+
+.playwright-outline .tree-item-self.is-active {
+  background-color: var(--nav-item-background-active);
+  color: var(--nav-item-color-active);
+}
+
+.playwright-outline .tree-item.is-collapsed > .tree-item-children {
+  display: none;
+}
+
+.playwright-outline-scene {
+  font-size: var(--font-ui-smaller);
+}
+
+.playwright-outline-number,
+.playwright-outline-synopsis {
+  color: var(--text-muted);
+}
+
+.playwright-outline-synopsis {
+  font-size: var(--font-ui-smaller);
+  font-style: italic;
 }

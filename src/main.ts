@@ -4,6 +4,7 @@ import { PositionStore } from "./editor/positions";
 import { exportScript, type ExportOptions } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { DEFAULT_SETTINGS, Library, type PlaywrightSettings } from "./library";
+import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
 import { PlaywrightSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
@@ -31,6 +32,13 @@ export default class PlaywrightPlugin extends Plugin {
       (leaf) => new FountainView(leaf, this.positions, (view) => view.file && void this.exportPdf(view.file)),
     );
 
+    this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf));
+    this.addCommand({
+      id: "show-outline",
+      name: "Show script outline",
+      callback: () => void this.showOutline(),
+    });
+
     try {
       this.registerExtensions([FOUNTAIN_EXTENSION], VIEW_TYPE_FOUNTAIN);
     } catch (error) {
@@ -47,7 +55,23 @@ export default class PlaywrightPlugin extends Plugin {
     });
     this.addRibbonIcon("drama", "New Fountain script", () => this.newScript());
 
-    const exportCommand = (id: string, name: string, options: ExportOptions) =>
+    // Obsidian's own mode commands only work in notes. Their hotkeys work
+    // in scripts too (see FountainView); these are for the command palette.
+    const viewCommand = (id: string, name: string, run: (view: FountainView) => void) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const view = this.app.workspace.getActiveViewOfType(FountainView);
+          if (!view) return false;
+          if (!checking) run(view);
+          return true;
+        },
+      });
+    viewCommand("toggle-reading-view", "Toggle reading view", (view) => view.toggleReading());
+    viewCommand("toggle-source-mode", "Toggle source mode", (view) => view.toggleSource());
+
+    const exportCommand =(id: string, name: string, options: ExportOptions) =>
       this.addCommand({
         id,
         name,
@@ -82,6 +106,17 @@ export default class PlaywrightPlugin extends Plugin {
       .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
     await exportScript(this.app, this.library, file, source, options);
+  }
+
+  /** Shows the script outline, opening it in the right sidebar if it isn't open yet. */
+  private async showOutline(): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_OUTLINE)[0];
+    if (!leaf) {
+      leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf("split");
+      await leaf.setViewState({ type: VIEW_TYPE_OUTLINE, active: false });
+    }
+    await workspace.revealLeaf(leaf);
   }
 
   onunload(): void {
