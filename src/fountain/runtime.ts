@@ -56,7 +56,7 @@ function elementSeconds(el: ScriptElement, wordsPerMinute: number, pauses: reado
   }
 }
 
-const isPreface = (el: ScriptElement) => el.type === "preface" || el.type === "preface_list_item";
+export const isPreface = (el: ScriptElement) => el.type === "preface" || el.type === "preface_list_item";
 
 /** The line the play starts on: its first element after the preface. */
 function bodyStartLine(script: ParsedScript): number | undefined {
@@ -88,15 +88,28 @@ export function wordsTimeline(script: ParsedScript, wordsPerMinute: number, paus
 }
 
 /** The timeline going by pages, from where each line landed in the layout. */
-export function pagesTimeline(script: ParsedScript, placements: Placement[], minutesPerPage: number): Timeline {
+/** How far into the pages a line starts, in pages (page index plus the fraction down it), and where the last page's text ends. */
+export interface PagePositions {
+  at(line: number): number;
+  end: number;
+}
+
+export function pagePositions(placements: Placement[]): PagePositions | undefined {
   const last = placements[placements.length - 1];
-  if (!last) return { at: () => 0, total: 0 };
+  if (!last) return undefined;
   const end = last.page + last.end;
   // Placements run in line order (a continuation repeats its element's line).
-  const position = (line: number) => {
+  const at = (line: number) => {
     const i = firstAtLeast(placements, (p) => p.line, line);
     return i < placements.length ? placements[i].page + placements[i].at : end;
   };
+  return { at, end };
+}
+
+export function pagesTimeline(script: ParsedScript, placements: Placement[], minutesPerPage: number): Timeline {
+  const positions = pagePositions(placements);
+  if (!positions) return { at: () => 0, total: 0 };
+  const { at: position, end } = positions;
   const bodyLine = bodyStartLine(script);
   const start = bodyLine === undefined ? end : position(bodyLine);
   const seconds = (pos: number) => Math.max(pos - start, 0) * minutesPerPage * 60;

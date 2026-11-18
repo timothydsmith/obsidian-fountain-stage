@@ -373,3 +373,112 @@
   background-color: var(--text-highlight-bg);
   color: var(--text-normal);
 }
+
+/* Script report */
+.playwright-report {
+  padding: var(--size-4-4);
+  font-size: var(--font-ui-small);
+}
+
+.playwright-report-title {
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--size-4-2);
+}
+
+.playwright-report h4 {
+  margin: var(--size-4-6) 0 var(--size-4-2);
+}
+
+.playwright-report-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7em, 1fr));
+  gap: var(--size-4-2);
+}
+
+.playwright-report-total {
+  padding: var(--size-4-2) var(--size-4-3);
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.playwright-report-total-value {
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.playwright-report-total-label,
+.playwright-report-note {
+  color: var(--text-muted);
+}
+
+.playwright-report-table-wrap {
+  overflow-x: auto;
+}
+
+.playwright-report-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.playwright-report-table th,
+.playwright-report-table td {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.playwright-report-table th {
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.playwright-report-table .is-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.playwright-report-cast {
+  color: var(--text-muted);
+}
+
+.playwright-report-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.playwright-report-link:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+/* Who's in each scene: names stay put while the scenes scroll. */
+.playwright-report-chart {
+  width: auto;
+}
+
+.playwright-report-chart tbody th {
+  position: sticky;
+  left: 0;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.playwright-report-chart .is-scene {
+  text-align: center;
+  min-width: 2em;
+  padding-left: var(--size-2-1);
+  padding-right: var(--size-2-1);
+}
+
+.playwright-report-chart td.is-in {
+  color: var(--text-accent);
+}
+
+.playwright-report-doubling {
+  padding-left: var(--size-4-4);
+}

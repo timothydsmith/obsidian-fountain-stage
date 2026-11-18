@@ -36,6 +36,14 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
     The times for pause and silence follow the Author's Note to Annie Baker's *Circle Mirror Transformation*. Baker calls a beat less than a pause, and doesn't time a moment or a short silence, so a beat is 1 second, a moment is taken as a pause, and a short silence is half a silence.
   - **Pages**: a minute a page of the PDF.
+- A script report, opened with **Show script report** in a tab beside the script. It follows the script you're in and updates as you write. Click a character or scene to go there.
+  - **Totals:** pages, runtime, words spoken, speeches, acts, scenes and characters.
+  - **Characters:** each one's speeches, words, share of the dialogue, time speaking, number of scenes, and first and last scene.
+  - **Scenes:** each one's act, pages, runtime, speeches, words and characters. Scenes are the smallest parts of the outline: scene headings, or `##` scenes where there are none. Text before the first heading is a scene of its own.
+  - **Who's in each scene:** a chart of characters against scenes. A character is in a scene if they speak there or are named in a stage direction or parenthetical.
+  - **Doubling:** characters who never share a scene, so one actor could play both.
+
+  The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
@@ -146,6 +154,7 @@ Layout:
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
 | `src/pagination.ts`, `src/pdf/pageBreaks.ts`, `src/editor/pageRules.ts` | Page breaks in the editor: laying the script out in its style and fonts, where pages break, and the rules |
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
+| `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
 | `src/fountain/rename.ts`, `src/renameCharacterModal.ts` | Renaming a character: finding every place to change, and the dialog |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |

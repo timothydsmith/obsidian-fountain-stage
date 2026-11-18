@@ -30,6 +30,24 @@ describe("characterNames", () => {
     expect(characterNames(script)).toEqual(["DAVID", "BRICK", "MARGARET", "MRS SMITH", "THE GHOST"]);
   });
 
+  it("reads a Characters list with spaced descriptions and lines of prose", () => {
+    const script = parseFountain(
+      [
+        "***Characters***",
+        "NICHOLAS     46. Political strategist.",
+        "",
+        "The following characters appear in video segments throughout the play.",
+        "",
+        "JOANNE PRESCOTT           News Anchor",
+        "A forward slash (\"/\") indicates overlapping dialogue.",
+        "The beats, pauses, and silences are important.",
+        "",
+        "# ACT ONE",
+      ].join("\n"),
+    );
+    expect(characterNames(script)).toEqual(["JOANNE PRESCOTT", "NICHOLAS"]);
+  });
+
   it("leaves out the cue being typed", () => {
     const script = parseFountain("INT. ROOM\n\nDAVID\nHello.\n\nDAV\nHi.\n");
     expect(characterNames(script, 5)).toEqual(["DAVID"]);

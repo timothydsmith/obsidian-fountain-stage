@@ -6,13 +6,30 @@
 import type { ParsedScript } from "./parser";
 
 /** A cue's name, without extensions such as (V.O.) or (CONT'D), or a dual dialogue mark. */
-function cueName(text: string): string {
+export function cueName(text: string): string {
   return text.replace(/\^\s*$/, "").replace(/\s*\(.*$/, "").trim();
 }
 
-/** The name at the start of a Characters list entry, such as "MARGARET" in "MARGARET, sixties". */
-function listName(entry: string): string {
-  return entry.split(/,|\s[-–—:]\s|\(/)[0].trim().toUpperCase();
+/** What ends the name in a Characters list entry: a comma, a dash, or a run of spaces. */
+const LIST_SEPARATOR_RE = /,|\s[-–—:]\s|\s{2,}|\t/;
+
+/**
+ * The name at the start of a Characters list entry, upper case, such as
+ * MARGARET in "MARGARET, sixties" or "NORA     34. Student support officer".
+ * A name in capitals counts on its own. One in mixed case ("Mrs Smith, a
+ * neighbour") needs a description after it, and a capital starting each
+ * of its few words, so a line of prose in the list ("The beats, pauses
+ * and silences…") isn't taken for one.
+ */
+function listName(entry: string): string | undefined {
+  const line = entry.trim();
+  const separator = LIST_SEPARATOR_RE.exec(line);
+  const name = (separator ? line.slice(0, separator.index) : line).replace(/\s*\(.*$/, "").trim();
+  if (!name) return undefined;
+  const capitals = !/\p{Ll}/u.test(name);
+  const words = name.split(/\s+/);
+  const titleCase = words.length <= 4 && words.every((w) => /^\p{Lu}/u.test(w));
+  return capitals || (separator && titleCase) ? name.toUpperCase() : undefined;
 }
 
 /** A name worth offering: has letters, and no lower case once upper-cased. */
@@ -27,7 +44,7 @@ export function characterNames(script: ParsedScript, exceptLine?: number): strin
   for (const entry of script.titleValues.characters ?? []) {
     for (const line of entry.split("\n")) {
       const name = listName(line);
-      if (isName(name) && !counts.has(name)) counts.set(name, 0);
+      if (name && isName(name) && !counts.has(name)) counts.set(name, 0);
     }
   }
   for (const el of script.elements) {

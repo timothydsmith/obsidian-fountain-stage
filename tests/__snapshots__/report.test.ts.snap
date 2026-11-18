@@ -1,0 +1,53 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`reportMarkdown > writes the report as tables 1`] = `
+"# A Play: report
+
+Made 18 November 2026. Runtimes are estimated from the words spoken.
+
+## Totals
+
+- Pages: –
+- Runtime: 13 s
+- Words spoken: 9
+- Speeches: 4
+- Acts: 2
+- Scenes: 3
+- Characters: 3
+
+## Characters
+
+| Character | Speeches | Words | Share | Speaking | Scenes | First scene | Last scene |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| MARGARET | 2 | 6 | 67% | 6 s | 2 | 1. Scene One | 3. INT. KITCHEN |
+| ANNIE | 1 | 2 | 22% | 2 s | 1 | 2. Scene Two | 2. Scene Two |
+| DAVID | 1 | 1 | 11% | 1 s | 1 | 1. Scene One | 1. Scene One |
+| THE GHOST | 0 | 0 | – | – | 0 | – | – |
+
+## Scenes
+
+| # | Scene | Act | Pages | Runtime | Speeches | Words | Characters |
+| ---: | --- | --- | ---: | ---: | ---: | ---: | --- |
+| 1 | Scene One | ACT ONE | – | 10 s | 2 | 6 | MARGARET, DAVID |
+| 2 | Scene Two | ACT ONE | – | 2 s | 1 | 2 | ANNIE |
+| 3 | INT. KITCHEN | ACT TWO | – | 1 s | 1 | 1 | MARGARET |
+
+## Who's in each scene
+
+Scenes are numbered as in the table above.
+
+| Character | 1 | 2 | 3 |
+| --- | :---: | :---: | :---: |
+| MARGARET | ● |  | ● |
+| ANNIE |  | ● |  |
+| DAVID | ● |  |  |
+
+## Doubling
+
+Characters who never share a scene, so one actor could play both:
+
+- **MARGARET** with ANNIE
+- **ANNIE** with MARGARET, DAVID
+- **DAVID** with ANNIE
+"
+`;

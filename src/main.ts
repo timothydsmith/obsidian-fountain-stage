@@ -1,14 +1,18 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { normalizePath, Notice, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript, type ExportOptions } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { DEFAULT_SETTINGS, Library, type PlaywrightSettings, readSettings } from "./library";
-import { formatDuration, type Timeline, timeline } from "./fountain/runtime";
+import { buildOutline } from "./fountain/outline";
+import { buildReport, type ScriptReport } from "./fountain/report";
+import { reportMarkdown } from "./fountain/reportMarkdown";
+import { formatDuration, pagePositions, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
 import { Paginator } from "./pagination";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
 import { renameCharacter } from "./renameCharacterModal";
+import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
 import { PlaywrightSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
@@ -46,6 +50,10 @@ export default class PlaywrightPlugin extends Plugin {
     this.showStatusBar();
 
     this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf, (view) => this.timelineOf(view)));
+    this.registerView(
+      VIEW_TYPE_REPORT,
+      (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
+    );
     this.addCommand({
       id: "show-outline",
       name: "Show script outline",
@@ -87,6 +95,8 @@ export default class PlaywrightPlugin extends Plugin {
     viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
     viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
     viewCommand("rename-character", "Rename character", (view) => renameCharacter(this.app, view));
+    viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
+    viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
     const exportCommand =(id: string, name: string, options: ExportOptions) =>
       this.addCommand({
@@ -202,6 +212,58 @@ export default class PlaywrightPlugin extends Plugin {
       unsubscribe?.();
       if (frame !== null) window.cancelAnimationFrame(frame);
     });
+  }
+
+  /** The script's report, with lengths by the runtime method in settings. */
+  private reportOf(view: FountainView): ScriptReport {
+    const pages = view.scriptPages();
+    return buildReport(view.script(), buildOutline(view.getViewData()), {
+      wordsPerMinute: this.playwrightSettings.wordsPerMinute,
+      timeline: this.timelineOf(view),
+      positions: pages ? pagePositions(pages.placements) : undefined,
+      pageCount: pages?.pageCount,
+    });
+  }
+
+  /** Shows the report on a script in a tab beside it, opening one if there isn't one. */
+  private async showReport(view: FountainView): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_REPORT)[0];
+    if (!leaf) {
+      leaf = workspace.getLeaf("split", "vertical");
+      await leaf.setViewState({ type: VIEW_TYPE_REPORT, active: false });
+    }
+    if (leaf.view instanceof ReportView) leaf.view.setScript(view);
+    await workspace.revealLeaf(leaf);
+  }
+
+  /** Saves the report on a script as a Markdown note beside it, replacing an earlier one, and opens it. */
+  private async saveReport(view: FountainView): Promise<void> {
+    const file = view.file;
+    if (!file) return;
+    const date = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+    const method = this.playwrightSettings.runtimeMethod === "words" ? "the words spoken" : "the number of pages";
+    const text = reportMarkdown(this.reportOf(view), { title: file.basename, date, method });
+    const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";
+    const path = normalizePath(`${folder}${file.basename} - Report.md`);
+    try {
+      const { vault, workspace } = this.app;
+      const existing = vault.getAbstractFileByPath(path);
+      let note: TFile;
+      if (existing instanceof TFile) {
+        await vault.modify(existing, text);
+        note = existing;
+      } else if (existing) {
+        throw new Error(`${path} is a folder`);
+      } else {
+        note = await vault.create(path, text);
+      }
+      await workspace.getLeaf("tab").openFile(note);
+      new Notice(`Saved the report as ${note.name}`);
+    } catch (error) {
+      console.error("[playwright] couldn't save the report", error);
+      new Notice(`Couldn't save the report: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /** Shows the script outline, opening it in the right sidebar if it isn't open yet. */
