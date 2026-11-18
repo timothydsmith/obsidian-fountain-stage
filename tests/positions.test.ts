@@ -9,8 +9,15 @@ function memoryStorage(initial: unknown = null) {
 }
 
 describe("PositionStore", () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+  beforeEach(() => {
+    // The store uses window's timers, as Obsidian asks; in Node, window is the global object.
+    vi.stubGlobal("window", globalThis);
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it("remembers positions and saves them shortly after a change", () => {
     const storage = memoryStorage();

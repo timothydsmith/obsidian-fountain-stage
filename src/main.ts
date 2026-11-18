@@ -31,7 +31,7 @@ export default class PlaywrightPlugin extends Plugin {
     this.addSettingTab(new PlaywrightSettingTab(this.app, this, this.playwrightSettings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
-      load: () => this.app.loadLocalStorage(POSITIONS_KEY),
+      load: (): unknown => this.app.loadLocalStorage(POSITIONS_KEY),
       save: (data) => this.app.saveLocalStorage(POSITIONS_KEY, data),
     });
     this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.positions.rename(oldPath, file.path)));
@@ -252,7 +252,7 @@ export default class PlaywrightPlugin extends Plugin {
       const existing = vault.getAbstractFileByPath(path);
       let note: TFile;
       if (existing instanceof TFile) {
-        await vault.modify(existing, text);
+        await vault.process(existing, () => text);
         note = existing;
       } else if (existing) {
         throw new Error(`${path} is a folder`);

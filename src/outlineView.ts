@@ -111,7 +111,7 @@ export class OutlineView extends ItemView {
     }
     this.outline = buildOutline(this.script.getViewData());
     const timeline = this.timelineOf(this.script);
-    this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map();
+    this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map<OutlineItem, number>();
     if (this.outline.length === 0) {
       contentEl.createDiv({ cls: "pane-empty", text: "No sections or scenes yet. Start a line with # for an act, ## for a scene, or INT. or EXT. for a scene heading." });
       return;

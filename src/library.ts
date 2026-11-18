@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: PlaywrightSettings = {
  */
 export function readSettings(saved: unknown): PlaywrightSettings {
   const s = (typeof saved === "object" && saved !== null ? saved : {}) as Record<string, unknown>;
-  const string = (key: keyof PlaywrightSettings, fallback: string) => (typeof s[key] === "string" ? (s[key] as string) : fallback);
+  const string = (key: keyof PlaywrightSettings, fallback: string) => (typeof s[key] === "string" ? s[key] : fallback);
   const positive = (key: keyof PlaywrightSettings, fallback: number) => {
     const value = s[key];
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;

@@ -23,9 +23,7 @@ class PageRuleWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const el = document.createElement("div");
-    el.className = "playwright-page-rule";
-    el.setAttribute("aria-hidden", "true");
+    const el = createDiv({ cls: "playwright-page-rule", attr: { "aria-hidden": "true" } });
     const label = el.createSpan({ cls: "playwright-page-rule-label", text: this.label });
     if (this.partway) {
       label.createSpan({ cls: "playwright-page-rule-note", text: " starts partway through the paragraph above" });

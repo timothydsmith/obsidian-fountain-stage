@@ -62,7 +62,7 @@ export interface NameCompletion {
 }
 
 /** Upper-case words, which a name of several words ("MRS SMITH") is made of. */
-const CAPS_RUN_RE = /(?:\p{Lu}[\p{Lu}\d'’.\-]*\s)*\p{Lu}[\p{Lu}\d'’.\-]*$/u;
+const CAPS_RUN_RE = /(?:\p{Lu}[\p{Lu}\d'’.-]*\s)*\p{Lu}[\p{Lu}\d'’.-]*$/u;
 
 /**
  * The names that complete what's just been typed, once it ends in two

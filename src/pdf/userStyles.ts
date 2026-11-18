@@ -128,7 +128,7 @@ function parseColor(value: unknown): [number, number, number] | undefined {
     let hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim())?.[1];
     if (!hex) return undefined;
     if (hex.length === 3) hex = [...hex].map((c) => c + c).join("");
-    return [0, 2, 4].map((i) => parseInt(hex!.slice(i, i + 2), 16) / 255) as [number, number, number];
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
   }
   return undefined;
 }

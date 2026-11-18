@@ -5,6 +5,7 @@
  */
 
 import { matchBreakdownHeading, type ParsedScript } from "./parser";
+import { escapeRe, wholeWordRe, wholeWords } from "./wholeWords";
 
 /** Where a name is written, so a rename can leave some places alone. */
 export type RenamePlace = "cue" | "list" | "direction" | "dialogue";
@@ -20,14 +21,14 @@ export interface RenameEdit {
   line: number;
 }
 
-function escape(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** The name's words, in any case and with any spacing between them, as a pattern. */
+function nameSource(name: string): string {
+  return name.trim().split(/\s+/).map(escapeRe).join("\\s+");
 }
 
-/** The name's words, matched whole, in any case and with any spacing between them. */
+/** The name, matched whole. */
 function nameRe(name: string): RegExp {
-  const words = name.trim().split(/\s+/).map(escape).join("\\s+");
-  return new RegExp(`(?<![\\p{L}\\p{N}])${words}(?![\\p{L}\\p{N}])`, "giu");
+  return wholeWordRe(nameSource(name));
 }
 
 const hasLower = (text: string) => text !== text.toUpperCase();
@@ -116,19 +117,18 @@ export function findRenames(source: string, script: ParsedScript, oldName: strin
       from = range.from;
       text = text.slice(range.from, range.to);
       // The whole name, not a name inside it: renaming ANN leaves ANNE's cues alone.
-      const m = new RegExp(`^${re.source}$`, "iu").exec(text);
-      if (!m) return;
+      if (!new RegExp(`^(?:${nameSource(oldName)})$`, "iu").test(text)) return;
     } else if (script.titlePage.some((e) => e.key === "characters" && e.line === i)) {
       // After the "Characters:" key.
       from = text.indexOf(":") + 1;
       text = text.slice(from);
     }
-    for (const m of text.matchAll(re)) {
-      if (!/\p{Lu}/u.test(m[0][0])) continue;
-      const insert = inCaseOf(m[0], name);
-      if (insert === m[0]) continue;
+    for (const m of wholeWords(text, re)) {
+      if (!/\p{Lu}/u.test(m.text[0])) continue;
+      const insert = inCaseOf(m.text, name);
+      if (insert === m.text) continue;
       const start = line.start + from + m.index;
-      edits.push({ from: start, to: start + m[0].length, insert, place, line: i });
+      edits.push({ from: start, to: start + m.text.length, insert, place, line: i });
     }
   });
   return edits;
@@ -141,9 +141,9 @@ export function findRenames(source: string, script: ParsedScript, oldName: strin
 export function nameAt(lineText: string, ch: number, names: string[]): string | undefined {
   let found: string | undefined;
   for (const name of names) {
-    for (const m of lineText.matchAll(nameRe(name))) {
-      const capitalised = /\p{Lu}/u.test(m[0][0]);
-      if (capitalised && m.index <= ch && ch <= m.index + m[0].length && (!found || name.length > found.length)) found = name;
+    for (const m of wholeWords(lineText, nameRe(name))) {
+      const capitalised = /\p{Lu}/u.test(m.text[0]);
+      if (capitalised && m.index <= ch && ch <= m.index + m.text.length && (!found || name.length > found.length)) found = name;
     }
   }
   return found;

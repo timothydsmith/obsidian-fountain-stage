@@ -13,7 +13,7 @@ interface Formatting {
 }
 
 function lineClassesFor(script: ParsedScript, lineCount: number): (string | undefined)[] {
-  const classes: (string | undefined)[] = new Array(lineCount);
+  const classes = new Array<string | undefined>(lineCount);
   for (const [line, role] of script.lineRoles) classes[line] = `pw-${role}`;
   for (const el of script.elements) {
     let cls = `pw-${el.type.replace(/_/g, "-")}`;

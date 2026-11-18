@@ -8,6 +8,8 @@
  * can change and add to in settings.
  */
 
+import { escapeRe, wholeWordRe, wholeWords } from "./wholeWords";
+
 export interface PauseWord {
   /** The word or phrase, such as "beat" or "lights fade". */
   word: string;
@@ -81,8 +83,8 @@ function matcherFor(words: readonly PauseWord[]): Matcher | null {
     // Longer phrases first, so "long silence" as a word of its own wins over "silence".
     const alternatives = [...byWord.keys()]
       .sort((a, b) => b.length - a.length)
-      .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+"));
-    matcher = { re: new RegExp(`(?<![\\p{L}\\p{N}])(${alternatives.join("|")})(?:e?s)?(?![\\p{L}\\p{N}])`, "giu"), byWord };
+      .map((key) => escapeRe(key).replace(/ /g, "\\s+"));
+    matcher = { re: wholeWordRe(`(${alternatives.join("|")})(?:e?s)?`), byWord };
   }
   matchers.set(words, matcher);
   return matcher;
@@ -99,14 +101,14 @@ export function pauseSeconds(text: string, parenthetical: boolean, words: readon
   const matcher = matcherFor(words);
   if (!matcher) return 0;
   let seconds = 0;
-  for (const m of text.matchAll(matcher.re)) {
-    const pause = matcher.byWord.get(normalizeWord(m[1]));
+  for (const m of wholeWords(text, matcher.re)) {
+    const pause = matcher.byWord.get(normalizeWord(m.groups[0] ?? ""));
     if (!pause) continue;
     // The words before it in the same sentence or bracket.
     const clause = text.slice(0, m.index).split(/[.!?:;()]/).pop()!;
     const lead = clause.toLowerCase().split(/[^\p{L}\d]+/u).filter(Boolean);
     if (!parenthetical) {
-      const after = text.slice(m.index + m[0].length);
+      const after = text.slice(m.index + m.text.length);
       const startsSentence = lead.every((w) => LEADS.has(w)) && !NOT_A_PAUSE_RE.test(after);
       const beforePunctuation = /^\s*([.,!?;:)—–]|-\s|$)/.test(after);
       if (!startsSentence && !beforePunctuation) continue;

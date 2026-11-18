@@ -13,6 +13,7 @@ import { characterNames, cueName } from "./characters";
 import type { OutlineItem } from "./outline";
 import type { ParsedScript } from "./parser";
 import { countWords, isPreface, type PagePositions, type Timeline } from "./runtime";
+import { escapeRe, wholeWordRe, wholeWords } from "./wholeWords";
 
 export interface SceneReport {
   /** Counting from 1. */
@@ -87,19 +88,19 @@ function nameFinder(names: string[]): (text: string) => string[] {
   const patterns = [...names]
     .sort((a, b) => b.length - a.length)
     .map((name) => {
-      const words = name.split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-      return { name, re: new RegExp(`(?<![\\p{L}\\p{N}])${words.join("\\s+")}(?![\\p{L}\\p{N}])`, "giu") };
+      return { name, re: wholeWordRe(name.split(/\s+/).map(escapeRe).join("\\s+")) };
     });
   return (text) => {
     const found: string[] = [];
     let rest = text;
     for (const { name, re } of patterns) {
       let seen = false;
-      rest = rest.replace(re, (match) => {
-        if (!/\p{Lu}/u.test(match[0])) return match;
+      // Blanking keeps every length, so the matches' places stay true.
+      for (const m of wholeWords(rest, re)) {
+        if (!/\p{Lu}/u.test(m.text[0])) continue;
         seen = true;
-        return " ".repeat(match.length);
-      });
+        rest = rest.slice(0, m.index) + " ".repeat(m.text.length) + rest.slice(m.index + m.text.length);
+      }
       if (seen) found.push(name);
     }
     return found;

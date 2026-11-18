@@ -77,7 +77,9 @@ describe("buildReport", () => {
     expect(characters[0].share).toBeCloseTo(6 / 9);
     expect(characters[0].seconds).toBeCloseTo(6);
     expect(characters[2].firstLine).toBe(12);
-    expect(totals).toEqual({ pages: undefined, seconds: expect.any(Number), words: 9, speeches: 4, acts: 2, scenes: 3, characters: 3 });
+    const { seconds, ...counts } = totals;
+    expect(counts).toEqual({ pages: undefined, words: 9, speeches: 4, acts: 2, scenes: 3, characters: 3 });
+    expect(seconds).toBeGreaterThan(0);
   });
 
   it("makes text before the first heading a scene, or the whole script one", () => {

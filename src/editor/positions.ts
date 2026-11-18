@@ -27,7 +27,7 @@ function isPosition(value: unknown): value is ScriptPosition {
  */
 export class PositionStore {
   private positions = new Map<string, ScriptPosition>();
-  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private saveTimer: number | null = null;
 
   constructor(private storage: PositionStorage) {
     const saved = storage.load();
@@ -67,14 +67,14 @@ export class PositionStore {
   /** Writes any pending change now. */
   flush(): void {
     if (this.saveTimer === null) return;
-    clearTimeout(this.saveTimer);
+    window.clearTimeout(this.saveTimer);
     this.saveTimer = null;
     this.storage.save([...this.positions]);
   }
 
   private scheduleSave(): void {
     if (this.saveTimer !== null) return;
-    this.saveTimer = setTimeout(() => {
+    this.saveTimer = window.setTimeout(() => {
       this.saveTimer = null;
       this.storage.save([...this.positions]);
     }, SAVE_DELAY_MS);

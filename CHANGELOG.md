@@ -30,3 +30,4 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 - Styles of your own: JSON files in a styles folder that `extends` a built-in style or another of yours and change only the settings that differ. Lengths take units (`"25mm"`, `"1in"`). A file with problems is left out, and each problem is listed with the setting and the reason.
 - Fonts from your vault: `.ttf` and `.otf` files in a fonts folder, matched by the family named in the file, so APT can use real Palatino. Without the font, PDFs use the style's fallback (Times for the built-in styles) and say so.
 - Settings for the styles and fonts folders, which also list the styles and font families Playwright found and any problems with them.
+- Playwright's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.

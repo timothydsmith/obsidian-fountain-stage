@@ -35,7 +35,7 @@ export function parseInline(text: string): InlineMarkup {
   const bold = new Uint8Array(n);
   const italic = new Uint8Array(n);
   const underline = new Uint8Array(n);
-  const link: (string | undefined)[] = new Array(n);
+  const link = new Array<string | undefined>(n);
 
   /** The text with markup and escaped characters hidden, so later passes skip them. */
   const working = () => {
@@ -57,7 +57,7 @@ export function parseInline(text: string): InlineMarkup {
   }
 
   for (const m of working().matchAll(LINK_RE)) {
-    const start = m.index!;
+    const start = m.index;
     const textFrom = start + 1;
     const textTo = textFrom + m[1].length;
     const end = start + m[0].length;
@@ -69,7 +69,7 @@ export function parseInline(text: string): InlineMarkup {
 
   const pairs = (re: RegExp, width: number, flags: Uint8Array[]) => {
     for (const m of working().matchAll(re)) {
-      const start = m.index!;
+      const start = m.index;
       const end = start + m[0].length;
       mark(start, start + width);
       mark(end - width, end);

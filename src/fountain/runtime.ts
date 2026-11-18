@@ -87,10 +87,9 @@ export function wordsTimeline(script: ParsedScript, wordsPerMinute: number, paus
   };
 }
 
-/** The timeline going by pages, from where each line landed in the layout. */
 /** How far into the pages a line starts, in pages (page index plus the fraction down it), and where the last page's text ends. */
 export interface PagePositions {
-  at(line: number): number;
+  at: (line: number) => number;
   end: number;
 }
 
@@ -106,6 +105,7 @@ export function pagePositions(placements: Placement[]): PagePositions | undefine
   return { at, end };
 }
 
+/** The timeline going by pages, from where each line landed in the layout. */
 export function pagesTimeline(script: ParsedScript, placements: Placement[], minutesPerPage: number): Timeline {
   const positions = pagePositions(placements);
   if (!positions) return { at: () => 0, total: 0 };
