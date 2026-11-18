@@ -7,6 +7,9 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Changed
+- Fountain Stage now needs Obsidian 1.13 or later. Its settings are drawn the way Obsidian 1.13 draws settings, and the older way is gone.
+
 ## [0.1.2] - 2026-11-18
 
 ### Changed
