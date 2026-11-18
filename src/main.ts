@@ -8,6 +8,7 @@ import { formatDuration, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
 import { Paginator } from "./pagination";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
+import { renameCharacter } from "./renameCharacterModal";
 import { PlaywrightSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
@@ -85,6 +86,7 @@ export default class PlaywrightPlugin extends Plugin {
     // For touch keyboards, which have no Tab key: these can go on the mobile toolbar.
     viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
     viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
+    viewCommand("rename-character", "Rename character", (view) => renameCharacter(this.app, view));
 
     const exportCommand =(id: string, name: string, options: ExportOptions) =>
       this.addCommand({

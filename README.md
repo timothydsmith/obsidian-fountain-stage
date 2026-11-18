@@ -20,6 +20,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - On a line of text, Tab changes it from action to character to scene heading to transition and back to action, and Shift+Tab goes the other way. The line is changed from how it was before your first Tab, so going round gives it back, and a forcing mark (`!`, `@`, `.`, `>`) is only added where the text needs it.
   - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
+- **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
 - The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Playwright reads it. A cue with no dialogue under it yet reads as a stage direction.
 - A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
@@ -145,6 +146,7 @@ Layout:
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
 | `src/pagination.ts`, `src/pdf/pageBreaks.ts`, `src/editor/pageRules.ts` | Page breaks in the editor: laying the script out in its style and fonts, where pages break, and the rules |
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
+| `src/fountain/rename.ts`, `src/renameCharacterModal.ts` | Renaming a character: finding every place to change, and the dialog |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

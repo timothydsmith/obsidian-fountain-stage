@@ -12,6 +12,7 @@ import type { PositionStore, ScriptPosition } from "./positions";
 import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
 import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
+import { renameCharacter } from "../renameCharacterModal";
 
 export const VIEW_TYPE_FOUNTAIN = "playwright-fountain";
 
@@ -194,6 +195,13 @@ export class FountainView extends TextFileView {
         .setIcon("code")
         .setChecked(!this.reading && this.sourceMode)
         .onClick(() => this.toggleSource()),
+    );
+    menu.addItem((item) =>
+      item
+        .setSection("action")
+        .setTitle("Rename character")
+        .setIcon("users")
+        .onClick(() => renameCharacter(this.app, this)),
     );
     super.onPaneMenu(menu, source);
   }
@@ -400,6 +408,20 @@ export class FountainView extends TextFileView {
     const { state } = this.editor;
     const line = state.doc.lineAt(state.selection.main.head);
     return describeLine(scriptOf(state), line.number - 1, line.text);
+  }
+
+  /** The cursor's line (counting from 0), its text, and the cursor's place in it. */
+  cursorLine(): { line: number; text: string; ch: number } {
+    const { state } = this.editor;
+    const head = state.selection.main.head;
+    const line = state.doc.lineAt(head);
+    return { line: line.number - 1, text: line.text, ch: head - line.from };
+  }
+
+  /** Changes the script, as one step to undo, such as a rename. Works in reading view too. */
+  applyChanges(changes: { from: number; to: number; insert: string }[]): void {
+    if (changes.length === 0) return;
+    this.editor.dispatch({ changes, userEvent: "edit.rename", scrollIntoView: false });
   }
 
   /** Moves to a line, counting from 0: scrolled to the top, with the cursor at its start. */

@@ -180,7 +180,7 @@ function startsNewElement(line: string): boolean {
 }
 
 /** The preliminary section a body heading such as `***Characters***` names, if any. */
-function matchBreakdownHeading(line: string): string | undefined {
+export function matchBreakdownHeading(line: string): string | undefined {
   let s = line.trim();
   if (s.endsWith(":")) s = s.slice(0, -1).trim();
   const m = MARKDOWN_HEADING_RE.exec(s);
@@ -190,7 +190,6 @@ function matchBreakdownHeading(line: string): string | undefined {
   return BREAKDOWN_HEADING_ALIASES[inner.toLowerCase()];
 }
 
-/** The first line at or after `start` that begins the script proper: a section or a scene heading. */
 /** Whether the block starting at line `i` is a character cue, as the main loop would read it. */
 function startsSpeech(body: string[], i: number): boolean {
   const s = body[i];

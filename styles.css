@@ -334,3 +334,42 @@
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
+
+/* Rename character */
+.playwright-rename-warning {
+  color: var(--text-warning);
+}
+
+.playwright-rename-preview {
+  margin: 0 0 var(--size-4-3);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.playwright-rename-preview summary {
+  cursor: var(--cursor);
+}
+
+.playwright-rename-preview ul {
+  list-style: none;
+  padding-left: 0;
+  max-height: 12em;
+  overflow-y: auto;
+}
+
+.playwright-rename-preview li {
+  overflow-wrap: anywhere;
+  margin-bottom: var(--size-2-1);
+}
+
+.playwright-rename-line {
+  display: inline-block;
+  min-width: 3em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.playwright-rename-preview mark {
+  background-color: var(--text-highlight-bg);
+  color: var(--text-normal);
+}
