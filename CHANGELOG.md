@@ -36,5 +36,5 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-playwright/compare/0.1.0...HEAD
-[0.1.0]: https://github.com/timothydsmith/obsidian-playwright/releases/tag/0.1.0
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/timothydsmith/obsidian-fountain-stage/releases/tag/0.1.0

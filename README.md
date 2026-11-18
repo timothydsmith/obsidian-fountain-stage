@@ -131,13 +131,13 @@ PDFs use Times unless a style names a font family and your fonts folder (`Founta
 Fountain Stage isn't in Obsidian's community plugin directory yet. Install it from its GitHub releases, by hand or with BRAT. It needs Obsidian 1.8.7 or later, on desktop or mobile.
 
 **By hand:**
-1. From the [latest release](https://github.com/timothydsmith/obsidian-playwright/releases/latest), download `main.js`, `manifest.json` and `styles.css`.
+1. From the [latest release](https://github.com/timothydsmith/obsidian-fountain-stage/releases/latest), download `main.js`, `manifest.json` and `styles.css`.
 2. Put them in a folder called `fountain-stage` inside your vault's plugins folder: `<vault>/.obsidian/plugins/fountain-stage/`. The `.obsidian` folder is hidden on some systems.
 3. Restart Obsidian, then turn on **Fountain Stage** in **Settings → Community plugins**.
 
 To update, replace the three files with those from a newer release.
 
-**With BRAT:** install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin, choose **Add beta plugin**, and enter `timothydsmith/obsidian-playwright`. BRAT installs the latest release and keeps it up to date.
+**With BRAT:** install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin, choose **Add beta plugin**, and enter `timothydsmith/obsidian-fountain-stage`. BRAT installs the latest release and keeps it up to date.
 
 Only one plugin can open `.fountain` files at a time. If another Fountain plugin, such as **Fountain**, is on in a vault, turn it off there before turning on Fountain Stage.
 
