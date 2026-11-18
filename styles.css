@@ -188,3 +188,9 @@
 .playwright-view .pw-note * {
   color: inherit;
 }
+
+/* PDF export style picker */
+.playwright-style-description {
+  display: block;
+  color: var(--text-muted);
+}

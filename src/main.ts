@@ -1,10 +1,28 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import { PositionStore } from "./editor/positions";
+import { exportScript, type ExportOptions } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
+import { BUILT_IN_STYLES } from "./pdf/styles";
+
+/** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
+const POSITIONS_KEY = "playwright-positions";
 
 export default class PlaywrightPlugin extends Plugin {
+  private positions!: PositionStore;
+
   async onload(): Promise<void> {
-    this.registerView(VIEW_TYPE_FOUNTAIN, (leaf) => new FountainView(leaf));
+    this.positions = new PositionStore({
+      load: () => this.app.loadLocalStorage(POSITIONS_KEY),
+      save: (data) => this.app.saveLocalStorage(POSITIONS_KEY, data),
+    });
+    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.positions.rename(oldPath, file.path)));
+    this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
+
+    this.registerView(
+      VIEW_TYPE_FOUNTAIN,
+      (leaf) => new FountainView(leaf, this.positions, (view) => view.file && void this.exportPdf(view.file)),
+    );
 
     try {
       this.registerExtensions([FOUNTAIN_EXTENSION], VIEW_TYPE_FOUNTAIN);
@@ -21,6 +39,46 @@ export default class PlaywrightPlugin extends Plugin {
       callback: () => this.newScript(),
     });
     this.addRibbonIcon("drama", "New Fountain script", () => this.newScript());
+
+    const exportCommand = (id: string, name: string, options: ExportOptions) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const file = this.app.workspace.getActiveFile();
+          if (file?.extension !== FOUNTAIN_EXTENSION) return false;
+          if (!checking) void this.exportPdf(file, options);
+          return true;
+        },
+      });
+    exportCommand("export-pdf", "Export to PDF", {});
+    exportCommand("export-pdf-choose-style", "Export to PDF in a chosen style", { chooseStyle: true });
+
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu, file) => {
+        if (!(file instanceof TFile) || file.extension !== FOUNTAIN_EXTENSION) return;
+        menu.addItem((item) =>
+          item
+            .setTitle("Export to PDF")
+            .setIcon("file-down")
+            .onClick(() => void this.exportPdf(file)),
+        );
+      }),
+    );
+  }
+
+  /** Exports a script, using unsaved changes if it's open. */
+  private async exportPdf(file: TFile, options: ExportOptions = {}): Promise<void> {
+    const open = this.app.workspace
+      .getLeavesOfType(VIEW_TYPE_FOUNTAIN)
+      .map((leaf) => leaf.view)
+      .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
+    const source = open ? open.getViewData() : await this.app.vault.read(file);
+    exportScript(this.app, file, source, BUILT_IN_STYLES, options);
+  }
+
+  onunload(): void {
+    this.positions.flush();
   }
 
   /** Creates an untitled script in the folder Obsidian uses for new notes, and opens it. */

@@ -2,7 +2,7 @@
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
-> **Status:** early development. Nothing is released yet. Right now `.fountain` files open in an editor that formats the script as you type, with line numbers. PDF export comes next.
+> **Status:** early development. Nothing is released yet. Right now `.fountain` files open in an editor that formats the script as you type, with line numbers, and scripts export to PDF in three built-in house styles. Your own styles and fonts come next.
 
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
@@ -52,6 +52,12 @@ Layout:
 | `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
+| `src/export.ts` | Export to PDF in Obsidian: style picker and saving the PDF |
+| `src/pdf/style.ts` | The `PlayStyle` type: every setting a house style controls |
+| `src/pdf/styles/` | The built-in styles |
+| `src/pdf/layout.ts` | Turns a parsed script into pages, ported from fountain2pdf's engine |
+| `src/pdf/paragraph.ts`, `blocks.ts`, `flow.ts` | Line breaking and pagination, matching reportlab's so pages break where fountain2pdf's did |
+| `src/pdf/fonts.ts`, `render.ts` | Font metrics, and drawing the pages with pdf-lib |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |
 | `tests/` | vitest tests |
