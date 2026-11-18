@@ -1,6 +1,6 @@
 /** Reads styles and fonts from the vault folders named in settings. */
 
-import { type App, normalizePath, TFile } from "obsidian";
+import { type App, normalizePath, TFile, Vault } from "obsidian";
 import type { FontChoice } from "./pdf/render";
 import { type Face, type PlayStyle, STANDARD_FAMILY_NAMES } from "./pdf/style";
 import { BUILT_IN_STYLES } from "./pdf/styles";
@@ -106,14 +106,17 @@ export class Library {
     private readonly settings: () => FountainStageSettings,
   ) {}
 
-  /** Files anywhere under a folder with one of the extensions, in path order. */
+  /** Files anywhere under a folder with one of the extensions, in path order. Only that folder is read, not the whole vault. */
   private filesIn(folder: string, extensions: string[]): TFile[] {
     const root = normalizePath(folder);
     if (!folder.trim() || root === "/") return [];
-    return this.app.vault
-      .getFiles()
-      .filter((f) => f.path.startsWith(`${root}/`) && extensions.includes(f.extension.toLowerCase()))
-      .sort((a, b) => a.path.localeCompare(b.path));
+    const top = this.app.vault.getFolderByPath(root);
+    if (!top) return [];
+    const files: TFile[] = [];
+    Vault.recurseChildren(top, (f) => {
+      if (f instanceof TFile && extensions.includes(f.extension.toLowerCase())) files.push(f);
+    });
+    return files.sort((a, b) => a.path.localeCompare(b.path));
   }
 
   async loadStyles(): Promise<LoadedStyles> {

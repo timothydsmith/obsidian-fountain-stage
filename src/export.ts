@@ -42,7 +42,7 @@ class ExportModal extends Modal {
       if (this.styleNote) styleSetting.descEl.createDiv({ text: this.styleNote, cls: "fountain-stage-export-note" });
     };
     styleSetting.addDropdown((dropdown) => {
-      this.styles.forEach((style, i) => dropdown.addOption(String(i), style.name));
+      for (const [i, style] of this.styles.entries()) dropdown.addOption(String(i), style.name);
       dropdown.setValue(String(this.styles.indexOf(this.style)));
       dropdown.onChange((value) => {
         this.style = this.styles[Number(value)];

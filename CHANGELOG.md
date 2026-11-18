@@ -7,6 +7,10 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Changed
+- Releases are built by GitHub Actions, with artifact attestations that prove `main.js`, `manifest.json` and `styles.css` were built from this repository.
+- Styles and fonts are found by reading only the styles and fonts folders, not by listing every file in the vault.
+
 ## [0.1.1] - 2026-11-18
 
 ### Changed

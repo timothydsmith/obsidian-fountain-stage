@@ -11,6 +11,7 @@ import {
   normalizePath,
   type Plugin,
   PluginSettingTab,
+  requireApiVersion,
   Setting,
   type SettingDefinitionItem,
   TFolder,
@@ -49,8 +50,8 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
   getSuggestions(query: string): TFolder[] {
     const q = query.toLowerCase();
     return this.app.vault
-      .getAllLoadedFiles()
-      .filter((f): f is TFolder => f instanceof TFolder && !f.isRoot() && f.path.toLowerCase().includes(q))
+      .getAllFolders()
+      .filter((f) => f.path.toLowerCase().includes(q))
       .slice(0, 50);
   }
 
@@ -115,7 +116,7 @@ export class FountainStageSettingTab extends PluginSettingTab {
             desc: TEXT.pauseWords[1],
             aliases: ["Beat", "Silence", "Moment"],
             visible: byWords,
-            render: (setting) => this.pauseWordsRow(setting, () => this.update()),
+            render: (setting) => this.pauseWordsRow(setting, () => this.redraw()),
           },
         ],
       },
@@ -170,8 +171,8 @@ export class FountainStageSettingTab extends PluginSettingTab {
     }
     await this.save();
     // Words per minute or minutes per page, and pause words, show by the method.
-    if (key === "runtimeMethod") this.refreshDomState();
-    if (folder) this.refreshSoon(() => this.update());
+    if (key === "runtimeMethod" && requireApiVersion("1.13.0")) this.refreshDomState();
+    if (folder) this.refreshSoon(() => this.redraw());
   }
 
   /** Puts what `fill` draws in a row's description, in place of what's there. */
@@ -223,12 +224,12 @@ export class FountainStageSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             settings.runtimeMethod = value === "pages" ? "pages" : "words";
             await this.save();
-            this.display();
+            this.redraw();
           }),
       );
     if (settings.runtimeMethod === "words") {
       this.numberSetting(containerEl, "wordsPerMinute", 150);
-      this.pauseWordsRow(new Setting(containerEl).setName(TEXT.pauseWords[0]), () => this.display());
+      this.pauseWordsRow(new Setting(containerEl).setName(TEXT.pauseWords[0]), () => this.redraw());
     } else {
       this.numberSetting(containerEl, "minutesPerPage", 1);
     }
@@ -284,6 +285,12 @@ export class FountainStageSettingTab extends PluginSettingTab {
 
   hide(): void {
     if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
+  }
+
+  /** Draws the tab again: from its definitions in Obsidian 1.13 and later, else with display(). */
+  private redraw(): void {
+    if (requireApiVersion("1.13.0")) this.update();
+    else this.display();
   }
 
   /** Runs `redraw` once typing in a folder setting pauses. */
