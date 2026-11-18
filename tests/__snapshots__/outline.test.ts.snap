@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildOutline > outlines the sample script 1`] = `
+[
+  "section ACT ONE @14",
+  "  section Scene One @16",
+  "  section Scene Two @54",
+  "section ACT TWO @71",
+  "  section Scene One @73",
+]
+`;

@@ -1,0 +1,490 @@
+/* The .fountain editor. Obsidian only styles its own markdown editor,
+   so this view sets up CodeMirror's look from Obsidian's theme variables. */
+
+.fountain-stage-view {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fountain-stage-view .cm-editor {
+  height: 100%;
+  background: transparent;
+  color: var(--text-normal);
+  font-family: var(--font-text);
+  font-size: var(--font-text-size);
+}
+
+.fountain-stage-view .cm-editor.cm-focused {
+  outline: none;
+}
+
+/* Centre the line numbers and text together, so the numbers sit beside the text. */
+.fountain-stage-view .cm-scroller {
+  justify-content: center;
+  line-height: var(--line-height-normal);
+}
+
+.fountain-stage-view .cm-content {
+  padding: var(--file-margins);
+  caret-color: var(--caret-color);
+}
+
+/* Obsidian's "Readable line length" setting. */
+.fountain-stage-view.is-readable-line-width .cm-content {
+  max-width: var(--file-line-width);
+}
+
+.fountain-stage-view .cm-cursor {
+  border-left-color: var(--caret-color);
+}
+
+.fountain-stage-view .cm-selectionBackground,
+.fountain-stage-view .cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--text-selection);
+}
+
+.fountain-stage-view .cm-activeLine {
+  background: transparent;
+}
+
+.fountain-stage-view .cm-gutters {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.fountain-stage-view .cm-gutters + .cm-content {
+  padding-left: var(--size-4-3);
+}
+
+/* --- Script formatting ---------------------------------------------------
+   Each line gets pw-line plus a class for what it is. Laid out as a stage
+   play: cues centred, stage directions indented and in italics. */
+
+.fountain-stage-view .pw-title-page {
+  color: var(--text-muted);
+}
+
+.fountain-stage-view .pw-title-key {
+  color: var(--text-faint);
+}
+
+.fountain-stage-view .pw-section-1 {
+  text-align: center;
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fountain-stage-view .pw-section-2 {
+  text-align: center;
+  text-decoration: underline;
+}
+
+.fountain-stage-view .pw-section-3 {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-view .pw-scene-heading {
+  font-weight: var(--font-bold);
+}
+
+.fountain-stage-view .pw-scene-number {
+  color: var(--text-muted);
+}
+
+.fountain-stage-view .pw-character {
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.fountain-stage-view .pw-parenthetical {
+  text-align: center;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.fountain-stage-view .pw-dialogue {
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+.fountain-stage-view .pw-action {
+  padding-left: 25%;
+  font-style: italic;
+}
+
+.fountain-stage-view .pw-lyric {
+  padding-left: 10%;
+}
+
+/* Emphasis inside text that's already in italics shows upright. */
+.fountain-stage-view .pw-action .pw-italic,
+.fountain-stage-view .pw-parenthetical .pw-italic {
+  font-style: normal;
+}
+
+.fountain-stage-view .pw-transition {
+  text-align: right;
+}
+
+.fountain-stage-view .pw-centered {
+  text-align: center;
+}
+
+.fountain-stage-view .pw-page-break {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.fountain-stage-view .pw-preface-list-item {
+  padding-left: 1.5em;
+}
+
+.fountain-stage-view .pw-breakdown-heading {
+  font-weight: var(--font-bold);
+}
+
+.fountain-stage-view .pw-synopsis {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Inline emphasis and markup. */
+
+.fountain-stage-view .pw-bold {
+  font-weight: var(--font-bold);
+}
+
+.fountain-stage-view .pw-italic {
+  font-style: italic;
+}
+
+.fountain-stage-view .pw-underline {
+  text-decoration: underline;
+}
+
+.fountain-stage-view .pw-link {
+  color: var(--link-color);
+}
+
+.fountain-stage-view .pw-marker {
+  color: var(--text-faint);
+}
+
+.fountain-stage-view .pw-note {
+  color: var(--text-muted);
+  background-color: var(--text-highlight-bg);
+  border-radius: var(--radius-s);
+}
+
+.fountain-stage-view .pw-boneyard {
+  color: var(--text-faint);
+}
+
+/* Text in a note or the boneyard isn't part of the script. */
+.fountain-stage-view .pw-boneyard *,
+.fountain-stage-view .pw-note * {
+  color: inherit;
+}
+
+/* Reading view: not editable, so no cursor, and a page break is a rule. */
+.fountain-stage-view.is-reading .cm-content {
+  caret-color: transparent;
+}
+
+.fountain-stage-view.is-reading .cm-cursorLayer {
+  display: none;
+}
+
+.fountain-stage-view.is-reading .pw-page-break {
+  color: transparent;
+  background: linear-gradient(var(--background-modifier-border), var(--background-modifier-border)) center / 100% 1px no-repeat;
+}
+
+/* Where the PDF's pages break. Padding, not margin, so the editor measures the rule's full height. */
+.fountain-stage-view .fountain-stage-page-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2) 0;
+  color: var(--text-faint);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-smaller);
+  font-style: normal;
+  font-weight: normal;
+  text-transform: none;
+  user-select: none;
+}
+
+.fountain-stage-view .fountain-stage-page-rule::before {
+  content: "";
+  flex: 1;
+  border-top: var(--border-width) dashed var(--background-modifier-border-hover);
+}
+
+.fountain-stage-view .fountain-stage-page-rule-note {
+  font-style: italic;
+}
+
+/* PDF export style picker */
+.fountain-stage-style-description {
+  display: block;
+  color: var(--text-muted);
+}
+
+/* Settings: lists of styles and fonts */
+.fountain-stage-settings-list {
+  margin-top: 0;
+}
+
+.fountain-stage-settings-detail {
+  color: var(--text-muted);
+}
+
+.fountain-stage-settings-problem {
+  color: var(--text-error);
+}
+
+/* Script outline sidebar */
+.fountain-stage-outline {
+  padding: var(--size-4-2);
+}
+
+.fountain-stage-outline .tree-item-self.is-active {
+  background-color: var(--nav-item-background-active);
+  color: var(--nav-item-color-active);
+}
+
+.fountain-stage-outline .tree-item.is-collapsed > .tree-item-children {
+  display: none;
+}
+
+.fountain-stage-outline-scene {
+  font-size: var(--font-ui-smaller);
+}
+
+.fountain-stage-outline-number,
+.fountain-stage-outline-synopsis {
+  color: var(--text-muted);
+}
+
+.fountain-stage-outline-synopsis {
+  font-size: var(--font-ui-smaller);
+  font-style: italic;
+}
+
+.fountain-stage-outline-runtime {
+  white-space: nowrap;
+}
+
+/* Character name completion, in Obsidian's look for suggestions. */
+.fountain-stage-view .cm-editor .cm-tooltip {
+  background-color: var(--background-primary);
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-s);
+  overflow: hidden;
+}
+
+.fountain-stage-view .cm-editor .cm-tooltip-autocomplete > ul {
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small);
+  padding: var(--size-2-2);
+  max-height: 16em;
+}
+
+.fountain-stage-view .cm-editor .cm-tooltip-autocomplete > ul > li {
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+}
+
+.fountain-stage-view .cm-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.fountain-stage-view .cm-editor .cm-completionMatchedText {
+  text-decoration: none;
+  font-weight: var(--font-semibold);
+}
+
+/* Pause words settings page */
+.fountain-stage-pause-words-source {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-pause-words-row {
+  display: grid;
+  grid-template-columns: minmax(6em, 1fr) repeat(3, 5em) var(--icon-size);
+  gap: var(--size-4-2);
+  align-items: center;
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-pause-words-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.fountain-stage-pause-words-header {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/* Rename character */
+.fountain-stage-rename-warning {
+  color: var(--text-warning);
+}
+
+.fountain-stage-rename-preview {
+  margin: 0 0 var(--size-4-3);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.fountain-stage-rename-preview summary {
+  cursor: var(--cursor);
+}
+
+.fountain-stage-rename-preview ul {
+  list-style: none;
+  padding-left: 0;
+  max-height: 12em;
+  overflow-y: auto;
+}
+
+.fountain-stage-rename-preview li {
+  overflow-wrap: anywhere;
+  margin-bottom: var(--size-2-1);
+}
+
+.fountain-stage-rename-line {
+  display: inline-block;
+  min-width: 3em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.fountain-stage-rename-preview mark {
+  background-color: var(--text-highlight-bg);
+  color: var(--text-normal);
+}
+
+/* Script report */
+.fountain-stage-report {
+  padding: var(--size-4-4);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-report-title {
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-report h4 {
+  margin: var(--size-4-6) 0 var(--size-4-2);
+}
+
+.fountain-stage-report-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7em, 1fr));
+  gap: var(--size-4-2);
+}
+
+.fountain-stage-report-total {
+  padding: var(--size-4-2) var(--size-4-3);
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.fountain-stage-report-total-value {
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.fountain-stage-report-total-label,
+.fountain-stage-report-note {
+  color: var(--text-muted);
+}
+
+.fountain-stage-report-table-wrap {
+  overflow-x: auto;
+}
+
+.fountain-stage-report-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.fountain-stage-report-table th,
+.fountain-stage-report-table td {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fountain-stage-report-table th {
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.fountain-stage-report-table .is-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fountain-stage-report-cast {
+  color: var(--text-muted);
+}
+
+.fountain-stage-report-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fountain-stage-report-link:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+/* Who's in each scene: names stay put while the scenes scroll. */
+.fountain-stage-report-chart {
+  width: auto;
+}
+
+.fountain-stage-report-chart tbody th {
+  position: sticky;
+  left: 0;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.fountain-stage-report-chart .is-scene {
+  text-align: center;
+  min-width: 2em;
+  padding-left: var(--size-2-1);
+  padding-right: var(--size-2-1);
+}
+
+.fountain-stage-report-chart td.is-in {
+  color: var(--text-accent);
+}
+
+.fountain-stage-report-doubling {
+  padding-left: var(--size-4-4);
+}
+
+/* Export dialog */
+.fountain-stage-export-note {
+  margin-top: var(--size-4-1);
+  color: var(--text-accent);
+}
