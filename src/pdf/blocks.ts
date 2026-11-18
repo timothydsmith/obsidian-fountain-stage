@@ -23,6 +23,14 @@ export interface Block {
   draw(page: LayoutPage, x: number, y: number): void;
   /** Running-header and pagination markers, noted when the block is placed. */
   marks?: Marks;
+  /** The script line the block comes from, so the editor can show where pages break. */
+  source?: SourceRef;
+}
+
+/** A script line, counting from 0. `continues` marks the rest of an element a page break split. */
+export interface SourceRef {
+  line: number;
+  continues?: boolean;
 }
 
 export interface Marks {
@@ -40,6 +48,7 @@ export type StoryItem = Block | typeof PAGE_BREAK;
 export class Spacer implements Block {
   spaceBefore = 0;
   spaceAfter = 0;
+  source?: SourceRef;
 
   constructor(
     private readonly height: number,
@@ -70,6 +79,7 @@ export interface Cell {
 export class TableRow implements Block {
   spaceBefore = 0;
   spaceAfter = 0;
+  source?: SourceRef;
   private heights: number[] = [];
   private height = 0;
 
@@ -113,6 +123,7 @@ export interface SpeechContext {
  */
 export class Speech implements Block {
   spaceBefore = 0;
+  source?: SourceRef;
   private heights: number[] = [];
   private readonly minLead: number;
 
@@ -152,10 +163,12 @@ export class Speech implements Block {
       rest = [cue, ...rest];
       restLead = Math.min(2, rest.length);
     }
-    return [
-      new Speech(this.name, [...this.parts.slice(0, fitted), more], this.context, this.minLead),
-      new Speech(this.name, rest, this.context, restLead, this.spaceAfter),
-    ];
+    const head = new Speech(this.name, [...this.parts.slice(0, fitted), more], this.context, this.minLead);
+    head.source = this.source;
+    const tail = new Speech(this.name, rest, this.context, restLead, this.spaceAfter);
+    // The rest starts with the line it carries on from.
+    tail.source = this.parts[fitted].source ?? (this.source && { line: this.source.line, continues: true });
+    return [head, tail];
   }
 
   draw(page: LayoutPage, x: number, y: number): void {

@@ -21,7 +21,20 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
 - The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Playwright reads it. A cue with no dialogue under it yet reads as a stage direction.
-- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
+- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
+- Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
+- A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Playwright's settings:
+  - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Playwright's settings.
+
+    | Word | Seconds | Short | Long |
+    |---|---|---|---|
+    | beat | 1 | 0.5 | 2 |
+    | moment | 2 | 1 | 4 |
+    | pause | 2 | 1 | 4 |
+    | silence | 5 | 2.5 | 7 |
+
+    The times for pause and silence follow the Author's Note to Annie Baker's *Circle Mirror Transformation*. Baker calls a beat less than a pause, and doesn't time a moment or a short silence, so a beat is 1 second, a moment is taken as a pause, and a short silence is half a silence.
+  - **Pages**: a minute a page of the PDF.
 - Each script reopens where you left it.
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
@@ -130,6 +143,9 @@ Layout:
 | `src/editor/completion.ts`, `src/fountain/characters.ts` | Character name completion, and finding the names |
 | `src/editor/cycling.ts`, `src/fountain/lineTypes.ts` | Tab and Shift+Tab: what they do to a line, and the keys |
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
+| `src/pagination.ts`, `src/pdf/pageBreaks.ts`, `src/editor/pageRules.ts` | Page breaks in the editor: laying the script out in its style and fonts, where pages break, and the rules |
+| `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
+| `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
 | `src/export.ts` | Export to PDF in Obsidian: style picker and saving the PDF |

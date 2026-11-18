@@ -9,6 +9,9 @@ import { describeLine } from "../fountain/lineTypes";
 import { fountainFormatting, scriptOf } from "./formatting";
 import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
+import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
+import type { ParsedScript } from "../fountain/parser";
+import type { PaginatedScript } from "../pagination";
 
 export const VIEW_TYPE_FOUNTAIN = "playwright-fountain";
 
@@ -17,6 +20,9 @@ const fromFile = Annotation.define<boolean>();
 
 /** How long after you stop scrolling or moving the cursor your place is remembered. */
 const REMEMBER_DELAY_MS = 500;
+
+/** How long after you stop typing the page breaks catch up. */
+const PAGINATE_DELAY_MS = 1000;
 
 interface LineCh {
   line?: unknown;
@@ -45,8 +51,16 @@ interface ModeState {
   source?: unknown;
 }
 
-/** What changed in a script, for views that follow it, such as the outline. */
-export type ScriptChange = "text" | "position";
+/** What changed in a script, for views that follow it, such as the outline: its text, where you are, or its page layout. */
+export type ScriptChange = "text" | "position" | "pages";
+
+/** What a script's view needs from the plugin. */
+export interface FountainHost {
+  exportPdf(view: FountainView): void;
+  /** Lays the script out as its PDF would be, to find its pages. */
+  paginate(script: ParsedScript): Promise<PaginatedScript>;
+  showPageBreaks(): boolean;
+}
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
 const TOGGLE_READING_COMMAND = "markdown:toggle-preview";
@@ -63,6 +77,10 @@ export class FountainView extends TextFileView {
   private editor: EditorView;
   private lineNumbers = new Compartment();
   private modeExtensions = new Compartment();
+  private pageDisplay = new Compartment();
+  private pages: PaginatedScript | null = null;
+  private paginateTimer: number | null = null;
+  private closed = false;
   private rememberTimer: number | null = null;
   private listeners = new Set<(change: ScriptChange) => void>();
   private reading: boolean;
@@ -72,7 +90,7 @@ export class FountainView extends TextFileView {
   constructor(
     leaf: WorkspaceLeaf,
     private positions: PositionStore,
-    exportPdf: (view: FountainView) => void,
+    private host: FountainHost,
   ) {
     super(leaf);
     this.reading = defaultViewMode(this.app) === "preview";
@@ -82,7 +100,7 @@ export class FountainView extends TextFileView {
       evt.preventDefault();
       this.setMode(!this.reading, this.sourceMode);
     });
-    this.addAction("file-down", "Export to PDF", () => exportPdf(this));
+    this.addAction("file-down", "Export to PDF", () => host.exportPdf(this));
     this.contentEl.addClass("playwright-view");
     this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
     this.editor = new EditorView({ parent: this.contentEl, state: this.createState("") });
@@ -187,7 +205,11 @@ export class FountainView extends TextFileView {
     this.reading = reading;
     this.sourceMode = sourceMode;
     this.editor.dispatch({
-      effects: [this.modeExtensions.reconfigure(this.currentModeExtensions()), this.lineNumbers.reconfigure(this.lineNumberGutter())],
+      effects: [
+        this.modeExtensions.reconfigure(this.currentModeExtensions()),
+        this.lineNumbers.reconfigure(this.lineNumberGutter()),
+        this.pageDisplay.reconfigure(this.currentPageDisplay()),
+      ],
     });
     if (top !== undefined) this.editor.dispatch({ effects: EditorView.scrollIntoView(top, { y: "start", yMargin: 0 }) });
     this.showMode();
@@ -207,6 +229,57 @@ export class FountainView extends TextFileView {
     return showLineNumbers(this.app) && !this.reading ? lineNumbers() : [];
   }
 
+  /** Page-break rules, in Live Preview and reading view, if they're turned on. */
+  private currentPageDisplay(): Extension {
+    const source = !this.reading && this.sourceMode;
+    return this.host.showPageBreaks() && !source ? pageRuleDisplay() : [];
+  }
+
+  /** Catches up with changed settings: whether page breaks show, and the style and fonts they're found with. */
+  refreshPages(): void {
+    this.editor.dispatch({ effects: this.pageDisplay.reconfigure(this.currentPageDisplay()) });
+    this.paginateSoon(0);
+  }
+
+  /** The script's page layout, as of a moment ago, or null before the first. */
+  scriptPages(): PaginatedScript | null {
+    return this.pages;
+  }
+
+  /** The script as it is now, parsed. */
+  script(): ParsedScript {
+    return scriptOf(this.editor.state);
+  }
+
+  private paginateSoon(delay: number): void {
+    this.cancelPaginate();
+    this.paginateTimer = window.setTimeout(() => {
+      this.paginateTimer = null;
+      void this.paginate();
+    }, delay);
+  }
+
+  private cancelPaginate(): void {
+    if (this.paginateTimer === null) return;
+    window.clearTimeout(this.paginateTimer);
+    this.paginateTimer = null;
+  }
+
+  private async paginate(): Promise<void> {
+    const { state } = this.editor;
+    let pages: PaginatedScript | null = null;
+    try {
+      pages = await this.host.paginate(scriptOf(state));
+    } catch (error) {
+      console.error("[playwright] couldn't find the page breaks", error);
+    }
+    // Changed since, so another layout is on its way.
+    if (this.closed || this.editor.state.doc !== state.doc) return;
+    this.pages = pages;
+    this.editor.dispatch({ effects: setPages.of(pages) });
+    this.notify("pages");
+  }
+
   private currentModeExtensions(): Extension {
     if (this.reading) return [fountainFormatting(), readingView()];
     const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion(), lineTypeCycling()];
@@ -223,6 +296,8 @@ export class FountainView extends TextFileView {
       // and go back to where you were in it.
       this.editor.setState(this.createState(data));
       this.restorePosition(this.file ? this.positions.get(this.file.path) : undefined);
+      this.pages = null;
+      this.paginateSoon(0);
       this.notify("text");
       return;
     }
@@ -235,6 +310,8 @@ export class FountainView extends TextFileView {
   }
 
   clear(): void {
+    this.cancelPaginate();
+    this.pages = null;
     this.editor.setState(this.createState(""));
     this.notify("text");
   }
@@ -246,7 +323,9 @@ export class FountainView extends TextFileView {
   }
 
   async onClose(): Promise<void> {
+    this.closed = true;
     this.cancelRemember();
+    this.cancelPaginate();
     this.editor.destroy();
   }
 
@@ -381,6 +460,8 @@ export class FountainView extends TextFileView {
       extensions: [
         this.lineNumbers.of(this.lineNumberGutter()),
         this.modeExtensions.of(this.currentModeExtensions()),
+        pageRuleField,
+        this.pageDisplay.of(this.currentPageDisplay()),
         history(),
         drawSelection(),
         highlightActiveLine(),
@@ -390,7 +471,10 @@ export class FountainView extends TextFileView {
           const external = update.transactions.some((tr) => tr.annotation(fromFile));
           if (update.docChanged && !external) this.requestSave();
           if (update.selectionSet) this.rememberPositionSoon();
-          if (update.docChanged) this.notify("text");
+          if (update.docChanged) {
+            this.paginateSoon(PAGINATE_DELAY_MS);
+            this.notify("text");
+          }
           else if (update.selectionSet) this.notify("position");
         }),
       ],

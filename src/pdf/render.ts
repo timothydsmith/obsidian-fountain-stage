@@ -49,34 +49,44 @@ export interface BuiltPdf {
   layout: LayoutDocument;
 }
 
-export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice): Promise<BuiltPdf> {
-  const pdf = await PDFDocument.create();
+/** Embeds the fonts in a PDF, returning them and a font set that measures text exactly as they'll draw it. */
+async function embedFonts(pdf: PDFDocument, choice: FontChoice): Promise<{ fonts: Record<Face, PDFFont>; fontSet: FontSet }> {
   const fonts = {} as Record<Face, PDFFont>;
-  let fontSet: FontSet;
-
   if ("standard" in choice) {
     const faces = STANDARD_FAMILIES[choice.standard];
     for (const face of FACES) fonts[face] = await pdf.embedFont(faces[face]);
-    fontSet = standardFontSet(faces);
-  } else {
-    pdf.registerFontkit(fontkit);
-    // A file standing in for a missing face is embedded once.
-    const embedded = new Map<Uint8Array, PDFFont>();
-    for (const face of FACES) {
-      const bytes = choice.files[face];
-      let font = embedded.get(bytes);
-      if (!font) {
-        // Each character is drawn as its own glyph, without ligatures or
-        // contextual alternates, as fountain2pdf did, so lines measure and
-        // break the same.
-        font = await pdf.embedFont(bytes, { subset: true, features: NO_SHAPING });
-        embedded.set(bytes, font);
-      }
-      fonts[face] = font;
-    }
-    fontSet = embeddedFontSet(fonts);
+    return { fonts, fontSet: standardFontSet(faces) };
   }
+  pdf.registerFontkit(fontkit);
+  // A file standing in for a missing face is embedded once.
+  const embedded = new Map<Uint8Array, PDFFont>();
+  for (const face of FACES) {
+    const bytes = choice.files[face];
+    let font = embedded.get(bytes);
+    if (!font) {
+      // Each character is drawn as its own glyph, without ligatures or
+      // contextual alternates, as fountain2pdf did, so lines measure and
+      // break the same.
+      font = await pdf.embedFont(bytes, { subset: true, features: NO_SHAPING });
+      embedded.set(bytes, font);
+    }
+    fonts[face] = font;
+  }
+  return { fonts, fontSet: embeddedFontSet(fonts) };
+}
 
+/**
+ * A font set that measures text as a PDF in these fonts would, for laying
+ * out a script without drawing it (to show page breaks in the editor).
+ */
+export async function measuringFontSet(choice: FontChoice): Promise<FontSet> {
+  if ("standard" in choice) return standardFontSet(STANDARD_FAMILIES[choice.standard]);
+  return (await embedFonts(await PDFDocument.create(), choice)).fontSet;
+}
+
+export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice): Promise<BuiltPdf> {
+  const pdf = await PDFDocument.create();
+  const { fonts, fontSet } = await embedFonts(pdf, choice);
   const layout = layoutScript(script, style, fontSet);
   pdf.setTitle(layout.title);
   if (layout.author) pdf.setAuthor(layout.author);

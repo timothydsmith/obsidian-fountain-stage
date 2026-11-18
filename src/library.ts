@@ -4,6 +4,8 @@ import { type App, normalizePath, TFile } from "obsidian";
 import type { FontChoice } from "./pdf/render";
 import { type Face, type PlayStyle, STANDARD_FAMILY_NAMES } from "./pdf/style";
 import { BUILT_IN_STYLES } from "./pdf/styles";
+import type { RuntimeMethod } from "./fountain/runtime";
+import { defaultPauseWords, type PauseWord, readPauseWords } from "./fountain/pauses";
 import { type LoadedStyles, loadStyles } from "./pdf/userStyles";
 import { chooseFamily, describeFont, FONT_EXTENSIONS, type FontInfo } from "./pdf/vaultFonts";
 
@@ -12,12 +14,52 @@ export interface PlaywrightSettings {
   stylesFolder: string;
   /** Folder of .ttf and .otf font files. */
   fontsFolder: string;
+  /** Show where the PDF's pages break, in Live Preview and reading view. */
+  showPageBreaks: boolean;
+  /** The style to find page breaks in, for a script with no `Style:` key. */
+  pageBreakStyle: string;
+  /** Estimate runtime from the words spoken or the number of pages. */
+  runtimeMethod: RuntimeMethod;
+  wordsPerMinute: number;
+  minutesPerPage: number;
+  /** Words that add pauses to the runtime, going by words spoken. */
+  pauseWords: PauseWord[];
 }
 
 export const DEFAULT_SETTINGS: PlaywrightSettings = {
   stylesFolder: "Playwright/Styles",
   fontsFolder: "Playwright/Fonts",
+  showPageBreaks: true,
+  pageBreakStyle: "modern",
+  runtimeMethod: "words",
+  wordsPerMinute: 150,
+  minutesPerPage: 1,
+  pauseWords: defaultPauseWords(),
 };
+
+/**
+ * Settings as saved, with defaults for what's missing or the wrong kind.
+ * Settings no longer used are dropped, so they aren't saved again.
+ */
+export function readSettings(saved: unknown): PlaywrightSettings {
+  const s = (typeof saved === "object" && saved !== null ? saved : {}) as Record<string, unknown>;
+  const string = (key: keyof PlaywrightSettings, fallback: string) => (typeof s[key] === "string" ? (s[key] as string) : fallback);
+  const positive = (key: keyof PlaywrightSettings, fallback: number) => {
+    const value = s[key];
+    return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+  };
+  const d = DEFAULT_SETTINGS;
+  return {
+    stylesFolder: string("stylesFolder", d.stylesFolder),
+    fontsFolder: string("fontsFolder", d.fontsFolder),
+    showPageBreaks: typeof s.showPageBreaks === "boolean" ? s.showPageBreaks : d.showPageBreaks,
+    pageBreakStyle: string("pageBreakStyle", d.pageBreakStyle),
+    runtimeMethod: s.runtimeMethod === "pages" ? "pages" : "words",
+    wordsPerMinute: positive("wordsPerMinute", d.wordsPerMinute),
+    minutesPerPage: positive("minutesPerPage", d.minutesPerPage),
+    pauseWords: s.pauseWords === undefined ? defaultPauseWords() : readPauseWords(s.pauseWords),
+  };
+}
 
 export interface LoadedFonts {
   fonts: FontInfo[];

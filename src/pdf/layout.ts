@@ -134,7 +134,7 @@ function shortParentheticalWord(text: string): string | undefined {
   return inner.split(/\s+/).filter(Boolean).length <= 1 ? inner : undefined;
 }
 
-type SpeechLine = { kind: "parenthetical" | "dialogue"; text: string };
+type SpeechLine = { kind: "parenthetical" | "dialogue"; text: string; line: number };
 
 class StoryBuilder {
   readonly styles: Record<StyleName, ParaStyle>;
@@ -222,8 +222,9 @@ class StoryBuilder {
   }
 
   /** Name and first line side by side in a table row, later lines indented to match. */
-  private sharedLineParts(name: string, lines: SpeechLine[]): Block[] {
+  private sharedLineParts(name: string, lines: SpeechLine[], cueLine: number): Block[] {
     const nameBlock = this.para(inlineSpans(name), "character");
+    nameBlock.source = { line: cueLine };
     if (lines.length === 0) return [nameBlock];
 
     let first = this.lineSpans(lines[0]);
@@ -237,20 +238,22 @@ class StoryBuilder {
       }
     }
     const { nameColumnWidth, gutter } = this.style.character;
-    const parts: Block[] = [
-      new TableRow([
-        { content: nameBlock, width: nameColumnWidth, paddingLeft: 0 },
-        { content: this.para(first, "dialogue"), width: this.available - nameColumnWidth, paddingLeft: gutter },
-      ]),
-    ];
+    const row = new TableRow([
+      { content: nameBlock, width: nameColumnWidth, paddingLeft: 0 },
+      { content: this.para(first, "dialogue"), width: this.available - nameColumnWidth, paddingLeft: gutter },
+    ]);
+    row.source = { line: cueLine };
+    const parts: Block[] = [row];
     for (const line of lines.slice(consumed)) {
-      parts.push(this.para(this.lineSpans(line), line.kind === "parenthetical" ? "parentheticalContinued" : "dialogueContinued"));
+      const para = this.para(this.lineSpans(line), line.kind === "parenthetical" ? "parentheticalContinued" : "dialogueContinued");
+      para.source = { line: line.line };
+      parts.push(para);
     }
     return parts;
   }
 
   /** Name on a line of its own, then each line of the speech. */
-  private ownLineParts(name: string, lines: SpeechLine[]): Block[] {
+  private ownLineParts(name: string, lines: SpeechLine[], cueLine: number): Block[] {
     let nameSpans = inlineSpans(name);
     let consumed = 0;
     if (this.style.character.shortParentheticalInline && lines[0]?.kind === "parenthetical") {
@@ -260,9 +263,13 @@ class StoryBuilder {
         consumed = 1;
       }
     }
-    const parts: Block[] = [this.para(nameSpans, "character")];
+    const nameBlock = this.para(nameSpans, "character");
+    nameBlock.source = { line: cueLine };
+    const parts: Block[] = [nameBlock];
     for (const line of lines.slice(consumed)) {
-      parts.push(this.para(inlineSpans(line.text), line.kind === "parenthetical" ? "parenthetical" : "dialogue"));
+      const para = this.para(inlineSpans(line.text), line.kind === "parenthetical" ? "parenthetical" : "dialogue");
+      para.source = { line: line.line };
+      parts.push(para);
     }
     return parts;
   }
@@ -275,12 +282,15 @@ class StoryBuilder {
     };
   }
 
-  speech(name: string, lines: SpeechLine[]): Block[] {
+  /** A speech, its blocks marked with the script lines they come from: `cueLine` for the name. */
+  speech(name: string, lines: SpeechLine[], cueLine: number): Block[] {
     const ownLine = this.style.character.ownLine;
-    const parts = ownLine ? this.ownLineParts(name, lines) : this.sharedLineParts(name, lines);
+    const parts = ownLine ? this.ownLineParts(name, lines, cueLine) : this.sharedLineParts(name, lines, cueLine);
     const gap = this.style.speech.gap;
     if (this.style.speech.moreContinued) {
-      return [new Speech(name, parts, this.speechContext(), ownLine ? 2 : 1, gap)];
+      const speech = new Speech(name, parts, this.speechContext(), ownLine ? 2 : 1, gap);
+      speech.source = { line: cueLine };
+      return [speech];
     }
     // Without break cues the parts flow on their own, and paragraphs can split mid-speech.
     parts[parts.length - 1].spaceAfter = gap;
@@ -302,22 +312,25 @@ class StoryBuilder {
     }
 
     let speaker: string | undefined;
+    let cueLine = 0;
     let lines: SpeechLine[] = [];
     let bodyMarked = false;
     const flush = () => {
       if (speaker === undefined) return;
-      story.push(...this.speech(speaker, lines));
+      story.push(...this.speech(speaker, lines, cueLine));
       speaker = undefined;
       lines = [];
       fresh = false;
     };
-    const heading = (block: Block, scene: string) => {
+    const heading = (block: Block, scene: string, line: number) => {
+      block.source = { line };
       block.marks = { scene, bodyStart: !bodyMarked || undefined };
       bodyMarked = true;
       story.push(block);
       fresh = false;
     };
-    const add = (block: Block) => {
+    const add = (block: Block, line: number) => {
+      block.source = { line };
       story.push(block);
       fresh = false;
     };
@@ -326,12 +339,13 @@ class StoryBuilder {
       if (el.type === "character") {
         flush();
         speaker = el.text.toUpperCase();
+        cueLine = el.line;
         if (el.dual && this.style.speech.dualLabel) speaker += ` ${this.style.speech.dualLabel}`;
         continue;
       }
       if (el.type === "parenthetical" || el.type === "dialogue") {
         // A stray line with no character before it is dropped, as in fountain2pdf.
-        if (speaker !== undefined) lines.push({ kind: el.type, text: el.text });
+        if (speaker !== undefined) lines.push({ kind: el.type, text: el.text, line: el.line });
         continue;
       }
       flush();
@@ -343,26 +357,26 @@ class StoryBuilder {
           const underline = act ? this.style.act.underline : this.style.scene.underline;
           const block = this.plain(upper ? el.text.toUpperCase() : el.text, act ? "act" : "scene", underline);
           if (act && story.length > 0 && !fresh) story.push(PAGE_BREAK);
-          heading(block, el.text.toUpperCase());
+          heading(block, el.text.toUpperCase(), el.line);
           break;
         }
         case "scene_heading":
-          heading(...this.sceneHeading(el));
+          heading(...this.sceneHeading(el), el.line);
           break;
         case "action":
-          add(this.para(inlineSpans(el.text), "action"));
+          add(this.para(inlineSpans(el.text), "action"), el.line);
           break;
         case "preface":
-          add(this.para(inlineSpans(el.text), "preface"));
+          add(this.para(inlineSpans(el.text), "preface"), el.line);
           break;
         case "preface_list_item":
-          add(this.para(inlineSpans(el.text), "prefaceList", el.marker ?? "•"));
+          add(this.para(inlineSpans(el.text), "prefaceList", el.marker ?? "•"), el.line);
           break;
         case "transition":
-          add(this.para(inlineSpans(el.text.toUpperCase()), "transition"));
+          add(this.para(inlineSpans(el.text.toUpperCase()), "transition"), el.line);
           break;
         case "centered":
-          add(this.para(inlineSpans(el.text), "centered"));
+          add(this.para(inlineSpans(el.text), "centered"), el.line);
           break;
         case "page_break":
           if (!fresh) {
@@ -436,6 +450,7 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
   const { pagination } = style;
   let scene = "";
   let event = 0;
+  const pageNumbers: (string | undefined)[] = [];
 
   result.pages.forEach((page, i) => {
     const n = i + 1;
@@ -448,6 +463,7 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
     } else if (n > 1 || !hasTitlePage) {
       number = String(n);
     }
+    pageNumbers.push(number);
     if (number !== undefined) {
       const text = fonts.clean(pagination.format.split("{n}").join(number));
       const w = fonts.width(text, pagination.face, pagination.size);
@@ -470,6 +486,8 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
     title: join(values.title) || "Untitled",
     author: join(values.author),
     pages: result.pages,
+    placements: result.placements,
+    pageNumbers,
   };
 }
 

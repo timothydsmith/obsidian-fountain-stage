@@ -203,6 +203,31 @@
   background: linear-gradient(var(--background-modifier-border), var(--background-modifier-border)) center / 100% 1px no-repeat;
 }
 
+/* Where the PDF's pages break. Padding, not margin, so the editor measures the rule's full height. */
+.playwright-view .playwright-page-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2) 0;
+  color: var(--text-faint);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-smaller);
+  font-style: normal;
+  font-weight: normal;
+  text-transform: none;
+  user-select: none;
+}
+
+.playwright-view .playwright-page-rule::before {
+  content: "";
+  flex: 1;
+  border-top: var(--border-width) dashed var(--background-modifier-border-hover);
+}
+
+.playwright-view .playwright-page-rule-note {
+  font-style: italic;
+}
+
 /* PDF export style picker */
 .playwright-style-description {
   display: block;
@@ -250,6 +275,10 @@
   font-style: italic;
 }
 
+.playwright-outline-runtime {
+  white-space: nowrap;
+}
+
 /* Character name completion, in Obsidian's look for suggestions. */
 .playwright-view .cm-editor .cm-tooltip {
   background-color: var(--background-primary);
@@ -280,4 +309,28 @@
 .playwright-view .cm-editor .cm-completionMatchedText {
   text-decoration: none;
   font-weight: var(--font-semibold);
+}
+
+/* Pause words settings page */
+.playwright-pause-words-source {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.playwright-pause-words-row {
+  display: grid;
+  grid-template-columns: minmax(6em, 1fr) repeat(3, 5em) var(--icon-size);
+  gap: var(--size-4-2);
+  align-items: center;
+  margin-bottom: var(--size-4-2);
+}
+
+.playwright-pause-words-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.playwright-pause-words-header {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
 }

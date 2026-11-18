@@ -11,7 +11,7 @@
  */
 
 import { PAGE_BREAK, type Block, type Marks, type StoryItem } from "./blocks";
-import { emptyPage, type LayoutPage } from "./model";
+import { emptyPage, type LayoutPage, type Placement } from "./model";
 import { FUZZ } from "./paragraph";
 
 export const FRAME_PADDING = 6;
@@ -27,11 +27,14 @@ export interface FlowResult {
   pages: LayoutPage[];
   /** Marks of the blocks placed, with the index of the page each landed on. */
   marks: { page: number; marks: Marks }[];
+  /** Where each block from a script line landed. */
+  placements: Placement[];
 }
 
 export function flow(story: StoryItem[], frame: Frame): FlowResult {
   const pages: LayoutPage[] = [];
   const marks: FlowResult["marks"] = [];
+  const placements: Placement[] = [];
   const queue = story.slice();
   const postponed = new Set<Block>();
 
@@ -67,6 +70,10 @@ export function flow(story: StoryItem[], frame: Frame): FlowResult {
     if (room <= 0 && !force) return false;
     const h = block.wrap(availWidth, atTop) + s;
     if (y - h < floor - FUZZ && !force) return false;
+    if (block.source) {
+      const depth = (yy: number) => (top - yy) / (top - floor);
+      placements.push({ page: pages.length - 1, line: block.source.line, continues: block.source.continues === true, at: depth(y - s), end: depth(y - h) });
+    }
     let newY = y - h;
     block.draw(page!, x, newY);
     newY -= block.spaceAfter;
@@ -92,6 +99,8 @@ export function flow(story: StoryItem[], frame: Frame): FlowResult {
     if (parts.length > 0) {
       const [first, ...rest] = parts;
       if (item.marks && !first.marks) first.marks = item.marks;
+      first.source ??= item.source;
+      if (rest[0] && item.source) rest[0].source ??= { line: item.source.line, continues: true };
       add(first, true);
       queue.unshift(...rest);
     } else if (postponed.has(item) || (atTop && placedOnPage === 0)) {
@@ -105,5 +114,5 @@ export function flow(story: StoryItem[], frame: Frame): FlowResult {
   }
 
   if (pages.length === 0) pages.push(emptyPage());
-  return { pages, marks };
+  return { pages, marks, placements };
 }

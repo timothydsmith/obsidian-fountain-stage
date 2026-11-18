@@ -1,10 +1,13 @@
 import { Notice, Plugin, TFile } from "obsidian";
-import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript, type ExportOptions } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
-import { DEFAULT_SETTINGS, Library, type PlaywrightSettings } from "./library";
+import { DEFAULT_SETTINGS, Library, type PlaywrightSettings, readSettings } from "./library";
+import { formatDuration, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
+import { Paginator } from "./pagination";
+import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
 import { PlaywrightSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
@@ -14,11 +17,13 @@ export default class PlaywrightPlugin extends Plugin {
   private positions!: PositionStore;
   private playwrightSettings: PlaywrightSettings = { ...DEFAULT_SETTINGS };
   private library!: Library;
+  private paginator!: Paginator;
 
   async onload(): Promise<void> {
-    this.playwrightSettings = { ...DEFAULT_SETTINGS, ...((await this.loadData()) as Partial<PlaywrightSettings> | null) };
+    this.playwrightSettings = readSettings(await this.loadData());
     this.library = new Library(this.app, () => this.playwrightSettings);
-    this.addSettingTab(new PlaywrightSettingTab(this.app, this, this.playwrightSettings, () => this.saveData(this.playwrightSettings), this.library));
+    this.paginator = new Paginator(this.library, () => this.playwrightSettings);
+    this.addSettingTab(new PlaywrightSettingTab(this.app, this, this.playwrightSettings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
       load: () => this.app.loadLocalStorage(POSITIONS_KEY),
@@ -29,12 +34,17 @@ export default class PlaywrightPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_FOUNTAIN,
-      (leaf) => new FountainView(leaf, this.positions, (view) => view.file && void this.exportPdf(view.file)),
+      (leaf) =>
+        new FountainView(leaf, this.positions, {
+          exportPdf: (view) => view.file && void this.exportPdf(view.file),
+          paginate: (script) => this.paginator.paginate(script),
+          showPageBreaks: () => this.playwrightSettings.showPageBreaks,
+        }),
     );
 
-    this.showLineTypeInStatusBar();
+    this.showStatusBar();
 
-    this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf));
+    this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf, (view) => this.timelineOf(view)));
     this.addCommand({
       id: "show-outline",
       name: "Show script outline",
@@ -113,20 +123,66 @@ export default class PlaywrightPlugin extends Plugin {
     await exportScript(this.app, this.library, file, source, options);
   }
 
-  /** Shows what the cursor's line is (Character, Dialogue, Stage direction…) in the status bar, while you're in a script. */
-  private showLineTypeInStatusBar(): void {
-    const statusEl = this.addStatusBarItem();
-    statusEl.addClass("playwright-line-type");
+  private async saveSettings(): Promise<void> {
+    await this.saveData(this.playwrightSettings);
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN)) {
+      if (leaf.view instanceof FountainView) leaf.view.refreshPages();
+    }
+  }
+
+  /** The script's runtime, line by line, by the method in settings. Undefined by pages until they're laid out. */
+  private timelineOf(view: FountainView): Timeline | undefined {
+    const { runtimeMethod, wordsPerMinute, minutesPerPage, pauseWords } = this.playwrightSettings;
+    return timeline(view.script(), view.scriptPages()?.placements, { method: runtimeMethod, wordsPerMinute, minutesPerPage, pauses: pauseWords });
+  }
+
+  /**
+   * Shows, while you're in a script, what the cursor's line is (Character,
+   * Dialogue, Stage direction…), the page you're on, and the runtime.
+   */
+  private showStatusBar(): void {
+    const lineTypeEl = this.addStatusBarItem();
+    lineTypeEl.addClass("playwright-line-type");
+    const pageEl = this.addStatusBarItem();
+    pageEl.addClass("playwright-page");
+    const runtimeEl = this.addStatusBarItem();
+    runtimeEl.addClass("playwright-runtime");
     let script: FountainView | null = null;
     let unsubscribe: (() => void) | null = null;
     let frame: number | null = null;
+    // The runtime changes only with the text or layout, not as you move about.
+    let runtimeStale = true;
 
+    const showPage = (view: FountainView) => {
+      const pages = view.scriptPages();
+      pageEl.toggle(pages !== null);
+      if (!pages) return;
+      const count = `${pages.pageCount} ${pages.pageCount === 1 ? "page" : "pages"}`;
+      const page = pageAtLine(pages, view.script(), view.currentLine());
+      pageEl.setText(page === undefined ? count : `${pageLabel(pages, page)} (${count})`);
+      pageEl.setAttribute("aria-label", [`Pages as laid out in ${pages.styleName}`, pages.fontNotice].filter(Boolean).join("\n"));
+      pageEl.setAttribute("data-tooltip-position", "top");
+    };
+    const showRuntime = (view: FountainView) => {
+      const t = this.timelineOf(view);
+      runtimeEl.toggle(t !== undefined);
+      if (!t) return;
+      runtimeEl.setText(`Runtime ${formatDuration(t.total)}`);
+      const method = this.playwrightSettings.runtimeMethod === "words" ? "from the words spoken" : "from the number of pages";
+      runtimeEl.setAttribute("aria-label", `Estimated runtime, ${method}`);
+      runtimeEl.setAttribute("data-tooltip-position", "top");
+    };
     const update = () => {
       frame = null;
-      statusEl.toggle(script !== null);
-      if (script) statusEl.setText(script.cursorLineType());
+      for (const el of [lineTypeEl, pageEl, runtimeEl]) el.toggle(script !== null);
+      if (!script) return;
+      lineTypeEl.setText(script.cursorLineType());
+      showPage(script);
+      if (runtimeStale) showRuntime(script);
+      runtimeStale = false;
     };
-    const updateSoon = () => {
+    const updateSoon = (change?: ScriptChange) => {
+      if (change !== "position") runtimeStale = true;
       frame ??= window.requestAnimationFrame(update);
     };
     const follow = () => {

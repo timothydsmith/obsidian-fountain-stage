@@ -72,6 +72,38 @@ describe("layout", () => {
     expect(texts(doc)[1]).toMatch(/^MARGARET \(Cont\.\) Line number/);
   });
 
+  it("notes which page each script line lands on", () => {
+    const lines = Array.from({ length: 80 }, (_, i) => `Line number ${i + 1} of a very long speech.`).join("\n");
+    const doc = layoutScript(parseFountain(`INT. ROOM\n\nMARGARET\n${lines}\n\nShe sits.\n`), style("samuel_french"), fonts);
+    // The heading, the speech (placed by its cue), then the line the speech
+    // carries on with at the top of page 2.
+    const [heading, cue, carried] = doc.placements;
+    expect([heading, cue].map((p) => [p.page, p.line, p.continues])).toEqual([
+      [0, 0, false],
+      [0, 2, false],
+    ]);
+    expect(heading.at).toBe(0);
+    expect(cue.at).toBeGreaterThan(0);
+    expect(carried.page).toBe(1);
+    expect(carried.at).toBe(0);
+    expect(carried.line).toBeGreaterThan(3);
+    expect(texts(doc)[1]).toContain(`Line number ${carried.line - 2} `);
+    const last = doc.placements[doc.placements.length - 1];
+    expect([last.page, last.line]).toEqual([doc.pages.length - 1, 84]);
+    expect(last.at).toBeGreaterThan(0);
+    expect(doc.pageNumbers).toEqual(doc.pages.map((_, i) => String(i + 1)));
+  });
+
+  it("notes a paragraph that breaks across a page as continuing", () => {
+    const long = Array.from({ length: 400 }, () => "word").join(" ");
+    const doc = layoutScript(parseFountain(`INT. ROOM\n\n${long}\n`), style("modern"), fonts);
+    expect(doc.placements.map((p) => [p.page, p.line, p.continues])).toEqual([
+      [0, 0, false],
+      [0, 2, false],
+      [1, 2, true],
+    ]);
+  });
+
   it("starts each act on a new page", () => {
     const doc = layoutScript(parseFountain("# Act One\n\nA chair.\n\n# Act Two\n\nAnother chair.\n"), style("modern"), fonts);
     expect(doc.pages).toHaveLength(2);

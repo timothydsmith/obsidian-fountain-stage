@@ -1,7 +1,8 @@
-/** Playwright's settings tab: the styles and fonts folders, and what's in them. */
+/** Playwright's settings tab: page breaks and runtime in the editor, and the styles and fonts folders and what's in them. */
 
 import { AbstractInputSuggest, type App, normalizePath, type Plugin, PluginSettingTab, Setting, TFolder } from "obsidian";
 import type { Library, LoadedFonts, PlaywrightSettings } from "./library";
+import { PauseWordsModal } from "./pauseWordsModal";
 import type { LoadedStyles } from "./pdf/userStyles";
 import { listFamilies } from "./pdf/vaultFonts";
 
@@ -49,6 +50,8 @@ export class PlaywrightSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
+    this.editorSettings(containerEl);
+
     new Setting(containerEl).setName("PDF export").setHeading();
     this.folderSetting(containerEl, "Styles folder", "JSON files of your own styles. Each one extends another style and changes only what differs.", "stylesFolder");
     this.folderSetting(containerEl, "Fonts folder", "Font files (.ttf or .otf) for styles that name a font family, such as Palatino for APT.", "fontsFolder");
@@ -56,6 +59,91 @@ export class PlaywrightSettingTab extends PluginSettingTab {
     this.stylesEl = containerEl.createDiv();
     this.fontsEl = containerEl.createDiv();
     void this.showLists();
+  }
+
+  private editorSettings(containerEl: HTMLElement): void {
+    const { settings } = this;
+    new Setting(containerEl).setName("Page breaks and runtime").setHeading();
+    new Setting(containerEl)
+      .setName("Show page breaks")
+      .setDesc("Show where the PDF's pages break, with each page's number, in Live Preview and reading view.")
+      .addToggle((toggle) =>
+        toggle.setValue(settings.showPageBreaks).onChange(async (value) => {
+          settings.showPageBreaks = value;
+          await this.save();
+        }),
+      );
+    const styleSetting = new Setting(containerEl)
+      .setName("Style for page breaks")
+      .setDesc("Pages break as they would in this style, unless a script's title page names one with a Style key.");
+    void this.library.loadStyles().then(({ styles }) => {
+      styleSetting.addDropdown((dropdown) => {
+        for (const style of styles) dropdown.addOption(style.id, style.name);
+        if (!styles.some((style) => style.id === settings.pageBreakStyle)) dropdown.addOption(settings.pageBreakStyle, settings.pageBreakStyle);
+        dropdown.setValue(settings.pageBreakStyle).onChange(async (value) => {
+          settings.pageBreakStyle = value;
+          await this.save();
+        });
+      });
+    });
+
+    new Setting(containerEl)
+      .setName("Estimate runtime from")
+      .setDesc("Words spoken counts dialogue at a speaking rate, stage directions at half that, and the pauses a script asks for, such as (beat) or Silence. Pages counts minutes per page of the PDF.")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("words", "Words spoken")
+          .addOption("pages", "Pages")
+          .setValue(settings.runtimeMethod)
+          .onChange(async (value) => {
+            settings.runtimeMethod = value === "pages" ? "pages" : "words";
+            await this.save();
+            this.display();
+          }),
+      );
+    if (settings.runtimeMethod === "words") {
+      this.numberSetting(containerEl, "Words per minute", "How fast the dialogue is spoken.", "wordsPerMinute", 150);
+      this.pauseSettings(containerEl);
+    } else {
+      this.numberSetting(containerEl, "Minutes per page", "How long a page of the PDF runs.", "minutesPerPage", 1);
+    }
+  }
+
+  private numberSetting(containerEl: HTMLElement, name: string, desc: string, key: "wordsPerMinute" | "minutesPerPage", fallback: number): void {
+    new Setting(containerEl)
+      .setName(name)
+      .setDesc(desc)
+      .addText((text) => {
+        text.inputEl.type = "number";
+        text.inputEl.min = "0";
+        text.setPlaceholder(String(fallback)).setValue(String(this.settings[key])).onChange(async (value) => {
+          const n = Number(value);
+          this.settings[key] = value.trim() !== "" && Number.isFinite(n) && n > 0 ? n : fallback;
+          await this.save();
+        });
+      });
+  }
+
+  /** A summary of the pause words, with a button to the page where they're edited. */
+  private pauseSettings(containerEl: HTMLElement): void {
+    const words = this.settings.pauseWords.map((w) => w.word).filter(Boolean);
+    const list = words.length <= 1 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+    new Setting(containerEl)
+      .setName("Pause words")
+      .setDesc(words.length === 0 ? "No words add pauses." : `Add time where a script asks for a pause: ${list}.`)
+      .addButton((button) =>
+        button.setButtonText("Edit").onClick(() => {
+          new PauseWordsModal(
+            this.app,
+            this.settings.pauseWords,
+            (changed) => {
+              this.settings.pauseWords = changed;
+              void this.save();
+            },
+            () => this.display(),
+          ).open();
+        }),
+      );
   }
 
   private stylesEl?: HTMLElement;
@@ -77,7 +165,7 @@ export class PlaywrightSettingTab extends PluginSettingTab {
     if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
   }
 
-  private folderSetting(containerEl: HTMLElement, name: string, desc: string, key: keyof PlaywrightSettings): void {
+  private folderSetting(containerEl: HTMLElement, name: string, desc: string, key: "stylesFolder" | "fontsFolder"): void {
     new Setting(containerEl)
       .setName(name)
       .setDesc(desc)

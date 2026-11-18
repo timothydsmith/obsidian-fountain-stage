@@ -6,7 +6,7 @@
  * least two lines stay behind.
  */
 
-import type { Block } from "./blocks";
+import type { Block, SourceRef } from "./blocks";
 import type { FontSet } from "./fonts";
 import type { LayoutPage } from "./model";
 import type { Alignment, Face, Rgb } from "./style";
@@ -189,6 +189,7 @@ function breakLines(input: Word[], maxWidths: number[], style: ParaStyle, fonts:
 export class Paragraph implements Block {
   spaceBefore: number;
   spaceAfter: number;
+  source?: SourceRef;
   private lines?: Line[];
   private wrappedWidth = -1;
   private width = 0;
@@ -249,6 +250,8 @@ export class Paragraph implements Block {
     const head = new Paragraph(lines.slice(0, s).flatMap((l) => l.words), this.style, this.fonts, this.bullet, lines.slice(0, s));
     head.wrappedWidth = availWidth;
     const tail = new Paragraph(lines.slice(s).flatMap((l) => l.words), this.style, this.fonts);
+    head.source = this.source;
+    tail.source = this.source && { line: this.source.line, continues: true };
     return [head, tail];
   }
 

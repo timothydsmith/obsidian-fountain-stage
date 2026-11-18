@@ -1,8 +1,9 @@
-/** The script outline sidebar: the sections and scenes of the script you're in. */
+/** The script outline sidebar: the sections and scenes of the script you're in, and how long each runs. */
 
 import { FileView, ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
+import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
 
 export const VIEW_TYPE_OUTLINE = "playwright-outline";
 
@@ -14,6 +15,7 @@ export class OutlineView extends ItemView {
   private script: FountainView | null = null;
   private unsubscribe: (() => void) | null = null;
   private outline: OutlineItem[] = [];
+  private runtimes = new Map<OutlineItem, number>();
   private rows = new Map<OutlineItem, HTMLElement>();
   private active: HTMLElement | null = null;
   /** Collapsed items, by their path of headings, so they stay collapsed as you type. */
@@ -21,7 +23,10 @@ export class OutlineView extends ItemView {
   private refreshTimer: number | null = null;
   private highlightFrame: number | null = null;
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(
+    leaf: WorkspaceLeaf,
+    private readonly timelineOf: (script: FountainView) => Timeline | undefined,
+  ) {
     super(leaf);
   }
 
@@ -67,7 +72,7 @@ export class OutlineView extends ItemView {
     this.cancelTimers();
     this.script = script;
     if (script) {
-      this.unsubscribe = script.subscribe((change) => (change === "text" ? this.refreshSoon() : this.highlightSoon()));
+      this.unsubscribe = script.subscribe((change) => (change === "position" ? this.highlightSoon() : this.refreshSoon()));
     }
     this.refresh();
   }
@@ -105,6 +110,8 @@ export class OutlineView extends ItemView {
       return;
     }
     this.outline = buildOutline(this.script.getViewData());
+    const timeline = this.timelineOf(this.script);
+    this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map();
     if (this.outline.length === 0) {
       contentEl.createDiv({ cls: "pane-empty", text: "No sections or scenes yet. Start a line with # for an act, ## for a scene, or INT. or EXT. for a scene heading." });
       return;
@@ -147,6 +154,10 @@ export class OutlineView extends ItemView {
       if (item.sceneNumber) inner.createSpan({ cls: "playwright-outline-number", text: `${item.sceneNumber}. ` });
       inner.createSpan({ text: item.text });
       if (item.synopsis) inner.createDiv({ cls: "playwright-outline-synopsis", text: item.synopsis });
+      const runtime = this.runtimes.get(item);
+      if (runtime !== undefined) {
+        selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair playwright-outline-runtime", text: formatDuration(runtime) });
+      }
       selfEl.addEventListener("click", () => this.reveal(item));
 
       if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path);
