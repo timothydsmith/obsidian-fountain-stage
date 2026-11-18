@@ -128,7 +128,7 @@ PDFs use Times unless a style names a font family and your fonts folder (`Founta
 
 ## Install
 
-Fountain Stage needs Obsidian 1.8.7 or later, on desktop or mobile.
+Fountain Stage needs Obsidian 1.13 or later, on desktop or mobile.
 
 1. In Obsidian, open **Settings → Community plugins**, and turn on community plugins if asked.
 2. Choose **Browse**, search for **Fountain Stage**, and choose **Install**.
