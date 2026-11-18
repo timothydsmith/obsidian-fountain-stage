@@ -5,12 +5,12 @@
  * choice comes from the style; nothing here knows about any one style.
  */
 
-import type { ParsedScript, ScriptElement } from "../fountain/parser";
+import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
 import { flow } from "./flow";
 import type { FontSet } from "./fonts";
-import type { LayoutDocument, LayoutPage } from "./model";
+import type { LayoutDocument, LayoutPage, TextItem } from "./model";
 import { BLACK, Paragraph, paraStyle, type ParaStyle, type Span } from "./paragraph";
 import type { Face, PlayStyle, Rgb } from "./style";
 
@@ -53,7 +53,9 @@ type StyleName =
   | "preface"
   | "prefaceList"
   | "transition"
-  | "centered";
+  | "centered"
+  | "note"
+  | "synopsis";
 
 function faceOf(bold: boolean, italic: boolean): Face {
   return bold && italic ? "boldItalic" : bold ? "bold" : italic ? "italic" : "regular";
@@ -93,26 +95,63 @@ function paragraphStyles(style: PlayStyle): Record<StyleName, ParaStyle> {
     prefaceList: paraStyle({ face: "regular", size, leading, leftIndent: 18, spaceBefore: 2, spaceAfter: 2 }),
     transition: paraStyle({ face: "bold", size, leading, alignment: "center", spaceBefore: 10, spaceAfter: 10 }),
     centered: paraStyle({ face: "regular", size, leading, alignment: "center", spaceBefore: 6, spaceAfter: 6 }),
+    note: paraStyle({ face: style.notes.italic ? "italic" : "regular", size, leading, color: style.notes.color, spaceBefore: 10, spaceAfter: 10 }),
+    synopsis: paraStyle({ face: style.synopses.italic ? "italic" : "regular", size, leading, color: style.synopses.color, spaceBefore: 10, spaceAfter: 10 }),
   };
 }
 
-/** Fountain emphasis and links as spans, with `extra` applied throughout. */
-export function inlineSpans(text: string, extra: Partial<Span> = {}): Span[] {
-  return parseInline(text).runs.map((run) => {
-    const span: Span = {
-      text: text.slice(run.from, run.to),
-      bold: run.bold || extra.bold,
-      italic: run.italic || extra.italic,
-      underline: run.underline || extra.underline,
-      color: extra.color,
+/** Spans put into a line of text at an offset, such as a note where it was written. */
+export interface Insert {
+  at: number;
+  spans: Span[];
+}
+
+/**
+ * Fountain emphasis and links as spans, with `extra` applied throughout,
+ * and `inserts` put in at their offsets into `text`.
+ */
+export function inlineSpans(text: string, extra: Partial<Span> = {}, inserts: readonly Insert[] = []): Span[] {
+  const pending = [...inserts].sort((a, b) => a.at - b.at);
+  const out: Span[] = [];
+  let next = 0;
+  for (const run of parseInline(text).runs) {
+    const piece = (from: number, to: number) => {
+      if (from >= to) return;
+      const span: Span = {
+        text: text.slice(from, to),
+        bold: run.bold || extra.bold,
+        italic: run.italic || extra.italic,
+        underline: run.underline || extra.underline,
+        color: extra.color,
+      };
+      if (run.link) {
+        span.link = run.link;
+        span.color = LINK_COLOR;
+        span.underline = true;
+      }
+      out.push(span);
     };
-    if (run.link) {
-      span.link = run.link;
-      span.color = LINK_COLOR;
-      span.underline = true;
+    let from = run.from;
+    while (next < pending.length && pending[next].at < run.to) {
+      const at = Math.max(pending[next].at, from);
+      piece(from, at);
+      out.push(...pending[next++].spans);
+      from = at;
     }
-    return span;
-  });
+    piece(from, run.to);
+  }
+  while (next < pending.length) out.push(...pending[next++].spans);
+  return out;
+}
+
+/** What an export includes beyond the script itself. */
+export interface LayoutOptions {
+  /** Text across every page, such as DRAFT. Blank for none. */
+  watermark?: string;
+  /** Print notes (`[[ ]]`). */
+  notes?: boolean;
+  /** Print synopses (`= …`). */
+  synopses?: boolean;
 }
 
 const join = (values: string[] | undefined) => (values ?? []).join(" ");
@@ -134,7 +173,7 @@ function shortParentheticalWord(text: string): string | undefined {
   return inner.split(/\s+/).filter(Boolean).length <= 1 ? inner : undefined;
 }
 
-type SpeechLine = { kind: "parenthetical" | "dialogue"; text: string; line: number };
+type SpeechLine = { kind: "parenthetical" | "dialogue"; text: string; line: number; notes: Insert[] };
 
 class StoryBuilder {
   readonly styles: Record<StyleName, ParaStyle>;
@@ -144,6 +183,7 @@ class StoryBuilder {
   constructor(
     readonly style: PlayStyle,
     readonly fonts: FontSet,
+    readonly options: LayoutOptions = {},
   ) {
     this.styles = paragraphStyles(style);
     this.available = style.page.width - style.page.margins.left - style.page.margins.right;
@@ -153,8 +193,32 @@ class StoryBuilder {
     return Paragraph.of(spans, this.styles[name], this.fonts, bullet);
   }
 
-  plain(text: string, name: StyleName, underline = false): Paragraph {
-    return this.para([{ text, underline }], name);
+  plain(text: string, name: StyleName, underline = false, notes: readonly Insert[] = []): Paragraph {
+    const spans: Span[] = [];
+    let from = 0;
+    for (const { at, spans: inserted } of [...notes].sort((a, b) => a.at - b.at)) {
+      if (at > from) spans.push({ text: text.slice(from, at), underline });
+      spans.push(...inserted);
+      from = Math.max(from, at);
+    }
+    if (from < text.length || spans.length === 0) spans.push({ text: text.slice(from), underline });
+    return this.para(spans, name);
+  }
+
+  /**
+   * The notes written in an element, to insert into `text` (its text as
+   * printed, which starts `shift` characters later than the element's own),
+   * if the export includes notes.
+   */
+  notesIn(el: ScriptElement, text: string, shift = 0): Insert[] {
+    if (!this.options.notes || !el.notes) return [];
+    const { italic, color } = this.style.notes;
+    return el.notes.map(({ at, text: note }) => {
+      const p = Math.min(at + shift, text.length);
+      const before = p > 0 && !/\s/.test(text[p - 1]) ? " " : "";
+      const after = p < text.length && !/\s/.test(text[p]) ? " " : "";
+      return { at: p, spans: [{ text: `${before}[${note}]${after}`, italic: italic || undefined, color }] };
+    });
   }
 
   titlePage(values: Record<string, string[]>): Block[] {
@@ -218,12 +282,12 @@ class StoryBuilder {
   }
 
   private lineSpans(line: SpeechLine): Span[] {
-    return inlineSpans(line.text, { italic: line.kind === "parenthetical" && this.style.parenthetical.italic });
+    return inlineSpans(line.text, { italic: line.kind === "parenthetical" && this.style.parenthetical.italic }, line.notes);
   }
 
   /** Name and first line side by side in a table row, later lines indented to match. */
-  private sharedLineParts(name: string, lines: SpeechLine[], cueLine: number): Block[] {
-    const nameBlock = this.para(inlineSpans(name), "character");
+  private sharedLineParts(name: string, lines: SpeechLine[], cueLine: number, nameNotes: Insert[]): Block[] {
+    const nameBlock = this.para(inlineSpans(name, {}, nameNotes), "character");
     nameBlock.source = { line: cueLine };
     if (lines.length === 0) return [nameBlock];
 
@@ -253,10 +317,10 @@ class StoryBuilder {
   }
 
   /** Name on a line of its own, then each line of the speech. */
-  private ownLineParts(name: string, lines: SpeechLine[], cueLine: number): Block[] {
-    let nameSpans = inlineSpans(name);
+  private ownLineParts(name: string, lines: SpeechLine[], cueLine: number, nameNotes: Insert[]): Block[] {
+    let nameSpans = inlineSpans(name, {}, nameNotes);
     let consumed = 0;
-    if (this.style.character.shortParentheticalInline && lines[0]?.kind === "parenthetical") {
+    if (this.style.character.shortParentheticalInline && lines[0]?.kind === "parenthetical" && lines[0].notes.length === 0) {
       const word = shortParentheticalWord(lines[0].text);
       if (word !== undefined) {
         nameSpans = [...nameSpans, { text: " (" }, ...inlineSpans(word), { text: ")" }];
@@ -267,7 +331,7 @@ class StoryBuilder {
     nameBlock.source = { line: cueLine };
     const parts: Block[] = [nameBlock];
     for (const line of lines.slice(consumed)) {
-      const para = this.para(inlineSpans(line.text), line.kind === "parenthetical" ? "parenthetical" : "dialogue");
+      const para = this.para(inlineSpans(line.text, {}, line.notes), line.kind === "parenthetical" ? "parenthetical" : "dialogue");
       para.source = { line: line.line };
       parts.push(para);
     }
@@ -283,9 +347,9 @@ class StoryBuilder {
   }
 
   /** A speech, its blocks marked with the script lines they come from: `cueLine` for the name. */
-  speech(name: string, lines: SpeechLine[], cueLine: number): Block[] {
+  speech(name: string, lines: SpeechLine[], cueLine: number, nameNotes: Insert[] = []): Block[] {
     const ownLine = this.style.character.ownLine;
-    const parts = ownLine ? this.ownLineParts(name, lines, cueLine) : this.sharedLineParts(name, lines, cueLine);
+    const parts = ownLine ? this.ownLineParts(name, lines, cueLine, nameNotes) : this.sharedLineParts(name, lines, cueLine, nameNotes);
     const gap = this.style.speech.gap;
     if (this.style.speech.moreContinued) {
       const speech = new Speech(name, parts, this.speechContext(), ownLine ? 2 : 1, gap);
@@ -313,11 +377,12 @@ class StoryBuilder {
 
     let speaker: string | undefined;
     let cueLine = 0;
+    let nameNotes: Insert[] = [];
     let lines: SpeechLine[] = [];
     let bodyMarked = false;
     const flush = () => {
       if (speaker === undefined) return;
-      story.push(...this.speech(speaker, lines, cueLine));
+      story.push(...this.speech(speaker, lines, cueLine, nameNotes));
       speaker = undefined;
       lines = [];
       fresh = false;
@@ -334,28 +399,44 @@ class StoryBuilder {
       story.push(block);
       fresh = false;
     };
+    // Notes on lines of their own and synopses, if included, go in where they were written.
+    const extras: (LineNote & { name: StyleName })[] = [
+      ...(this.options.notes ? script.lineNotes.map((n) => ({ line: n.line, text: `[${n.text}]`, name: "note" as const })) : []),
+      ...(this.options.synopses ? script.synopses.map((n) => ({ ...n, name: "synopsis" as const })) : []),
+    ].sort((a, b) => a.line - b.line);
+    let nextExtra = 0;
+    const extrasBefore = (line: number) => {
+      while (nextExtra < extras.length && extras[nextExtra].line < line) {
+        const extra = extras[nextExtra++];
+        add(this.para(inlineSpans(extra.text), extra.name), extra.line);
+      }
+    };
 
     for (const el of script.elements) {
       if (el.type === "character") {
         flush();
+        extrasBefore(el.line);
         speaker = el.text.toUpperCase();
         cueLine = el.line;
+        nameNotes = this.notesIn(el, speaker);
         if (el.dual && this.style.speech.dualLabel) speaker += ` ${this.style.speech.dualLabel}`;
         continue;
       }
       if (el.type === "parenthetical" || el.type === "dialogue") {
         // A stray line with no character before it is dropped, as in fountain2pdf.
-        if (speaker !== undefined) lines.push({ kind: el.type, text: el.text, line: el.line });
+        if (speaker !== undefined) lines.push({ kind: el.type, text: el.text, line: el.line, notes: this.notesIn(el, el.text) });
         continue;
       }
       flush();
+      extrasBefore(el.line);
 
       switch (el.type) {
         case "section": {
           const act = (el.depth ?? 1) === 1;
           const upper = act || this.style.scene.uppercaseSections;
           const underline = act ? this.style.act.underline : this.style.scene.underline;
-          const block = this.plain(upper ? el.text.toUpperCase() : el.text, act ? "act" : "scene", underline);
+          const title = upper ? el.text.toUpperCase() : el.text;
+          const block = this.plain(title, act ? "act" : "scene", underline, this.notesIn(el, title));
           if (act && story.length > 0 && !fresh) story.push(PAGE_BREAK);
           heading(block, el.text.toUpperCase(), el.line);
           break;
@@ -364,19 +445,21 @@ class StoryBuilder {
           heading(...this.sceneHeading(el), el.line);
           break;
         case "action":
-          add(this.para(inlineSpans(el.text), "action"), el.line);
+          add(this.para(inlineSpans(el.text, {}, this.notesIn(el, el.text)), "action"), el.line);
           break;
         case "preface":
-          add(this.para(inlineSpans(el.text), "preface"), el.line);
+          add(this.para(inlineSpans(el.text, {}, this.notesIn(el, el.text)), "preface"), el.line);
           break;
         case "preface_list_item":
-          add(this.para(inlineSpans(el.text), "prefaceList", el.marker ?? "•"), el.line);
+          add(this.para(inlineSpans(el.text, {}, this.notesIn(el, el.text)), "prefaceList", el.marker ?? "•"), el.line);
           break;
-        case "transition":
-          add(this.para(inlineSpans(el.text.toUpperCase()), "transition"), el.line);
+        case "transition": {
+          const upper = el.text.toUpperCase();
+          add(this.para(inlineSpans(upper, {}, this.notesIn(el, upper)), "transition"), el.line);
           break;
+        }
         case "centered":
-          add(this.para(inlineSpans(el.text), "centered"), el.line);
+          add(this.para(inlineSpans(el.text, {}, this.notesIn(el, el.text)), "centered"), el.line);
           break;
         case "page_break":
           if (!fresh) {
@@ -387,6 +470,7 @@ class StoryBuilder {
       }
     }
     flush();
+    extrasBefore(Infinity);
     return story;
   }
 
@@ -394,11 +478,14 @@ class StoryBuilder {
     const heading = el.text.toUpperCase();
     const { position, format, inHeader } = this.style.sceneNumbers;
     let display = heading;
+    let shift = 0;
     if (el.sceneNumber && position !== "hide") {
       const number = format.split("{n}").join(el.sceneNumber);
       display = position === "before" ? `${number} ${heading}` : `${heading} ${number}`;
+      if (position === "before") shift = number.length + 1;
     }
-    const spans = inlineSpans(display, { underline: this.style.scene.underline || undefined });
+    const notes = this.notesIn(el, display, shift);
+    const spans = inlineSpans(display, { underline: this.style.scene.underline || undefined }, notes);
     return [this.para(spans, "scene"), inHeader ? display : heading];
   }
 }
@@ -426,8 +513,8 @@ export function toRoman(n: number): string {
   return out;
 }
 
-export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: FontSet): LayoutDocument {
-  const builder = new StoryBuilder(style, fonts);
+export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: FontSet, options: LayoutOptions = {}): LayoutDocument {
+  const builder = new StoryBuilder(style, fonts, options);
   const { width, height, margins } = style.page;
   const result = flow(builder.build(script), {
     left: margins.left,
@@ -480,6 +567,12 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
     }
   });
 
+  const watermark = options.watermark?.trim();
+  if (watermark) {
+    const item = watermarkItem(watermark, style, fonts);
+    for (const page of result.pages) page.texts.unshift({ ...item });
+  }
+
   return {
     width,
     height,
@@ -488,6 +581,34 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
     pages: result.pages,
     placements: result.placements,
     pageNumbers,
+  };
+}
+
+/** Watermark text, as large as fits the page (up to the style's largest size) and centred on it. */
+function watermarkItem(watermark: string, style: PlayStyle, fonts: FontSet): TextItem {
+  const { face, color, opacity, angle, maxSize } = style.watermark;
+  const { width, height } = style.page;
+  const text = fonts.clean(watermark);
+  const unit = fonts.width(text, face, 1);
+  const rad = (angle * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  // The rotated text's bounding box fits within the middle 80% of the page.
+  const fit = Math.min((0.8 * width) / (unit * Math.abs(cos) + Math.abs(sin)), (0.8 * height) / (unit * Math.abs(sin) + Math.abs(cos)));
+  const size = Math.min(maxSize, fit);
+  // The text is drawn from the left end of its baseline: step back from the
+  // page's centre by half its length, and down by about half a capital's height.
+  const half = (unit * size) / 2;
+  const lift = 0.35 * size;
+  return {
+    x: width / 2 - (half * cos - lift * sin),
+    y: height / 2 - (half * sin + lift * cos),
+    text,
+    face,
+    size,
+    color,
+    rotate: angle,
+    opacity,
   };
 }
 

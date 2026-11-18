@@ -24,6 +24,18 @@ export interface PlaywrightSettings {
   minutesPerPage: number;
   /** Words that add pauses to the runtime, going by words spoken. */
   pauseWords: PauseWord[];
+  /** What the export dialog was last given. */
+  export: ExportChoices;
+}
+
+/** What the export dialog asks, remembered for next time. */
+export interface ExportChoices {
+  /** The id of the style last chosen. A script's `Style:` key comes first. */
+  style: string;
+  /** Text across every page, or blank for none. */
+  watermark: string;
+  notes: boolean;
+  synopses: boolean;
 }
 
 export const DEFAULT_SETTINGS: PlaywrightSettings = {
@@ -35,6 +47,7 @@ export const DEFAULT_SETTINGS: PlaywrightSettings = {
   wordsPerMinute: 150,
   minutesPerPage: 1,
   pauseWords: defaultPauseWords(),
+  export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
 /**
@@ -58,6 +71,18 @@ export function readSettings(saved: unknown): PlaywrightSettings {
     wordsPerMinute: positive("wordsPerMinute", d.wordsPerMinute),
     minutesPerPage: positive("minutesPerPage", d.minutesPerPage),
     pauseWords: s.pauseWords === undefined ? defaultPauseWords() : readPauseWords(s.pauseWords),
+    export: readExportChoices(s.export),
+  };
+}
+
+function readExportChoices(saved: unknown): ExportChoices {
+  const s = (typeof saved === "object" && saved !== null ? saved : {}) as Record<string, unknown>;
+  const d = DEFAULT_SETTINGS.export;
+  return {
+    style: typeof s.style === "string" ? s.style : d.style,
+    watermark: typeof s.watermark === "string" ? s.watermark : d.watermark,
+    notes: typeof s.notes === "boolean" ? s.notes : d.notes,
+    synopses: typeof s.synopses === "boolean" ? s.synopses : d.synopses,
   };
 }
 

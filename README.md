@@ -51,12 +51,19 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **samuel_french:** Samuel French / SFI submission format
 - Your own styles, as JSON files in your vault that extend another style and change only what differs.
 - Your own fonts, from font files in your vault.
-- A `Style:` key on a script's title page that picks its export style. Without one, you pick a style when you export.
+- An export dialog to pick the style, add a watermark (such as DRAFT) across every page, and include notes and synopses. A `Style:` key on a script's title page picks its style to start with.
 - Works on desktop and mobile.
 
 ## Exporting to PDF
 
-Run **Export to PDF** from the command palette, a script's file menu, or the button at the top of an open script. The PDF is saved next to the script with the same name, and opens in a new tab.
+Run **Export to PDF** from the command palette, a script's file menu, or the button at the top of an open script. A dialog asks for:
+
+- **Style:** the house style. Page size and margins are part of the style: Modern Play Format and Samuel French are US Letter, APT is A4. For another size, make a style of your own (below) with `"page": { "size": "A4" }`.
+- **Watermark:** text printed faintly and diagonally across every page, such as DRAFT or a theatre's name. Leave it blank for none.
+- **Include notes:** prints `[[notes]]` in grey italics in square brackets, where they're written. A note on a line of its own prints as a line of its own.
+- **Include synopses:** prints `= synopsis` lines in grey italics, where they're written.
+
+The dialog remembers your choices for next time. The PDF is saved next to the script with the same name, replacing any earlier export, and opens in a new tab.
 
 To give a script a style, add a `Style:` line to its title page. It's never printed.
 
@@ -66,7 +73,7 @@ Author: Tim
 Style: apt
 ```
 
-Without one, Playwright asks which style to use. **Export to PDF in a chosen style** always asks.
+The dialog then starts in that style. Without one, it starts in the style you used last.
 
 ### Styles of your own
 
@@ -84,12 +91,12 @@ A style of your own is a `.json` file in your styles folder (`Playwright/Styles`
 
 - `extends` names a built-in style (`modern`, `apt`, `samuel_french`) or another of your own.
 - The style's id, for `Style:` keys, is the file name (`Festival.json` is `Style: Festival`) unless you give an `"id"`. Ids ignore case, spaces, hyphens and underscores. `Style:` also finds a style by its name.
-- `name` and `description` are shown in the style picker.
+- `name` and `description` are shown in the export dialog.
 - Lengths are points, or text with a unit: `"25mm"`, `"2.5cm"`, `"1in"`, `"12pt"`.
 - Colours are `"#rrggbb"` or `[red, green, blue]` from 0 to 1.
 - Keys starting with `_` are ignored, so `"_note": "…"` works as a comment.
 
-If a file has a problem, such as a misspelt setting or a value of the wrong kind, the style is left out of the picker. Playwright's settings list each problem with the setting and the reason. Obsidian can't edit `.json` files itself, so use another text editor. To see them in Obsidian's file list, turn on **Settings → Files and links → Detect all file extensions**.
+If a file has a problem, such as a misspelt setting or a value of the wrong kind, the style is left out of the export dialog. Playwright's settings list each problem with the setting and the reason. Obsidian can't edit `.json` files itself, so use another text editor. To see them in Obsidian's file list, turn on **Settings → Files and links → Detect all file extensions**.
 
 Every setting:
 
@@ -109,6 +116,9 @@ Every setting:
 | `header` | `strap` (running "PLAY TITLE \| SCENE" header) |
 | `pagination` | `fromBody`, `prefaceRoman`, `face` (`"regular"`, `"bold"`, `"italic"`, `"boldItalic"`), `size`, `format`, `position` (`"top"`, `"bottom"`), `alignment` |
 | `prelims` | `headingBold`, `headingUnderline`, `nameUnderline` |
+| `notes` | `italic`, `color` (for notes, when an export includes them) |
+| `synopses` | `italic`, `color` (for synopses, when an export includes them) |
+| `watermark` | `face`, `color`, `opacity` (0 to 1), `angle` (degrees, -90 to 90), `maxSize` (longer text is set smaller to fit the page) |
 
 Alignments are `"left"`, `"center"` or `"right"`. The built-in styles in [src/pdf/styles](src/pdf/styles) show every setting in use.
 
@@ -159,7 +169,7 @@ Layout:
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
-| `src/export.ts` | Export to PDF in Obsidian: style picker and saving the PDF |
+| `src/export.ts` | Export to PDF in Obsidian: the export dialog and saving the PDF |
 | `src/pdf/style.ts` | The `PlayStyle` type: every setting a house style controls |
 | `src/pdf/styles/` | The built-in styles |
 | `src/pdf/layout.ts` | Turns a parsed script into pages, ported from fountain2pdf's engine |

@@ -12,6 +12,8 @@
  *   first section or scene heading, so a script with neither isn't all preface.
  * - Elements carry source offsets and line numbers, and the result lists the
  *   syntax characters (forcing marks, scene numbers, notes) for the editor.
+ * - Notes and synopses are kept, apart from the elements, so the PDF can
+ *   print them if asked.
  */
 
 export type ElementType =
@@ -47,6 +49,20 @@ export interface ScriptElement {
   italic?: boolean;
   /** A list item's marker, such as "•" or "3.". */
   marker?: string;
+  /** Notes written inside the element, which its text leaves out. */
+  notes?: InlineNote[];
+}
+
+/** A note inside an element: `at` is where it was, as an offset into the element's text. */
+export interface InlineNote {
+  at: number;
+  text: string;
+}
+
+/** A note or synopsis on a line of its own. */
+export interface LineNote {
+  line: number;
+  text: string;
 }
 
 export type SpanKind = "marker" | "scene-number" | "title-key" | "boneyard" | "note";
@@ -81,6 +97,10 @@ export interface ParsedScript {
   spans: SyntaxSpan[];
   /** Roles of lines that belong to no element, by line number. */
   lineRoles: Map<number, LineRole>;
+  /** Notes on lines of their own in the script, outside any element (and not on the title page). */
+  lineNotes: LineNote[];
+  /** Synopses (`= …`), without the `=`. */
+  synopses: LineNote[];
 }
 
 const SCENE_HEADING_RE = /^(INT|EXT|EST|INT\.?\/EXT|I\/E)[.\s]/i;
@@ -317,6 +337,7 @@ export function parseFountain(source: string): ParsedScript {
 
   // --- The script. ---------------------------------------------------------
   const elements: ScriptElement[] = [];
+  const synopses: LineNote[] = [];
   const single = (type: ElementType, i: number, elementText: string, extra: Partial<ScriptElement> = {}) => {
     elements.push({ type, text: elementText, from: lines[i].contentFrom, to: lines[i].contentTo, line: i, endLine: i, ...extra });
   };
@@ -348,6 +369,8 @@ export function parseFountain(source: string): ParsedScript {
     if (s.startsWith("=")) {
       // A synopsis: not part of the script.
       lineRoles.set(idx, "synopsis");
+      const synopsis = s.slice(1).trim();
+      if (synopsis) synopses.push({ line: idx, text: synopsis });
       idx++;
       continue;
     }
@@ -466,5 +489,54 @@ export function parseFountain(source: string): ParsedScript {
     });
   }
 
-  return { titlePage, titleValues, elements, spans, lineRoles };
+  const lineNotes = placeNotes(text, masked, lines, body, spans, elements, lineRoles);
+  return { titlePage, titleValues, elements, spans, lineRoles, lineNotes, synopses };
+}
+
+/**
+ * Puts each note where it was written: into the element whose lines it
+ * starts on, at its place in the element's text, or else on a line of its
+ * own. Notes on the title page or in a breakdown section are left out.
+ */
+function placeNotes(
+  text: string,
+  masked: string,
+  lines: SourceLine[],
+  body: string[],
+  spans: SyntaxSpan[],
+  elements: ScriptElement[],
+  lineRoles: Map<number, LineRole>,
+): LineNote[] {
+  const lineNotes: LineNote[] = [];
+  const notes = spans.filter((s) => s.kind === "note");
+  if (notes.length === 0) return lineNotes;
+  const elementAt = new Map<number, ScriptElement>();
+  for (const el of elements) for (let i = el.line; i <= el.endLine; i++) elementAt.set(i, el);
+
+  let i = 0;
+  for (const note of notes) {
+    const noteText = text.slice(note.from + 2, note.to - 2).replace(/\s+/g, " ").trim();
+    while (i + 1 < lines.length && lines[i + 1].start <= note.from) i++;
+    if (!noteText || lineRoles.has(i)) continue;
+    const el = elementAt.get(i);
+    if (!el) {
+      lineNotes.push({ line: i, text: noteText });
+      continue;
+    }
+    // Where the note was in the line's visible text, as `body` has it.
+    const visibleBefore = masked.slice(lines[i].start, note.from).replace(/\0/g, "").length;
+    const lead = lines[i].text.length - lines[i].text.trimStart().length;
+    const column = Math.max(0, Math.min(visibleBefore - lead, body[i].length));
+    let at: number;
+    if (el.line === el.endLine) {
+      // The element's text is its line without forcing marks, so it starts where it's found.
+      at = column - Math.max(0, body[i].indexOf(el.text));
+    } else {
+      // An action of several lines, joined with spaces.
+      at = column;
+      for (let j = el.line; j < i; j++) at += body[j].length + 1;
+    }
+    (el.notes ??= []).push({ at: Math.max(0, Math.min(at, el.text.length)), text: noteText });
+  }
+  return lineNotes;
 }

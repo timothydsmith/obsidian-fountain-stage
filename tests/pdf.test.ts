@@ -123,6 +123,71 @@ describe("layout", () => {
   });
 });
 
+describe("notes, synopses and watermark", () => {
+  const source = [
+    "INT. ROOM [[check set]]",
+    "= The morning after.",
+    "",
+    "She opens the door [[props: key]] and waits.",
+    "",
+    "[[Cut the next speech?]]",
+    "",
+    "DAVID",
+    "Hello [[louder]] there.",
+  ].join("\n");
+  const script = parseFountain(source);
+  const grey = style("modern").notes.color;
+
+  it("leaves them out unless asked", () => {
+    const plain = texts(layoutScript(script, style("modern"), fonts))[0];
+    expect(plain).not.toMatch(/check set|morning|props|Cut the|louder/);
+  });
+
+  it("prints notes in grey brackets where they were written", () => {
+    const doc = layoutScript(script, style("modern"), fonts, { notes: true });
+    const page = texts(doc)[0];
+    expect(page).toContain("INT. ROOM [check set]");
+    expect(page).toContain("door [props: key] and waits.");
+    expect(page).toContain("[Cut the next speech?]");
+    expect(page).toContain("Hello [louder] there.");
+    expect(page).not.toContain("morning");
+    const note = doc.pages[0].texts.find((t) => t.text.includes("louder"))!;
+    expect(note).toMatchObject({ face: "italic", color: grey });
+  });
+
+  it("prints synopses as lines of their own", () => {
+    const doc = layoutScript(script, style("modern"), fonts, { synopses: true });
+    const synopsis = doc.pages[0].texts.find((t) => t.text === "The morning after.")!;
+    const heading = doc.pages[0].texts.find((t) => t.text.includes("ROOM"))!;
+    expect(synopsis).toMatchObject({ face: "italic", color: grey });
+    expect(synopsis.y).toBeLessThan(heading.y);
+  });
+
+  it("keeps a note in a speech", () => {
+    const doc = layoutScript(script, style("apt"), fonts, { notes: true });
+    expect(texts(doc).join(" ")).toContain("Hello [louder] there.");
+  });
+
+  it("puts a watermark behind every page, centred and fitted", () => {
+    const doc = layoutScript(parseFountain(sample), style("modern"), fonts, { watermark: "  DRAFT " });
+    for (const page of doc.pages) expect(page.texts[0]).toMatchObject({ text: "DRAFT", rotate: 45, opacity: 0.2, size: 120 });
+    const long = layoutScript(script, style("modern"), fonts, { watermark: "NOT FOR CIRCULATION OR PERFORMANCE" }).pages[0].texts[0];
+    expect(long.size).toBeLessThan(120);
+    // The rotated text's middle is the page's middle.
+    const w = fonts.width(long.text, "bold", long.size);
+    const rad = Math.PI / 4;
+    const midX = long.x + (w / 2) * Math.cos(rad) - 0.35 * long.size * Math.sin(rad);
+    const midY = long.y + (w / 2) * Math.sin(rad) + 0.35 * long.size * Math.cos(rad);
+    expect(midX).toBeCloseTo(doc.width / 2);
+    expect(midY).toBeCloseTo(doc.height / 2);
+  });
+
+  it("draws the watermark in the PDF", async () => {
+    const { bytes } = await buildPdf(script, style("apt"), { standard: "times" }, { watermark: "DRAFT", notes: true, synopses: true });
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+  });
+});
+
 describe("toRoman", () => {
   it("converts", () => {
     expect([1, 4, 9, 14, 40, 90, 400, 1994].map(toRoman)).toEqual(["i", "iv", "ix", "xiv", "xl", "xc", "cd", "mcmxciv"]);

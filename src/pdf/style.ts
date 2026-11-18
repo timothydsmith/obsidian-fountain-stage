@@ -143,7 +143,32 @@ export interface PlayStyle {
     /** Underline the name in a "Name   Description" line. */
     nameUnderline: boolean;
   };
+
+  /** Notes (`[[ ]]`), when an export includes them: in square brackets, where they were written. */
+  notes: { italic: boolean; color: Rgb };
+
+  /** Synopses (`= …`), when an export includes them: a line of their own, where they were written. */
+  synopses: { italic: boolean; color: Rgb };
+
+  /** A watermark, when an export has one: across the middle of every page. */
+  watermark: {
+    face: Face;
+    color: Rgb;
+    /** From 0 (invisible) to 1 (solid). */
+    opacity: number;
+    /** Degrees anticlockwise from level. */
+    angle: number;
+    /** The largest size; shorter text is set at this size, longer text smaller to fit the page. */
+    maxSize: number;
+  };
 }
+
+/** Notes, synopses and watermark as the built-in styles have them. */
+export const EXTRAS_DEFAULTS: Pick<PlayStyle, "notes" | "synopses" | "watermark"> = {
+  notes: { italic: true, color: [0.45, 0.45, 0.45] },
+  synopses: { italic: true, color: [0.45, 0.45, 0.45] },
+  watermark: { face: "bold", color: [0.5, 0.5, 0.5], opacity: 0.2, angle: 45, maxSize: 120 },
+};
 
 export const MM = 72 / 25.4;
 export const INCH = 72;

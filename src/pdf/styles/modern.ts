@@ -1,4 +1,4 @@
-import { INCH, LETTER, type PlayStyle } from "../style";
+import { INCH, LETTER, EXTRAS_DEFAULTS, type PlayStyle } from "../style";
 
 /**
  * Dramatists Guild "Modern Play Format", per the Guild's annotated example
@@ -41,4 +41,5 @@ export const modern: PlayStyle = {
   header: { strap: false },
   pagination: { fromBody: true, prefaceRoman: false, face: "regular", size: 12, format: "{n}.", position: "top", alignment: "right" },
   prelims: { headingBold: true, headingUnderline: false, nameUnderline: false },
+  ...EXTRAS_DEFAULTS,
 };

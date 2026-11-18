@@ -1,4 +1,4 @@
-import { A4, MM, type PlayStyle } from "../style";
+import { A4, MM, EXTRAS_DEFAULTS, type PlayStyle } from "../style";
 
 /**
  * Australian Plays Transform submission format, per the "APT Submissions
@@ -43,4 +43,5 @@ export const apt: PlayStyle = {
   header: { strap: true },
   pagination: { fromBody: true, prefaceRoman: true, face: "bold", size: 10, format: "{n}", position: "bottom", alignment: "center" },
   prelims: { headingBold: true, headingUnderline: false, nameUnderline: false },
+  ...EXTRAS_DEFAULTS,
 };

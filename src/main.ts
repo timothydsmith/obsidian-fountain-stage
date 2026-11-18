@@ -1,7 +1,7 @@
 import { normalizePath, Notice, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
-import { exportScript, type ExportOptions } from "./export";
+import { exportScript } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { DEFAULT_SETTINGS, Library, type PlaywrightSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
@@ -98,19 +98,16 @@ export default class PlaywrightPlugin extends Plugin {
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
-    const exportCommand =(id: string, name: string, options: ExportOptions) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          const file = this.app.workspace.getActiveFile();
-          if (file?.extension !== FOUNTAIN_EXTENSION) return false;
-          if (!checking) void this.exportPdf(file, options);
-          return true;
-        },
-      });
-    exportCommand("export-pdf", "Export to PDF", {});
-    exportCommand("export-pdf-choose-style", "Export to PDF in a chosen style", { chooseStyle: true });
+    this.addCommand({
+      id: "export-pdf",
+      name: "Export to PDF",
+      checkCallback: (checking) => {
+        const file = this.app.workspace.getActiveFile();
+        if (file?.extension !== FOUNTAIN_EXTENSION) return false;
+        if (!checking) void this.exportPdf(file);
+        return true;
+      },
+    });
 
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
@@ -126,13 +123,17 @@ export default class PlaywrightPlugin extends Plugin {
   }
 
   /** Exports a script, using unsaved changes if it's open. */
-  private async exportPdf(file: TFile, options: ExportOptions = {}): Promise<void> {
+  private async exportPdf(file: TFile): Promise<void> {
     const open = this.app.workspace
       .getLeavesOfType(VIEW_TYPE_FOUNTAIN)
       .map((leaf) => leaf.view)
       .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
-    await exportScript(this.app, this.library, file, source, options);
+    await exportScript(this.app, this.library, file, source, this.playwrightSettings.export, (choices) => {
+      this.playwrightSettings.export = choices;
+      // Nothing else depends on these, so there's nothing to refresh.
+      void this.saveData(this.playwrightSettings);
+    });
   }
 
   private async saveSettings(): Promise<void> {

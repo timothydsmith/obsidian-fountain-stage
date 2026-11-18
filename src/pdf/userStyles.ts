@@ -32,6 +32,7 @@ export interface LoadedStyles {
 type Kind =
   | { kind: "length"; positive?: boolean }
   | { kind: "boolean" }
+  | { kind: "number"; min: number; max: number }
   | { kind: "string" }
   | { kind: "enum"; values: readonly string[] }
   | { kind: "color" }
@@ -47,6 +48,9 @@ const bool: Kind = { kind: "boolean" };
 const text: Kind = { kind: "string" };
 const choice = (...values: string[]): Kind => ({ kind: "enum", values });
 const alignment = choice("left", "center", "right");
+const face = choice("regular", "bold", "italic", "boldItalic");
+const color: Kind = { kind: "color" };
+const number = (min: number, max: number): Kind => ({ kind: "number", min, max });
 
 const PAGE_SIZES: Record<string, { width: number; height: number }> = {
   a4: A4,
@@ -79,7 +83,7 @@ const SCHEMA: Group = {
   },
   speech: { gap: length, moreContinued: bool, moreText: text, continuedText: text, dualLabel: text },
   parenthetical: { italic: bool, indent: length },
-  action: { size, italic: bool, alignment, leftIndent: length, rightIndent: length, color: { kind: "color" } },
+  action: { size, italic: bool, alignment, leftIndent: length, rightIndent: length, color },
   act: { size, bold: bool, italic: bool, underline: bool, alignment },
   scene: { size, bold: bool, italic: bool, underline: bool, alignment, uppercaseSections: bool },
   sceneNumbers: { position: choice("hide", "before", "after"), format: text, inHeader: bool },
@@ -87,13 +91,16 @@ const SCHEMA: Group = {
   pagination: {
     fromBody: bool,
     prefaceRoman: bool,
-    face: choice("regular", "bold", "italic", "boldItalic"),
+    face,
     size,
     format: text,
     position: choice("top", "bottom"),
     alignment,
   },
   prelims: { headingBold: bool, headingUnderline: bool, nameUnderline: bool },
+  notes: { italic: bool, color },
+  synopses: { italic: bool, color },
+  watermark: { face, color, opacity: number(0, 1), angle: number(-90, 90), maxSize: size },
 };
 
 const isKind = (node: Kind | Group): node is Kind => typeof (node as Kind).kind === "string";
@@ -186,6 +193,12 @@ function applyValue(target: Record<string, unknown>, key: string, value: unknown
     }
     case "boolean":
       if (typeof value !== "boolean") return `"${path}" must be true or false.`;
+      target[key] = value;
+      return;
+    case "number":
+      if (typeof value !== "number" || !Number.isFinite(value) || value < kind.min || value > kind.max) {
+        return `"${path}" must be a number from ${kind.min} to ${kind.max}.`;
+      }
       target[key] = value;
       return;
     case "string":

@@ -1,10 +1,10 @@
 /** Builds the PDF: embeds the fonts, lays out the script with them, and draws the pages with pdf-lib. */
 
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, type PDFFont, PDFString, rgb } from "pdf-lib";
+import { degrees, PDFDocument, type PDFFont, PDFString, rgb } from "pdf-lib";
 import type { ParsedScript } from "../fountain/parser";
 import { type FontSet, standardFontSet } from "./fonts";
-import { layoutScript } from "./layout";
+import { type LayoutOptions, layoutScript } from "./layout";
 import type { LayoutDocument } from "./model";
 import { type Face, type PlayStyle, type Rgb, STANDARD_FAMILIES, type StandardFamily } from "./style";
 
@@ -84,10 +84,10 @@ export async function measuringFontSet(choice: FontChoice): Promise<FontSet> {
   return (await embedFonts(await PDFDocument.create(), choice)).fontSet;
 }
 
-export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice): Promise<BuiltPdf> {
+export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice, options: LayoutOptions = {}): Promise<BuiltPdf> {
   const pdf = await PDFDocument.create();
   const { fonts, fontSet } = await embedFonts(pdf, choice);
-  const layout = layoutScript(script, style, fontSet);
+  const layout = layoutScript(script, style, fontSet, options);
   pdf.setTitle(layout.title);
   if (layout.author) pdf.setAuthor(layout.author);
   pdf.setCreator("Playwright");
@@ -95,7 +95,15 @@ export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: F
   for (const layoutPage of layout.pages) {
     const page = pdf.addPage([layout.width, layout.height]);
     for (const t of layoutPage.texts) {
-      page.drawText(t.text, { x: t.x, y: t.y, size: t.size, font: fonts[t.face], color: color(t.color) });
+      page.drawText(t.text, {
+        x: t.x,
+        y: t.y,
+        size: t.size,
+        font: fonts[t.face],
+        color: color(t.color),
+        rotate: t.rotate ? degrees(t.rotate) : undefined,
+        opacity: t.opacity,
+      });
     }
     for (const r of layoutPage.rules) {
       page.drawLine({ start: { x: r.x1, y: r.y }, end: { x: r.x2, y: r.y }, thickness: r.width, color: color(r.color) });

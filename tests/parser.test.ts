@@ -234,3 +234,41 @@ describe("positions", () => {
     ]);
   });
 });
+
+describe("notes and synopses", () => {
+  it("places each note in its element's text, or on a line of its own", () => {
+    const script = parseFountain(
+      [
+        "Title: A Play [[working title]]",
+        "",
+        "INT. ROOM [[check set]]",
+        "= The morning after.",
+        "",
+        "She opens the door [[props: key]] and waits.",
+        "Then sits.[[too slow?]]",
+        "",
+        "[[Cut the next speech?]]",
+        "",
+        "DAVID [[angry]]",
+        "Hello [[louder]] there.",
+      ].join("\n"),
+    );
+    const notes = (type: string) => script.elements.find((e) => e.type === type)?.notes;
+    expect(notes("scene_heading")).toEqual([{ at: 9, text: "check set" }]);
+    // The action joins its lines: "She opens the door  and waits. Then sits."
+    expect(notes("action")).toEqual([
+      { at: 19, text: "props: key" },
+      { at: 41, text: "too slow?" },
+    ]);
+    expect(notes("character")).toEqual([{ at: 5, text: "angry" }]);
+    expect(notes("dialogue")).toEqual([{ at: 6, text: "louder" }]);
+    expect(script.lineNotes).toEqual([{ line: 8, text: "Cut the next speech?" }]);
+    expect(script.synopses).toEqual([{ line: 3, text: "The morning after." }]);
+  });
+
+  it("leaves the elements as they were", () => {
+    const withNotes = parseFountain("INT. ROOM\n\nShe [[a]] waits.\n\n[[b]]\n\nDAVID\nHi [[c]].\n");
+    const without = parseFountain("INT. ROOM\n\nShe  waits.\n\n\n\nDAVID\nHi .\n");
+    expect(withNotes.elements.map(({ notes, from, to, ...rest }) => rest)).toEqual(without.elements.map(({ from, to, ...rest }) => rest));
+  });
+});

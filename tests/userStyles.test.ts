@@ -149,3 +149,15 @@ describe("chooseFamily", () => {
     expect(chooseFamily(palatino, ["Garamond"])).toBeUndefined();
   });
 });
+
+describe("notes, synopses and watermark settings", () => {
+  it("sets them, and checks numbers are in range", () => {
+    const good = load(["s.json", { extends: "apt", notes: { color: "#ff0000" }, watermark: { opacity: 0.5, angle: -30, maxSize: "2in" } }]);
+    expect(good.problems).toEqual([]);
+    const s = findStyle(good.styles, "s")!;
+    expect(s.notes.color).toEqual([1, 0, 0]);
+    expect(s.watermark).toMatchObject({ opacity: 0.5, angle: -30, maxSize: 144 });
+    const bad = load(["b.json", { extends: "apt", watermark: { opacity: 2, angle: "steep" } }]);
+    expect(bad.problems[0].messages).toEqual([`"watermark.opacity" must be a number from 0 to 1.`, `"watermark.angle" must be a number from -90 to 90.`]);
+  });
+});

@@ -14,6 +14,10 @@ export interface TextItem {
   face: Face;
   size: number;
   color: Rgb;
+  /** Degrees anticlockwise about (x, y), for a watermark. */
+  rotate?: number;
+  /** From 0 to 1, for a watermark. Solid when unset. */
+  opacity?: number;
 }
 
 /** A horizontal line, used for underlines. */

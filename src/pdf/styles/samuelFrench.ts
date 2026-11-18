@@ -1,4 +1,4 @@
-import { INCH, LETTER, type PlayStyle } from "../style";
+import { INCH, LETTER, EXTRAS_DEFAULTS, type PlayStyle } from "../style";
 
 /**
  * Samuel French / SFI submission format, per the worked example in the
@@ -41,4 +41,5 @@ export const samuelFrench: PlayStyle = {
   header: { strap: false },
   pagination: { fromBody: true, prefaceRoman: false, face: "regular", size: 12, format: "{n}.", position: "top", alignment: "right" },
   prelims: { headingBold: false, headingUnderline: true, nameUnderline: true },
+  ...EXTRAS_DEFAULTS,
 };
