@@ -32,6 +32,8 @@ export default class PlaywrightPlugin extends Plugin {
       (leaf) => new FountainView(leaf, this.positions, (view) => view.file && void this.exportPdf(view.file)),
     );
 
+    this.showLineTypeInStatusBar();
+
     this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf));
     this.addCommand({
       id: "show-outline",
@@ -70,6 +72,9 @@ export default class PlaywrightPlugin extends Plugin {
       });
     viewCommand("toggle-reading-view", "Toggle reading view", (view) => view.toggleReading());
     viewCommand("toggle-source-mode", "Toggle source mode", (view) => view.toggleSource());
+    // For touch keyboards, which have no Tab key: these can go on the mobile toolbar.
+    viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
+    viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
 
     const exportCommand =(id: string, name: string, options: ExportOptions) =>
       this.addCommand({
@@ -106,6 +111,39 @@ export default class PlaywrightPlugin extends Plugin {
       .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
     await exportScript(this.app, this.library, file, source, options);
+  }
+
+  /** Shows what the cursor's line is (Character, Dialogue, Stage direction…) in the status bar, while you're in a script. */
+  private showLineTypeInStatusBar(): void {
+    const statusEl = this.addStatusBarItem();
+    statusEl.addClass("playwright-line-type");
+    let script: FountainView | null = null;
+    let unsubscribe: (() => void) | null = null;
+    let frame: number | null = null;
+
+    const update = () => {
+      frame = null;
+      statusEl.toggle(script !== null);
+      if (script) statusEl.setText(script.cursorLineType());
+    };
+    const updateSoon = () => {
+      frame ??= window.requestAnimationFrame(update);
+    };
+    const follow = () => {
+      const active = this.app.workspace.getActiveViewOfType(FountainView);
+      if (active === script) return;
+      unsubscribe?.();
+      script = active;
+      unsubscribe = active?.subscribe(updateSoon) ?? null;
+      updateSoon();
+    };
+
+    this.registerEvent(this.app.workspace.on("active-leaf-change", follow));
+    this.app.workspace.onLayoutReady(follow);
+    this.register(() => {
+      unsubscribe?.();
+      if (frame !== null) window.cancelAnimationFrame(frame);
+    });
   }
 
   /** Shows the script outline, opening it in the right sidebar if it isn't open yet. */

@@ -8,10 +8,23 @@ import { scriptOf } from "./formatting";
 const MAYBE_NAME_RE = /\p{Lu}{2}[^\s]*$/u;
 
 function characterCompletions(context: CompletionContext): CompletionResult | null {
-  const line = context.state.doc.lineAt(context.pos);
+  const { state } = context;
+  const line = state.doc.lineAt(context.pos);
   const before = line.text.slice(0, context.pos - line.from);
+  const prevBlank = line.number === 1 || state.doc.line(line.number - 1).text.trim() === "";
+
+  // Asked for (by Tab on a new block): every name, narrowed by what you
+  // type after, in any case.
+  if (context.explicit && prevBlank) {
+    const indent = /^\s*/.exec(before)![0].length;
+    const typed = before.slice(indent).toUpperCase();
+    const names = characterNames(scriptOf(state), line.number - 1).filter((name) => name.startsWith(typed));
+    if (names.length === 0) return null;
+    return { from: line.from + indent, options: names.map((label) => ({ label })), filter: false };
+  }
+
   if (!MAYBE_NAME_RE.test(before)) return null;
-  const match = completeName(before, characterNames(scriptOf(context.state), line.number - 1));
+  const match = completeName(before, characterNames(scriptOf(state), line.number - 1));
   if (!match) return null;
   return {
     from: line.from + match.from,
@@ -23,7 +36,8 @@ function characterCompletions(context: CompletionContext): CompletionResult | nu
 
 /**
  * Completes character names once you type two capital letters in a row,
- * anywhere in a line: in a cue, or a name in a stage direction. Enter or
+ * anywhere in a line: in a cue, or a name in a stage direction. Tab on an
+ * empty line that starts a block lists every name (see ./cycling). Enter or
  * Tab picks the highlighted name; Escape closes the list.
  */
 export function characterCompletion(): Extension {

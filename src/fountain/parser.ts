@@ -8,6 +8,8 @@
  * - Boneyard (`/* *\/`) and notes (`[[ ]]`) are blanked out rather than cut,
  *   so positions stay true. A boneyard or note spanning several lines
  *   therefore keeps those lines apart, where parser.py would join them.
+ * - The preface also ends at the first character cue, not only at the
+ *   first section or scene heading, so a script with neither isn't all preface.
  * - Elements carry source offsets and line numbers, and the result lists the
  *   syntax characters (forcing marks, scene numbers, notes) for the editor.
  */
@@ -189,6 +191,22 @@ function matchBreakdownHeading(line: string): string | undefined {
 }
 
 /** The first line at or after `start` that begins the script proper: a section or a scene heading. */
+/** Whether the block starting at line `i` is a character cue, as the main loop would read it. */
+function startsSpeech(body: string[], i: number): boolean {
+  const s = body[i];
+  if (/^[!~>=]/.test(s)) return false;
+  if (TRANSITION_RE.test(s) && s === s.toUpperCase()) return false;
+  const forced = s.startsWith("@");
+  const candidate = forced ? s.slice(1).trim() : s;
+  if (!candidate || candidate.startsWith("(")) return false;
+  return forced || (isAllCapsName(stripCharacterExtension(candidate)) && i + 1 < body.length && body[i + 1] !== "");
+}
+
+/**
+ * Where the preface ends: at the first section, scene heading or character
+ * cue. parser.py ends it only at a section or scene heading, so a script
+ * with neither would be all preface; a speech shows the play has begun.
+ */
 function frontMatterEnd(body: string[], start: number): number {
   for (let i = start; i < body.length; i++) {
     const s = body[i];
@@ -196,6 +214,7 @@ function frontMatterEnd(body: string[], start: number): number {
     if (s.startsWith("#")) return i;
     if (s.startsWith(".") && !s.startsWith("..")) return i;
     if (SCENE_HEADING_RE.test(s)) return i;
+    if (startsSpeech(body, i)) return i;
   }
   return body.length;
 }
@@ -294,7 +313,7 @@ export function parseFountain(source: string): ParsedScript {
     }
   }
 
-  // Anything before the first section or scene heading is preface text.
+  // Anything before the first section, scene heading or cue is preface text.
   const prefaceEnd = frontMatterEnd(body, idx);
 
   // --- The script. ---------------------------------------------------------

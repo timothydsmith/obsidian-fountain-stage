@@ -4,7 +4,9 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { type Menu, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { characterCompletion } from "./completion";
-import { fountainFormatting } from "./formatting";
+import { cycleLineType, lineTypeCycling } from "./cycling";
+import { describeLine } from "../fountain/lineTypes";
+import { fountainFormatting, scriptOf } from "./formatting";
 import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
 
@@ -150,6 +152,11 @@ export class FountainView extends TextFileView {
   }
 
   /** Switches between Live Preview and source mode, from reading view too. */
+  /** Changes the cursor's line to the next type (1) or the previous (-1), as Tab and Shift+Tab do. */
+  cycleLineType(direction: 1 | -1): void {
+    if (cycleLineType(direction)(this.editor)) this.editor.focus();
+  }
+
   toggleSource(): void {
     this.setMode(false, !this.sourceMode);
   }
@@ -202,7 +209,7 @@ export class FountainView extends TextFileView {
 
   private currentModeExtensions(): Extension {
     if (this.reading) return [fountainFormatting(), readingView()];
-    const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion()];
+    const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion(), lineTypeCycling()];
     return this.sourceMode ? editing : [fountainFormatting(), editing];
   }
 
@@ -307,6 +314,13 @@ export class FountainView extends TextFileView {
     const top = this.topOffset();
     const pos = this.editor.hasFocus || top === undefined ? this.editor.state.selection.main.head : top;
     return doc.lineAt(pos).number - 1;
+  }
+
+  /** What the cursor's line is, in words, such as "Character" or "Stage direction". */
+  cursorLineType(): string {
+    const { state } = this.editor;
+    const line = state.doc.lineAt(state.selection.main.head);
+    return describeLine(scriptOf(state), line.number - 1, line.text);
   }
 
   /** Moves to a line, counting from 0: scrolled to the top, with the cursor at its start. */

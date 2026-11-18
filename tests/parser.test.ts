@@ -96,6 +96,25 @@ describe("script elements", () => {
     ]);
   });
 
+  it("ends the preface at the first character cue, with no scene heading needed", () => {
+    expect(shape("A note.\n\nMARGARET\nHello.\n\nShe sits.\n\nSTAGE MANAGER'S NOTE IN CAPITALS\n")).toEqual([
+      ["preface", "A note."],
+      ["character", "MARGARET"],
+      ["dialogue", "Hello."],
+      ["action", "She sits."],
+      ["action", "STAGE MANAGER'S NOTE IN CAPITALS"],
+    ]);
+  });
+
+  it("doesn't end the preface at a line in capitals with no dialogue under it", () => {
+    expect(shape("About the play.\n\nSETTING\n\nA room.\n\n# ACT ONE\n")).toEqual([
+      ["preface", "About the play."],
+      ["preface", "SETTING"],
+      ["preface", "A room."],
+      ["section", "ACT ONE"],
+    ]);
+  });
+
   it("skips synopses but notes their lines", () => {
     const r = parseFountain("INT. ROOM\n\n= The confrontation\n\nAction.\n");
     expect(r.elements.map((e) => e.type)).toEqual(["scene_heading", "action"]);

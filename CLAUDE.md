@@ -19,7 +19,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 
 ## Parser
 
-- `src/fountain/parser.ts` is a port of fountain2pdf's `parser.py` and is shared by the editor and the PDF export. It must keep producing the same elements as `parser.py` (it matched it exactly on 10 real scripts when ported). The one intended difference: boneyard and notes are blanked, not cut, so source positions stay true.
+- `src/fountain/parser.ts` is a port of fountain2pdf's `parser.py` and is shared by the editor and the PDF export. It must keep producing the same elements as `parser.py` (it matched it exactly on 10 real scripts when ported). The intended differences: boneyard and notes are blanked, not cut, so source positions stay true; and the preface also ends at the first character cue, so a script needn't have a scene heading.
 - `fountain2pdf/sample.fountain` is a good manual test script.
 
 ## PDF export design

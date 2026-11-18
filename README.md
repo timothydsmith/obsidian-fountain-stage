@@ -15,6 +15,12 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **Source mode** is the plain text, unformatted.
   - **Reading view** shows the formatted script without its markup, notes, synopses or boneyard, and can't be edited.
 - Character names complete as you type. Type two capital letters in a row anywhere in a line, in a cue or a stage direction, and Playwright offers the names that start that way: from the script's cues (most lines first) and its Characters list. Enter or Tab picks one; Escape closes the list. Names of several words work too (`MRS SM` offers MRS SMITH).
+- Tab sets what a line is:
+  - On an empty line after a blank line, where you'd start a stage direction, Tab lists the script's character names. Type to narrow the list, then Tab or Enter to pick a name.
+  - On a line of text, Tab changes it from action to character to scene heading to transition and back to action, and Shift+Tab goes the other way. The line is changed from how it was before your first Tab, so going round gives it back, and a forcing mark (`!`, `@`, `.`, `>`) is only added where the text needs it.
+  - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
+  - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
+- The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Playwright reads it. A cue with no dialogue under it yet reads as a stage direction.
 - A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Each script reopens where you left it.
 - PDF export in stage-play house styles, ported from fountain2pdf:
@@ -122,6 +128,7 @@ Layout:
 | `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
 | `src/editor/reading.ts`, `src/fountain/reading.ts` | Reading view: what it hides, and hiding it |
 | `src/editor/completion.ts`, `src/fountain/characters.ts` | Character name completion, and finding the names |
+| `src/editor/cycling.ts`, `src/fountain/lineTypes.ts` | Tab and Shift+Tab: what they do to a line, and the keys |
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
