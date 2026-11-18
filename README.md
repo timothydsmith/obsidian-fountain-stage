@@ -201,7 +201,7 @@ To cut a release:
 2. Bump `version` in `manifest.json` and `package.json`. Add the version to `versions.json`, mapped to `minAppVersion`.
 3. Run `npm test` and `npm run build`, then commit.
 4. Merge `dev` into `main`, and tag the merge with the bare version, e.g. `0.1.0`. Obsidian requires the tag to match `manifest.json` exactly, with no `v` prefix.
-5. Push `main` and the tag. Then create a GitHub release for that tag, with that version's changelog section as its notes and `main.js`, `manifest.json` and `styles.css` attached.
+5. Push `main` and the tag. The **Release** workflow then builds the plugin from the tag, attests the provenance of `main.js`, `manifest.json` and `styles.css`, and publishes the GitHub release with them attached and that version's changelog section as its notes. It stops if the tag doesn't match `manifest.json` or the changelog has no section for it.
 
 ## License
 
