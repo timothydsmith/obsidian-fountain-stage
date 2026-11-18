@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-18
+
 ### Changed
 - Fountain Stage now needs Obsidian 1.13 or later. Its settings are drawn the way Obsidian 1.13 draws settings, and the older way is gone.
 
@@ -50,7 +52,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...HEAD
+[0.1.3]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/timothydsmith/obsidian-fountain-stage/releases/tag/0.1.0
