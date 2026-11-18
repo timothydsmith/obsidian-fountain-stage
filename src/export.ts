@@ -1,10 +1,9 @@
 /** Exporting a script to PDF from Obsidian: choosing the style, laying out, and saving the PDF beside the script. */
 
 import { type App, FileView, normalizePath, Notice, SuggestModal, TFile } from "obsidian";
-import { parseFountain } from "./fountain/parser";
-import { standardFontSet } from "./pdf/fonts";
-import { layoutScript } from "./pdf/layout";
-import { renderPdf } from "./pdf/render";
+import { type ParsedScript, parseFountain } from "./fountain/parser";
+import type { Library } from "./library";
+import { buildPdf } from "./pdf/render";
 import type { PlayStyle } from "./pdf/style";
 import { findStyle } from "./pdf/styles";
 
@@ -42,29 +41,31 @@ export interface ExportOptions {
  * Exports a script in the style its `Style:` title-page key names, or the
  * one you pick if it names none (or one that doesn't exist).
  */
-export function exportScript(app: App, file: TFile, source: string, styles: readonly PlayStyle[], options: ExportOptions = {}): void {
+export async function exportScript(app: App, library: Library, file: TFile, source: string, options: ExportOptions = {}): Promise<void> {
+  const { styles, problems } = await library.loadStyles();
+  if (problems.length > 0) {
+    const files = problems.length === 1 ? `${problems[0].path} has problems` : `${problems.length} style files have problems`;
+    new Notice(`${files}, so ${problems.length === 1 ? "it's" : "they're"} left out. See Playwright's settings for details.`);
+  }
+
   const script = parseFountain(source);
   const key = (script.titleValues.style ?? []).join(" ").trim();
   const named = key && !options.chooseStyle ? findStyle(styles, key) : undefined;
   if (named) {
-    void writePdf(app, file, script, named);
+    await writePdf(app, library, file, script, named);
     return;
   }
   if (key && !options.chooseStyle) {
     new Notice(`There's no style called "${key}". Choose one for this export.`);
   }
-  new StylePicker(app, styles, (style) => void writePdf(app, file, script, style)).open();
+  new StylePicker(app, styles, (style) => void writePdf(app, library, file, script, style)).open();
 }
 
-async function writePdf(app: App, file: TFile, script: ReturnType<typeof parseFountain>, style: PlayStyle): Promise<void> {
+async function writePdf(app: App, library: Library, file: TFile, script: ParsedScript, style: PlayStyle): Promise<void> {
   try {
-    const faces = style.fonts.standard;
-    if (style.fonts.preferred) {
-      const family = faces.regular.split("-")[0];
-      new Notice(`${style.name} calls for ${style.fonts.preferred}, which Playwright can't use yet, so the PDF uses ${family}.`);
-    }
-    const layout = layoutScript(script, style, standardFontSet(faces));
-    const bytes = await renderPdf(layout, faces);
+    const { choice, notice } = await library.fontsFor(style);
+    if (notice) new Notice(notice);
+    const { bytes, layout } = await buildPdf(script, style, choice);
     const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 
     const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";

@@ -8,7 +8,7 @@ import { standardFontSet } from "../src/pdf/fonts";
 import { layoutScript, toRoman } from "../src/pdf/layout";
 import type { LayoutDocument } from "../src/pdf/model";
 import { Paragraph, paraStyle } from "../src/pdf/paragraph";
-import { renderPdf } from "../src/pdf/render";
+import { buildPdf } from "../src/pdf/render";
 import { TIMES } from "../src/pdf/style";
 import { BUILT_IN_STYLES, findStyle } from "../src/pdf/styles";
 
@@ -139,12 +139,11 @@ describe("flow", () => {
   });
 });
 
-describe("renderPdf", () => {
+describe("buildPdf", () => {
   it("writes a PDF with one page per layout page", async () => {
-    const doc = layoutScript(parseFountain(sample), style("apt"), fonts);
-    const bytes = await renderPdf(doc, TIMES);
+    const { bytes, layout } = await buildPdf(parseFountain(sample), style("apt"), { standard: "times" });
     const pdf = await PDFDocument.load(bytes);
-    expect(pdf.getPageCount()).toBe(doc.pages.length);
+    expect(pdf.getPageCount()).toBe(layout.pages.length);
     expect(pdf.getTitle()).toBe("The Last Rehearsal");
   });
 });

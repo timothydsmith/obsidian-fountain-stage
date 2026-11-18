@@ -1,4 +1,4 @@
-import { A4, MM, TIMES, type PlayStyle } from "../style";
+import { A4, MM, type PlayStyle } from "../style";
 
 /**
  * Australian Plays Transform submission format, per the "APT Submissions
@@ -22,7 +22,7 @@ export const apt: PlayStyle = {
   name: "Australian Plays Transform (APT)",
   description: "APT submission format. A4, Palatino 10pt, names beside the speech, running header.",
   page: { ...A4, margins: { top: 40 * MM, right: 25 * MM, bottom: 25 * MM, left: 25 * MM } },
-  fonts: { standard: TIMES, preferred: "Palatino" },
+  fonts: { family: ["Palatino", "TeX Gyre Pagella"], fallback: "times" },
   text: { size: 10, leading: 13 },
   titlePage: { titleSize: 35, bylineSize: 18 },
   character: {

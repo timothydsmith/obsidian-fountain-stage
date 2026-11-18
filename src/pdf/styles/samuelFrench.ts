@@ -1,4 +1,4 @@
-import { INCH, LETTER, TIMES, type PlayStyle } from "../style";
+import { INCH, LETTER, type PlayStyle } from "../style";
 
 /**
  * Samuel French / SFI submission format, per the worked example in the
@@ -20,7 +20,7 @@ export const samuelFrench: PlayStyle = {
   name: "Samuel French / SFI",
   description: "Samuel French submission format. US Letter, Times 12pt, centred stage directions.",
   page: { ...LETTER, margins: { top: INCH, right: INCH, bottom: INCH, left: 1.5 * INCH } },
-  fonts: { standard: TIMES },
+  fonts: { family: [], fallback: "times" },
   text: { size: 12, leading: 14 },
   titlePage: { titleSize: 24, bylineSize: 14 },
   character: {

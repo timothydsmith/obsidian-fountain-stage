@@ -3,15 +3,22 @@ import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript, type ExportOptions } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
-import { BUILT_IN_STYLES } from "./pdf/styles";
+import { DEFAULT_SETTINGS, Library, type PlaywrightSettings } from "./library";
+import { PlaywrightSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
 const POSITIONS_KEY = "playwright-positions";
 
 export default class PlaywrightPlugin extends Plugin {
   private positions!: PositionStore;
+  private playwrightSettings: PlaywrightSettings = { ...DEFAULT_SETTINGS };
+  private library!: Library;
 
   async onload(): Promise<void> {
+    this.playwrightSettings = { ...DEFAULT_SETTINGS, ...((await this.loadData()) as Partial<PlaywrightSettings> | null) };
+    this.library = new Library(this.app, () => this.playwrightSettings);
+    this.addSettingTab(new PlaywrightSettingTab(this.app, this, this.playwrightSettings, () => this.saveData(this.playwrightSettings), this.library));
+
     this.positions = new PositionStore({
       load: () => this.app.loadLocalStorage(POSITIONS_KEY),
       save: (data) => this.app.saveLocalStorage(POSITIONS_KEY, data),
@@ -74,7 +81,7 @@ export default class PlaywrightPlugin extends Plugin {
       .map((leaf) => leaf.view)
       .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
-    exportScript(this.app, file, source, BUILT_IN_STYLES, options);
+    await exportScript(this.app, this.library, file, source, options);
   }
 
   onunload(): void {

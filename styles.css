@@ -194,3 +194,16 @@
   display: block;
   color: var(--text-muted);
 }
+
+/* Settings: lists of styles and fonts */
+.playwright-settings-list {
+  margin-top: 0;
+}
+
+.playwright-settings-detail {
+  color: var(--text-muted);
+}
+
+.playwright-settings-problem {
+  color: var(--text-error);
+}

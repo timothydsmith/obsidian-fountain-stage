@@ -1,4 +1,4 @@
-import { INCH, LETTER, TIMES, type PlayStyle } from "../style";
+import { INCH, LETTER, type PlayStyle } from "../style";
 
 /**
  * Dramatists Guild "Modern Play Format", per the Guild's annotated example
@@ -19,7 +19,7 @@ export const modern: PlayStyle = {
   name: "Modern Play Format",
   description: "Dramatists Guild Modern Play Format. US Letter, Times 12pt, names centred above the speech.",
   page: { ...LETTER, margins: { top: INCH, right: INCH, bottom: INCH, left: 1.5 * INCH } },
-  fonts: { standard: TIMES },
+  fonts: { family: [], fallback: "times" },
   text: { size: 12, leading: 14 },
   titlePage: { titleSize: 24, bylineSize: 14 },
   character: {

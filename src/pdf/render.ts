@@ -1,24 +1,89 @@
-/** Draws a laid-out document as a PDF with pdf-lib. */
+/** Builds the PDF: embeds the fonts, lays out the script with them, and draws the pages with pdf-lib. */
 
-import { PDFDocument, PDFFont, PDFString, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import { PDFDocument, type PDFFont, PDFString, rgb } from "pdf-lib";
+import type { ParsedScript } from "../fountain/parser";
+import { type FontSet, standardFontSet } from "./fonts";
+import { layoutScript } from "./layout";
 import type { LayoutDocument } from "./model";
-import type { Face, Rgb, StandardFont } from "./style";
+import { type Face, type PlayStyle, type Rgb, STANDARD_FAMILIES, type StandardFamily } from "./style";
 
 const FACES: Face[] = ["regular", "bold", "italic", "boldItalic"];
 
+/** The fonts to set a PDF in: one of the standard families, or font files for each face. */
+export type FontChoice = { standard: StandardFamily } | { files: Record<Face, Uint8Array> };
+
 const color = ([r, g, b]: Rgb) => rgb(r, g, b);
 
-export async function renderPdf(doc: LayoutDocument, faces: Record<Face, StandardFont>): Promise<Uint8Array> {
+const NO_SHAPING = { liga: false, clig: false, dlig: false, hlig: false, calt: false, kern: false };
+
+/** Measures with embedded font files, exactly as pdf-lib will draw them. */
+function embeddedFontSet(fonts: Record<Face, PDFFont>): FontSet {
+  const cache = new Map<string, number>();
+  let supported: Set<number> | undefined;
+  return {
+    width(text, face, size) {
+      const key = `${face}\u0000${text}`;
+      let w = cache.get(key);
+      if (w === undefined) {
+        w = fonts[face].widthOfTextAtSize(text, 1000);
+        cache.set(key, w);
+      }
+      return (w * size) / 1000;
+    },
+    clean(text) {
+      // Only characters every face can draw are kept.
+      supported ??= FACES.map((f) => new Set(fonts[f].getCharacterSet())).reduce((a, b) => new Set([...a].filter((c) => b.has(c))));
+      let out = "";
+      for (const ch of text) {
+        if (/\s/.test(ch)) out += " ";
+        else out += supported.has(ch.codePointAt(0)!) ? ch : "?";
+      }
+      return out;
+    },
+  };
+}
+
+export interface BuiltPdf {
+  bytes: Uint8Array;
+  layout: LayoutDocument;
+}
+
+export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice): Promise<BuiltPdf> {
   const pdf = await PDFDocument.create();
-  pdf.setTitle(doc.title);
-  if (doc.author) pdf.setAuthor(doc.author);
+  const fonts = {} as Record<Face, PDFFont>;
+  let fontSet: FontSet;
+
+  if ("standard" in choice) {
+    const faces = STANDARD_FAMILIES[choice.standard];
+    for (const face of FACES) fonts[face] = await pdf.embedFont(faces[face]);
+    fontSet = standardFontSet(faces);
+  } else {
+    pdf.registerFontkit(fontkit);
+    // A file standing in for a missing face is embedded once.
+    const embedded = new Map<Uint8Array, PDFFont>();
+    for (const face of FACES) {
+      const bytes = choice.files[face];
+      let font = embedded.get(bytes);
+      if (!font) {
+        // Each character is drawn as its own glyph, without ligatures or
+        // contextual alternates, as fountain2pdf did, so lines measure and
+        // break the same.
+        font = await pdf.embedFont(bytes, { subset: true, features: NO_SHAPING });
+        embedded.set(bytes, font);
+      }
+      fonts[face] = font;
+    }
+    fontSet = embeddedFontSet(fonts);
+  }
+
+  const layout = layoutScript(script, style, fontSet);
+  pdf.setTitle(layout.title);
+  if (layout.author) pdf.setAuthor(layout.author);
   pdf.setCreator("Playwright");
 
-  const fonts = {} as Record<Face, PDFFont>;
-  for (const face of FACES) fonts[face] = await pdf.embedFont(faces[face]);
-
-  for (const layoutPage of doc.pages) {
-    const page = pdf.addPage([doc.width, doc.height]);
+  for (const layoutPage of layout.pages) {
+    const page = pdf.addPage([layout.width, layout.height]);
     for (const t of layoutPage.texts) {
       page.drawText(t.text, { x: t.x, y: t.y, size: t.size, font: fonts[t.face], color: color(t.color) });
     }
@@ -36,5 +101,5 @@ export async function renderPdf(doc: LayoutDocument, faces: Record<Face, Standar
       page.node.addAnnot(pdf.context.register(annotation));
     }
   }
-  return pdf.save();
+  return { bytes: await pdf.save(), layout };
 }

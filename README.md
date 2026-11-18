@@ -2,21 +2,85 @@
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
-> **Status:** early development. Nothing is released yet. Right now `.fountain` files open in an editor that formats the script as you type, with line numbers, and scripts export to PDF in three built-in house styles. Your own styles and fonts come next.
+> **Status:** early development. Nothing is released yet, but everything planned for the first release is in place: formatting as you type, line numbers, and PDF export in built-in or your own styles, with your own fonts.
 
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
-## Planned for the first release
+## Features
 
 - Formatting as you type, following the Fountain spec.
 - Line numbers for every line of the file, shown in the editor when Obsidian's **Show line number** setting is on.
+- Each script reopens where you left it.
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
   - **samuel_french:** Samuel French / SFI submission format
-- Your own styles, as JSON files in your vault that extend a built-in style and change only what differs.
+- Your own styles, as JSON files in your vault that extend another style and change only what differs.
+- Your own fonts, from font files in your vault.
 - A `Style:` key on a script's title page that picks its export style. Without one, you pick a style when you export.
 - Works on desktop and mobile.
+
+## Exporting to PDF
+
+Run **Export to PDF** from the command palette, a script's file menu, or the button at the top of an open script. The PDF is saved next to the script with the same name, and opens in a new tab.
+
+To give a script a style, add a `Style:` line to its title page. It's never printed.
+
+```
+Title: The Last Rehearsal
+Author: Tim
+Style: apt
+```
+
+Without one, Playwright asks which style to use. **Export to PDF in a chosen style** always asks.
+
+### Styles of your own
+
+A style of your own is a `.json` file in your styles folder (`Playwright/Styles` unless you change it in Playwright's settings). It names the style it starts from with `extends`, then changes only what differs:
+
+```json
+{
+  "extends": "apt",
+  "name": "Festival submission",
+  "character": { "bold": true },
+  "page": { "margins": { "top": "30mm" } },
+  "action": { "italic": false, "color": "#000000" }
+}
+```
+
+- `extends` names a built-in style (`modern`, `apt`, `samuel_french`) or another of your own.
+- The style's id, for `Style:` keys, is the file name (`Festival.json` is `Style: Festival`) unless you give an `"id"`. Ids ignore case, spaces, hyphens and underscores. `Style:` also finds a style by its name.
+- `name` and `description` are shown in the style picker.
+- Lengths are points, or text with a unit: `"25mm"`, `"2.5cm"`, `"1in"`, `"12pt"`.
+- Colours are `"#rrggbb"` or `[red, green, blue]` from 0 to 1.
+- Keys starting with `_` are ignored, so `"_note": "…"` works as a comment.
+
+If a file has a problem, such as a misspelt setting or a value of the wrong kind, the style is left out of the picker. Playwright's settings list each problem with the setting and the reason. Obsidian can't edit `.json` files itself, so use another text editor. To see them in Obsidian's file list, turn on **Settings → Files and links → Detect all file extensions**.
+
+Every setting:
+
+| Group | Settings |
+|---|---|
+| `page` | `size` (`"A4"`, `"A5"`, `"letter"`, `"legal"`), `width`, `height`, `margins` (`top`, `right`, `bottom`, `left`) |
+| `fonts` | `family`: a font family name, or a list tried in order; `fallback`: `"times"`, `"helvetica"` or `"courier"` |
+| `text` | `size`, `leading` (baseline to baseline) |
+| `titlePage` | `titleSize`, `bylineSize` |
+| `character` | `size`, `bold`, `ownLine` (name above the speech, or beside its first line), `alignment`, `shortParentheticalInline` ("JOHN (laughing)"), `nameColumnWidth` and `gutter` (when beside) |
+| `speech` | `gap` (between speeches), `moreContinued` (mark speeches that break across a page), `moreText`, `continuedText`, `dualLabel` (added to both names of dual dialogue) |
+| `parenthetical` | `italic`, `indent` |
+| `action` | `size`, `italic`, `alignment`, `leftIndent`, `rightIndent`, `color` |
+| `act` | `size`, `bold`, `italic`, `underline`, `alignment` |
+| `scene` | `size`, `bold`, `italic`, `underline`, `alignment`, `uppercaseSections` |
+| `sceneNumbers` | `position` (`"hide"`, `"before"`, `"after"`), `format` (`{n}` is the number), `inHeader` |
+| `header` | `strap` (running "PLAY TITLE \| SCENE" header) |
+| `pagination` | `fromBody`, `prefaceRoman`, `face` (`"regular"`, `"bold"`, `"italic"`, `"boldItalic"`), `size`, `format`, `position` (`"top"`, `"bottom"`), `alignment` |
+| `prelims` | `headingBold`, `headingUnderline`, `nameUnderline` |
+
+Alignments are `"left"`, `"center"` or `"right"`. The built-in styles in [src/pdf/styles](src/pdf/styles) show every setting in use.
+
+### Fonts
+
+PDFs use Times unless a style names a font family and your fonts folder (`Playwright/Fonts` unless you change it) has it. APT asks for Palatino. Put the font's `.ttf` or `.otf` files in the folder: Playwright reads each file's own family name, weight and style, so file names don't matter. A family name also finds families it starts, so `Palatino` finds Palatino Linotype. If the family is missing, the PDF uses the style's fallback font and a notice says so. Font collections (`.ttc`) can't be used.
 
 ## Install
 
@@ -57,6 +121,10 @@ Layout:
 | `src/pdf/styles/` | The built-in styles |
 | `src/pdf/layout.ts` | Turns a parsed script into pages, ported from fountain2pdf's engine |
 | `src/pdf/paragraph.ts`, `blocks.ts`, `flow.ts` | Line breaking and pagination, matching reportlab's so pages break where fountain2pdf's did |
+| `src/library.ts` | Plugin settings, and loading styles and fonts from the vault folders |
+| `src/settings.ts` | The settings tab |
+| `src/pdf/userStyles.ts` | Style files of your own: the schema of every setting, validation and `extends` |
+| `src/pdf/vaultFonts.ts` | Reading font files and choosing a family's faces |
 | `src/pdf/fonts.ts`, `render.ts` | Font metrics, and drawing the pages with pdf-lib |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |

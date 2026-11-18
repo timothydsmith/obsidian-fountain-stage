@@ -27,5 +27,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - Styles are plain data. Built-in styles (`modern`, `apt`, `samuel_french`) are TS modules; user styles are JSON files in a vault folder that `extends` another style and override only grouped camelCase fields (`character.bold`). Invalid style files report the field and reason.
 - The engine has no style-specific logic. A new layout behaviour becomes a new style field whose default leaves existing styles unchanged.
 - Layout (pages of positioned text) is separate from PDF drawing (pdf-lib), and layout output is snapshot-tested per style.
-- Fonts come from files in the vault, falling back to the standard PDF fonts with a notice.
+- Fonts come from files in the vault, falling back to the standard PDF fonts with a notice. Vault fonts are matched by the family, weight and italic flag inside the file, not the file name, and are embedded without ligatures or kerning, as reportlab drew them.
+- Layout must keep matching fountain2pdf (reportlab): same page breaks and line positions. It matched on 3 scripts × 3 styles, and with real Palatino. The one intended difference: list bullets use the body font, not Helvetica.
+- User style files: `src/pdf/userStyles.ts` holds the schema of every overridable setting. A new style field needs adding there and to the README's settings table.
 - A title-page `Style:` key picks the export style and is never printed. Without one, the user picks on export.

@@ -32,6 +32,8 @@ export interface PlayStyle {
   id: string;
   name: string;
   description: string;
+  /** For a style from the vault, the file it came from. */
+  source?: string;
 
   page: {
     width: number;
@@ -40,10 +42,14 @@ export interface PlayStyle {
   };
 
   fonts: {
-    /** Standard PDF fonts for each face. */
-    standard: Record<Face, StandardFont>;
-    /** A font family the style really wants, which needs font files. Until those can be supplied, the standard fonts are used with a notice. */
-    preferred?: string;
+    /**
+     * Font families to look for in the vault's fonts folder, in order of
+     * preference. A name also matches families it starts, so "Palatino"
+     * finds "Palatino Linotype". Empty to always use the fallback.
+     */
+    family: string[];
+    /** The standard PDF font used when none of the families is in the vault. */
+    fallback: StandardFamily;
   };
 
   text: {
@@ -144,9 +150,15 @@ export const INCH = 72;
 export const A4 = { width: 210 * MM, height: 297 * MM };
 export const LETTER = { width: 8.5 * INCH, height: 11 * INCH };
 
-export const TIMES: Record<Face, StandardFont> = {
-  regular: "Times-Roman",
-  bold: "Times-Bold",
-  italic: "Times-Italic",
-  boldItalic: "Times-BoldItalic",
+/** The standard font families every PDF reader has, which need no font files. */
+export type StandardFamily = "times" | "helvetica" | "courier";
+
+export const STANDARD_FAMILIES: Record<StandardFamily, Record<Face, StandardFont>> = {
+  times: { regular: "Times-Roman", bold: "Times-Bold", italic: "Times-Italic", boldItalic: "Times-BoldItalic" },
+  helvetica: { regular: "Helvetica", bold: "Helvetica-Bold", italic: "Helvetica-Oblique", boldItalic: "Helvetica-BoldOblique" },
+  courier: { regular: "Courier", bold: "Courier-Bold", italic: "Courier-Oblique", boldItalic: "Courier-BoldOblique" },
 };
+
+export const TIMES = STANDARD_FAMILIES.times;
+
+export const STANDARD_FAMILY_NAMES: Record<StandardFamily, string> = { times: "Times", helvetica: "Helvetica", courier: "Courier" };
