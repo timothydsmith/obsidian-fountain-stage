@@ -3,6 +3,7 @@ import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } f
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { type Menu, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
+import { characterCompletion } from "./completion";
 import { fountainFormatting } from "./formatting";
 import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
@@ -201,8 +202,8 @@ export class FountainView extends TextFileView {
 
   private currentModeExtensions(): Extension {
     if (this.reading) return [fountainFormatting(), readingView()];
-    const spellcheck = EditorView.contentAttributes.of({ spellcheck: "true" });
-    return this.sourceMode ? spellcheck : [fountainFormatting(), spellcheck];
+    const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion()];
+    return this.sourceMode ? editing : [fountainFormatting(), editing];
   }
 
   getViewData(): string {

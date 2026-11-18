@@ -1,4 +1,4 @@
-import { type Extension, type Range, StateField } from "@codemirror/state";
+import { type EditorState, type Extension, type Range, StateField, type Text } from "@codemirror/state";
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { parseInline } from "../fountain/inline";
 import { parseFountain, type ParsedScript, type SyntaxSpan } from "../fountain/parser";
@@ -38,6 +38,23 @@ const formattingField = StateField.define<Formatting>({
   create: (state) => compute(state.doc.toString(), state.doc.lines),
   update: (value, tr) => (tr.docChanged ? compute(tr.newDoc.toString(), tr.newDoc.lines) : value),
 });
+
+const parsed = new WeakMap<Text, ParsedScript>();
+
+/**
+ * The parsed script: the formatting's own while it's on, otherwise parsed
+ * once per version of the document (in source mode, for completion).
+ */
+export function scriptOf(state: EditorState): ParsedScript {
+  const formatting = state.field(formattingField, false);
+  if (formatting) return formatting.script;
+  let script = parsed.get(state.doc);
+  if (!script) {
+    script = parseFountain(state.doc.toString());
+    parsed.set(state.doc, script);
+  }
+  return script;
+}
 
 const lineDecorations = new Map<string, Decoration>();
 function lineDecoration(cls: string): Decoration {
