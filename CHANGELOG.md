@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-18
+
 ### Changed
 - Releases are built by GitHub Actions, with artifact attestations that prove `main.js`, `manifest.json` and `styles.css` were built from this repository.
 - Styles and fonts are found by reading only the styles and fonts folders, not by listing every file in the vault.
@@ -45,6 +47,7 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...HEAD
+[0.1.2]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/timothydsmith/obsidian-fountain-stage/releases/tag/0.1.0
