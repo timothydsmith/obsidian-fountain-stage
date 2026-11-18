@@ -1,7 +1,7 @@
 {
   "id": "fountain-stage",
   "name": "Fountain Stage",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "minAppVersion": "1.8.7",
   "description": "Write Fountain scripts with formatting as you type, and export them as stage-play PDFs in a choice of house styles.",
   "author": "Timothy D. Smith",

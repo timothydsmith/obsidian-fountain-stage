@@ -2,7 +2,7 @@
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
-> **Status:** early development. Nothing is released yet, but everything planned for the first release is in place: formatting as you type, line numbers, and PDF export in built-in or your own styles, with your own fonts.
+> **Status:** first release, 0.1.0. It's not in Obsidian's community plugin directory yet: see [Install](#install).
 
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
@@ -128,13 +128,22 @@ PDFs use Times unless a style names a font family and your fonts folder (`Founta
 
 ## Install
 
-Not released yet. To try a development build, see [Development](#development).
+Fountain Stage isn't in Obsidian's community plugin directory yet. Install it from its GitHub releases, by hand or with BRAT. It needs Obsidian 1.8.7 or later, on desktop or mobile.
 
-Fountain Stage and the **Fountain** community plugin both open `.fountain` files, and only one plugin can do that at a time. Turn **Fountain** off in any vault where you use Fountain Stage.
+**By hand:**
+1. From the [latest release](https://github.com/timothydsmith/obsidian-playwright/releases/latest), download `main.js`, `manifest.json` and `styles.css`.
+2. Put them in a folder called `fountain-stage` inside your vault's plugins folder: `<vault>/.obsidian/plugins/fountain-stage/`. The `.obsidian` folder is hidden on some systems.
+3. Restart Obsidian, then turn on **Fountain Stage** in **Settings → Community plugins**.
+
+To update, replace the three files with those from a newer release.
+
+**With BRAT:** install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin, choose **Add beta plugin**, and enter `timothydsmith/obsidian-playwright`. BRAT installs the latest release and keeps it up to date.
+
+Only one plugin can open `.fountain` files at a time. If another Fountain plugin, such as **Fountain**, is on in a vault, turn it off there before turning on Fountain Stage.
 
 ## Development
 
-Needs Node.js 18 or later.
+Needs Node.js 22.12 or later.
 
 ```sh
 npm install

@@ -7,6 +7,10 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-18
+
+The first release.
+
 ### Added
 - `.fountain` files open in Fountain Stage's own editor.
 - Formatting as you type, laid out as a stage play: act and scene headings centred, character cues centred, parentheticals and stage directions in italics, transitions to the right, and `*italic*`, `**bold**` and `_underline_` shown as they'll print. Forcing marks (`.`, `@`, `!`, `~`, `>`, `<`, `^`), section `#`s and emphasis markers stay visible but faint. Notes are highlighted and boneyard text is dimmed. The title page and any `***Characters***`-style breakdown sections are shown as such.
@@ -31,3 +35,6 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 - Fonts from your vault: `.ttf` and `.otf` files in a fonts folder, matched by the family named in the file, so APT can use real Palatino. Without the font, PDFs use the style's fallback (Times for the built-in styles) and say so.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
+
+[Unreleased]: https://github.com/timothydsmith/obsidian-playwright/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/timothydsmith/obsidian-playwright/releases/tag/0.1.0
