@@ -61,7 +61,7 @@ class RenameModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     this.setTitle(`Rename ${this.oldName}`);
-    contentEl.addClass("playwright-rename");
+    contentEl.addClass("fountain-stage-rename");
 
     let input!: TextComponent;
     new Setting(contentEl)
@@ -81,7 +81,7 @@ class RenameModal extends Modal {
         });
       });
 
-    this.summaryEl = contentEl.createDiv({ cls: "playwright-rename-summary" });
+    this.summaryEl = contentEl.createDiv({ cls: "fountain-stage-rename-summary" });
     const buttons = contentEl.createDiv({ cls: "modal-button-container" });
     new ButtonComponent(buttons).setButtonText("Cancel").onClick(() => this.close());
     this.renameButton = new ButtonComponent(buttons)
@@ -113,7 +113,7 @@ class RenameModal extends Modal {
     const name = this.newName.trim();
     if (name && name.toUpperCase() !== this.oldName && characterNames(script).includes(name.toUpperCase())) {
       el.createEl("p", {
-        cls: "playwright-rename-warning",
+        cls: "fountain-stage-rename-warning",
         text: `There's already a character called ${name.toUpperCase()}. Renaming makes them one character.`,
       });
     }
@@ -141,7 +141,7 @@ class RenameModal extends Modal {
 
   /** Each line a place's changes are on, with the name marked, folded away until opened. */
   private preview(el: HTMLElement, place: RenamePlace, edits: RenameEdit[], lines: string[]): void {
-    const details = el.createEl("details", { cls: "playwright-rename-preview" });
+    const details = el.createEl("details", { cls: "fountain-stage-rename-preview" });
     details.open = this.opened.has(place);
     details.addEventListener("toggle", () => {
       if (details.open) this.opened.add(place);
@@ -155,13 +155,13 @@ class RenameModal extends Modal {
     let shown = 0;
     for (const [line, lineEdits] of byLine) {
       if (shown++ === PREVIEW_LIMIT) {
-        list.createEl("li", { cls: "playwright-rename-more", text: `and ${byLine.size - PREVIEW_LIMIT} more lines` });
+        list.createEl("li", { cls: "fountain-stage-rename-more", text: `and ${byLine.size - PREVIEW_LIMIT} more lines` });
         break;
       }
       const text = lines[line];
       const start = lineStart(line);
       const item = list.createEl("li");
-      item.createSpan({ cls: "playwright-rename-line", text: `${line + 1}` });
+      item.createSpan({ cls: "fountain-stage-rename-line", text: `${line + 1}` });
       let pos = 0;
       for (const e of lineEdits) {
         item.appendText(text.slice(pos, e.from - start));

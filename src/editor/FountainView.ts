@@ -14,7 +14,7 @@ import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
 import { renameCharacter } from "../renameCharacterModal";
 
-export const VIEW_TYPE_FOUNTAIN = "playwright-fountain";
+export const VIEW_TYPE_FOUNTAIN = "fountain-stage-script";
 
 /** Marks changes that came from the file on disk, so they aren't saved straight back. */
 const fromFile = Annotation.define<boolean>();
@@ -102,7 +102,7 @@ export class FountainView extends TextFileView {
       this.setMode(!this.reading, this.sourceMode);
     });
     this.addAction("file-down", "Export to PDF", () => host.exportPdf(this));
-    this.contentEl.addClass("playwright-view");
+    this.contentEl.addClass("fountain-stage-view");
     this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
     this.editor = new EditorView({ parent: this.contentEl, state: this.createState("") });
     this.showMode();
@@ -279,7 +279,7 @@ export class FountainView extends TextFileView {
     try {
       pages = await this.host.paginate(scriptOf(state));
     } catch (error) {
-      console.error("[playwright] couldn't find the page breaks", error);
+      console.error("[fountain-stage] couldn't find the page breaks", error);
     }
     // Changed since, so another layout is on its way.
     if (this.closed || this.editor.state.doc !== state.doc) return;

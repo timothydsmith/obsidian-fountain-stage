@@ -33,7 +33,7 @@ export function describeFont(path: string, bytes: Uint8Array): FontInfo | string
   try {
     font = fontkit.create(bytes) as unknown as FontkitFont & { fonts?: unknown[] };
   } catch {
-    return "isn't a font file Playwright can read";
+    return "isn't a font file Fountain Stage can read";
   }
   if (Array.isArray(font.fonts)) return "is a font collection (.ttc), which can't be embedded. Use separate .ttf or .otf files";
   const family = (font.getName?.("preferredFamily") || font.familyName || "").trim();

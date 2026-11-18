@@ -1,4 +1,4 @@
-# Playwright (obsidian-playwright)
+# Fountain Stage (obsidian-playwright)
 
 Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line numbers, and stage-play PDF export ported from the Python project `../fountain2pdf`. The plugin replaces fountain2pdf as the main codebase.
 

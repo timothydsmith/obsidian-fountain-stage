@@ -33,13 +33,13 @@ class ExportModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     this.setTitle(`Export ${this.fileName} to PDF`);
-    contentEl.addClass("playwright-export");
+    contentEl.addClass("fountain-stage-export");
 
     const styleSetting = new Setting(contentEl).setName("Style");
     const describe = () => {
       styleSetting.descEl.empty();
       styleSetting.descEl.createDiv({ text: this.style.description });
-      if (this.styleNote) styleSetting.descEl.createDiv({ text: this.styleNote, cls: "playwright-export-note" });
+      if (this.styleNote) styleSetting.descEl.createDiv({ text: this.styleNote, cls: "fountain-stage-export-note" });
     };
     styleSetting.addDropdown((dropdown) => {
       this.styles.forEach((style, i) => dropdown.addOption(String(i), style.name));
@@ -114,7 +114,7 @@ export async function exportScript(
   const { styles, problems } = await library.loadStyles();
   if (problems.length > 0) {
     const files = problems.length === 1 ? `${problems[0].path} has problems` : `${problems.length} style files have problems`;
-    new Notice(`${files}, so ${problems.length === 1 ? "it's" : "they're"} left out. See Playwright's settings for details.`);
+    new Notice(`${files}, so ${problems.length === 1 ? "it's" : "they're"} left out. See Fountain Stage's settings for details.`);
   }
 
   const script = parseFountain(source);
@@ -159,7 +159,7 @@ async function writePdf(app: App, library: Library, file: TFile, script: ParsedS
     else await app.workspace.getLeaf("tab").openFile(pdf);
     new Notice(`Exported ${pdf.name} (${style.name}, ${layout.pages.length} pages)`);
   } catch (error) {
-    console.error("[playwright] PDF export failed", error);
+    console.error("[fountain-stage] PDF export failed", error);
     new Notice(`Couldn't export ${file.name}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

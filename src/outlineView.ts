@@ -5,7 +5,7 @@ import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
 import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
 
-export const VIEW_TYPE_OUTLINE = "playwright-outline";
+export const VIEW_TYPE_OUTLINE = "fountain-stage-outline";
 
 /** How long after you stop typing the outline catches up. */
 const REFRESH_DELAY_MS = 300;
@@ -43,7 +43,7 @@ export class OutlineView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.contentEl.addClass("playwright-outline");
+    this.contentEl.addClass("fountain-stage-outline");
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
     this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
     this.app.workspace.onLayoutReady(() => this.follow());
@@ -116,7 +116,7 @@ export class OutlineView extends ItemView {
       contentEl.createDiv({ cls: "pane-empty", text: "No sections or scenes yet. Start a line with # for an act, ## for a scene, or INT. or EXT. for a scene heading." });
       return;
     }
-    this.renderItems(contentEl.createDiv({ cls: "playwright-outline-tree" }), this.outline, "");
+    this.renderItems(contentEl.createDiv({ cls: "fountain-stage-outline-tree" }), this.outline, "");
     this.highlight();
   }
 
@@ -132,7 +132,7 @@ export class OutlineView extends ItemView {
       const itemEl = parentEl.createDiv({ cls: "tree-item" });
       itemEl.toggleClass("is-collapsed", collapsed);
       const selfEl = itemEl.createDiv({ cls: "tree-item-self is-clickable" });
-      selfEl.addClass(item.kind === "scene" ? "playwright-outline-scene" : "playwright-outline-section");
+      selfEl.addClass(item.kind === "scene" ? "fountain-stage-outline-scene" : "fountain-stage-outline-section");
       this.rows.set(item, selfEl);
 
       if (item.children.length > 0) {
@@ -151,12 +151,12 @@ export class OutlineView extends ItemView {
       }
 
       const inner = selfEl.createDiv({ cls: "tree-item-inner" });
-      if (item.sceneNumber) inner.createSpan({ cls: "playwright-outline-number", text: `${item.sceneNumber}. ` });
+      if (item.sceneNumber) inner.createSpan({ cls: "fountain-stage-outline-number", text: `${item.sceneNumber}. ` });
       inner.createSpan({ text: item.text });
-      if (item.synopsis) inner.createDiv({ cls: "playwright-outline-synopsis", text: item.synopsis });
+      if (item.synopsis) inner.createDiv({ cls: "fountain-stage-outline-synopsis", text: item.synopsis });
       const runtime = this.runtimes.get(item);
       if (runtime !== undefined) {
-        selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair playwright-outline-runtime", text: formatDuration(runtime) });
+        selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair fountain-stage-outline-runtime", text: formatDuration(runtime) });
       }
       selfEl.addEventListener("click", () => this.reveal(item));
 

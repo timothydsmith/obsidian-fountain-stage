@@ -90,7 +90,7 @@ export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: F
   const layout = layoutScript(script, style, fontSet, options);
   pdf.setTitle(layout.title);
   if (layout.author) pdf.setAuthor(layout.author);
-  pdf.setCreator("Playwright");
+  pdf.setCreator("Fountain Stage");
 
   for (const layoutPage of layout.pages) {
     const page = pdf.addPage([layout.width, layout.height]);

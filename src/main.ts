@@ -3,7 +3,7 @@ import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/Fo
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
-import { DEFAULT_SETTINGS, Library, type PlaywrightSettings, readSettings } from "./library";
+import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
 import { reportMarkdown } from "./fountain/reportMarkdown";
@@ -13,22 +13,22 @@ import { Paginator } from "./pagination";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
 import { renameCharacter } from "./renameCharacterModal";
 import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
-import { PlaywrightSettingTab } from "./settings";
+import { FountainStageSettingTab } from "./settings";
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
-const POSITIONS_KEY = "playwright-positions";
+const POSITIONS_KEY = "fountain-stage-positions";
 
-export default class PlaywrightPlugin extends Plugin {
+export default class FountainStagePlugin extends Plugin {
   private positions!: PositionStore;
-  private playwrightSettings: PlaywrightSettings = { ...DEFAULT_SETTINGS };
+  settings: FountainStageSettings = { ...DEFAULT_SETTINGS };
   private library!: Library;
   private paginator!: Paginator;
 
   async onload(): Promise<void> {
-    this.playwrightSettings = readSettings(await this.loadData());
-    this.library = new Library(this.app, () => this.playwrightSettings);
-    this.paginator = new Paginator(this.library, () => this.playwrightSettings);
-    this.addSettingTab(new PlaywrightSettingTab(this.app, this, this.playwrightSettings, () => this.saveSettings(), this.library));
+    this.settings = readSettings(await this.loadData());
+    this.library = new Library(this.app, () => this.settings);
+    this.paginator = new Paginator(this.library, () => this.settings);
+    this.addSettingTab(new FountainStageSettingTab(this.app, this, this.settings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
       load: (): unknown => this.app.loadLocalStorage(POSITIONS_KEY),
@@ -43,7 +43,7 @@ export default class PlaywrightPlugin extends Plugin {
         new FountainView(leaf, this.positions, {
           exportPdf: (view) => view.file && void this.exportPdf(view.file),
           paginate: (script) => this.paginator.paginate(script),
-          showPageBreaks: () => this.playwrightSettings.showPageBreaks,
+          showPageBreaks: () => this.settings.showPageBreaks,
         }),
     );
 
@@ -65,8 +65,8 @@ export default class PlaywrightPlugin extends Plugin {
     } catch (error) {
       // Only one plugin can claim an extension. Another Fountain plugin
       // (such as "Fountain") that loaded first will have taken it.
-      console.error("[playwright] could not register .fountain files", error);
-      new Notice("Playwright can't open .fountain files because another plugin already does. Turn that plugin off, then reload Playwright.", 0);
+      console.error("[fountain-stage] could not register .fountain files", error);
+      new Notice("Fountain Stage can't open .fountain files because another plugin already does. Turn that plugin off, then reload Fountain Stage.", 0);
     }
 
     this.addCommand({
@@ -129,15 +129,15 @@ export default class PlaywrightPlugin extends Plugin {
       .map((leaf) => leaf.view)
       .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
-    await exportScript(this.app, this.library, file, source, this.playwrightSettings.export, (choices) => {
-      this.playwrightSettings.export = choices;
+    await exportScript(this.app, this.library, file, source, this.settings.export, (choices) => {
+      this.settings.export = choices;
       // Nothing else depends on these, so there's nothing to refresh.
-      void this.saveData(this.playwrightSettings);
+      void this.saveData(this.settings);
     });
   }
 
   private async saveSettings(): Promise<void> {
-    await this.saveData(this.playwrightSettings);
+    await this.saveData(this.settings);
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN)) {
       if (leaf.view instanceof FountainView) leaf.view.refreshPages();
     }
@@ -145,7 +145,7 @@ export default class PlaywrightPlugin extends Plugin {
 
   /** The script's runtime, line by line, by the method in settings. Undefined by pages until they're laid out. */
   private timelineOf(view: FountainView): Timeline | undefined {
-    const { runtimeMethod, wordsPerMinute, minutesPerPage, pauseWords } = this.playwrightSettings;
+    const { runtimeMethod, wordsPerMinute, minutesPerPage, pauseWords } = this.settings;
     return timeline(view.script(), view.scriptPages()?.placements, { method: runtimeMethod, wordsPerMinute, minutesPerPage, pauses: pauseWords });
   }
 
@@ -155,11 +155,11 @@ export default class PlaywrightPlugin extends Plugin {
    */
   private showStatusBar(): void {
     const lineTypeEl = this.addStatusBarItem();
-    lineTypeEl.addClass("playwright-line-type");
+    lineTypeEl.addClass("fountain-stage-line-type");
     const pageEl = this.addStatusBarItem();
-    pageEl.addClass("playwright-page");
+    pageEl.addClass("fountain-stage-page");
     const runtimeEl = this.addStatusBarItem();
-    runtimeEl.addClass("playwright-runtime");
+    runtimeEl.addClass("fountain-stage-runtime");
     let script: FountainView | null = null;
     let unsubscribe: (() => void) | null = null;
     let frame: number | null = null;
@@ -181,7 +181,7 @@ export default class PlaywrightPlugin extends Plugin {
       runtimeEl.toggle(t !== undefined);
       if (!t) return;
       runtimeEl.setText(`Runtime ${formatDuration(t.total)}`);
-      const method = this.playwrightSettings.runtimeMethod === "words" ? "from the words spoken" : "from the number of pages";
+      const method = this.settings.runtimeMethod === "words" ? "from the words spoken" : "from the number of pages";
       runtimeEl.setAttribute("aria-label", `Estimated runtime, ${method}`);
       runtimeEl.setAttribute("data-tooltip-position", "top");
     };
@@ -219,7 +219,7 @@ export default class PlaywrightPlugin extends Plugin {
   private reportOf(view: FountainView): ScriptReport {
     const pages = view.scriptPages();
     return buildReport(view.script(), buildOutline(view.getViewData()), {
-      wordsPerMinute: this.playwrightSettings.wordsPerMinute,
+      wordsPerMinute: this.settings.wordsPerMinute,
       timeline: this.timelineOf(view),
       positions: pages ? pagePositions(pages.placements) : undefined,
       pageCount: pages?.pageCount,
@@ -243,7 +243,7 @@ export default class PlaywrightPlugin extends Plugin {
     const file = view.file;
     if (!file) return;
     const date = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-    const method = this.playwrightSettings.runtimeMethod === "words" ? "the words spoken" : "the number of pages";
+    const method = this.settings.runtimeMethod === "words" ? "the words spoken" : "the number of pages";
     const text = reportMarkdown(this.reportOf(view), { title: file.basename, date, method });
     const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";
     const path = normalizePath(`${folder}${file.basename} - Report.md`);
@@ -262,7 +262,7 @@ export default class PlaywrightPlugin extends Plugin {
       await workspace.getLeaf("tab").openFile(note);
       new Notice(`Saved the report as ${note.name}`);
     } catch (error) {
-      console.error("[playwright] couldn't save the report", error);
+      console.error("[fountain-stage] couldn't save the report", error);
       new Notice(`Couldn't save the report: ${error instanceof Error ? error.message : String(error)}`);
     }
   }

@@ -1,4 +1,4 @@
-# Playwright
+# Fountain Stage
 
 An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](https://fountain.io/syntax/), with formatting as you type, line numbers, and export to stage-play PDFs in a choice of house styles.
 
@@ -14,18 +14,18 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **Live Preview** formats the script as you type, with the markup shown faintly.
   - **Source mode** is the plain text, unformatted.
   - **Reading view** shows the formatted script without its markup, notes, synopses or boneyard, and can't be edited.
-- Character names complete as you type. Type two capital letters in a row anywhere in a line, in a cue or a stage direction, and Playwright offers the names that start that way: from the script's cues (most lines first) and its Characters list. Enter or Tab picks one; Escape closes the list. Names of several words work too (`MRS SM` offers MRS SMITH).
+- Character names complete as you type. Type two capital letters in a row anywhere in a line, in a cue or a stage direction, and Fountain Stage offers the names that start that way: from the script's cues (most lines first) and its Characters list. Enter or Tab picks one; Escape closes the list. Names of several words work too (`MRS SM` offers MRS SMITH).
 - Tab sets what a line is:
   - On an empty line after a blank line, where you'd start a stage direction, Tab lists the script's character names. Type to narrow the list, then Tab or Enter to pick a name.
   - On a line of text, Tab changes it from action to character to scene heading to transition and back to action, and Shift+Tab goes the other way. The line is changed from how it was before your first Tab, so going round gives it back, and a forcing mark (`!`, `@`, `.`, `>`) is only added where the text needs it.
   - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
 - **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
-- The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Playwright reads it. A cue with no dialogue under it yet reads as a stage direction.
+- The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction.
 - A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
-- A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Playwright's settings:
-  - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Playwright's settings.
+- A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Fountain Stage's settings:
+  - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Fountain Stage's settings.
 
     | Word | Seconds | Short | Long |
     |---|---|---|---|
@@ -77,7 +77,7 @@ The dialog then starts in that style. Without one, it starts in the style you us
 
 ### Styles of your own
 
-A style of your own is a `.json` file in your styles folder (`Playwright/Styles` unless you change it in Playwright's settings). It names the style it starts from with `extends`, then changes only what differs:
+A style of your own is a `.json` file in your styles folder (`Fountain Stage/Styles` unless you change it in Fountain Stage's settings). It names the style it starts from with `extends`, then changes only what differs:
 
 ```json
 {
@@ -96,7 +96,7 @@ A style of your own is a `.json` file in your styles folder (`Playwright/Styles`
 - Colours are `"#rrggbb"` or `[red, green, blue]` from 0 to 1.
 - Keys starting with `_` are ignored, so `"_note": "…"` works as a comment.
 
-If a file has a problem, such as a misspelt setting or a value of the wrong kind, the style is left out of the export dialog. Playwright's settings list each problem with the setting and the reason. Obsidian can't edit `.json` files itself, so use another text editor. To see them in Obsidian's file list, turn on **Settings → Files and links → Detect all file extensions**.
+If a file has a problem, such as a misspelt setting or a value of the wrong kind, the style is left out of the export dialog. Fountain Stage's settings list each problem with the setting and the reason. Obsidian can't edit `.json` files itself, so use another text editor. To see them in Obsidian's file list, turn on **Settings → Files and links → Detect all file extensions**.
 
 Every setting:
 
@@ -124,13 +124,13 @@ Alignments are `"left"`, `"center"` or `"right"`. The built-in styles in [src/pd
 
 ### Fonts
 
-PDFs use Times unless a style names a font family and your fonts folder (`Playwright/Fonts` unless you change it) has it. APT asks for Palatino. Put the font's `.ttf` or `.otf` files in the folder: Playwright reads each file's own family name, weight and style, so file names don't matter. A family name also finds families it starts, so `Palatino` finds Palatino Linotype. If the family is missing, the PDF uses the style's fallback font and a notice says so. Font collections (`.ttc`) can't be used.
+PDFs use Times unless a style names a font family and your fonts folder (`Fountain Stage/Fonts` unless you change it) has it. APT asks for Palatino. Put the font's `.ttf` or `.otf` files in the folder: Fountain Stage reads each file's own family name, weight and style, so file names don't matter. A family name also finds families it starts, so `Palatino` finds Palatino Linotype. If the family is missing, the PDF uses the style's fallback font and a notice says so. Font collections (`.ttc`) can't be used.
 
 ## Install
 
 Not released yet. To try a development build, see [Development](#development).
 
-Playwright and the **Fountain** community plugin both open `.fountain` files, and only one plugin can do that at a time. Turn **Fountain** off in any vault where you use Playwright.
+Fountain Stage and the **Fountain** community plugin both open `.fountain` files, and only one plugin can do that at a time. Turn **Fountain** off in any vault where you use Fountain Stage.
 
 ## Development
 
@@ -149,7 +149,7 @@ To copy every build straight into a test vault, create a `.env` file in the proj
 OBSIDIAN_VAULT=C:\path\to\test vault
 ```
 
-Each build is then copied to `<vault>/.obsidian/plugins/playwright/`, along with a `.hotreload` marker file. With the [Hot Reload](https://github.com/pjeby/hot-reload) plugin installed in the test vault, Obsidian loads each new build by itself. Without it, turn Playwright off and on again after each build. Hot Reload ignores plugins that don't have the marker, so an old build keeps running until you reload.
+Each build is then copied to `<vault>/.obsidian/plugins/fountain-stage/`, along with a `.hotreload` marker file. With the [Hot Reload](https://github.com/pjeby/hot-reload) plugin installed in the test vault, Obsidian loads each new build by itself. Without it, turn Fountain Stage off and on again after each build. Hot Reload ignores plugins that don't have the marker, so an old build keeps running until you reload.
 
 Layout:
 

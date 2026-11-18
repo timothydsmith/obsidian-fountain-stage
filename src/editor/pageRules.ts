@@ -23,10 +23,10 @@ class PageRuleWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const el = createDiv({ cls: "playwright-page-rule", attr: { "aria-hidden": "true" } });
-    const label = el.createSpan({ cls: "playwright-page-rule-label", text: this.label });
+    const el = createDiv({ cls: "fountain-stage-page-rule", attr: { "aria-hidden": "true" } });
+    const label = el.createSpan({ cls: "fountain-stage-page-rule-label", text: this.label });
     if (this.partway) {
-      label.createSpan({ cls: "playwright-page-rule-note", text: " starts partway through the paragraph above" });
+      label.createSpan({ cls: "fountain-stage-page-rule-note", text: " starts partway through the paragraph above" });
     }
     return el;
   }

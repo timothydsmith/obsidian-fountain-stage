@@ -9,7 +9,7 @@ import { defaultPauseWords, type PauseWord, readPauseWords } from "./fountain/pa
 import { type LoadedStyles, loadStyles } from "./pdf/userStyles";
 import { chooseFamily, describeFont, FONT_EXTENSIONS, type FontInfo } from "./pdf/vaultFonts";
 
-export interface PlaywrightSettings {
+export interface FountainStageSettings {
   /** Folder of JSON style files. */
   stylesFolder: string;
   /** Folder of .ttf and .otf font files. */
@@ -38,9 +38,9 @@ export interface ExportChoices {
   synopses: boolean;
 }
 
-export const DEFAULT_SETTINGS: PlaywrightSettings = {
-  stylesFolder: "Playwright/Styles",
-  fontsFolder: "Playwright/Fonts",
+export const DEFAULT_SETTINGS: FountainStageSettings = {
+  stylesFolder: "Fountain Stage/Styles",
+  fontsFolder: "Fountain Stage/Fonts",
   showPageBreaks: true,
   pageBreakStyle: "modern",
   runtimeMethod: "words",
@@ -54,10 +54,10 @@ export const DEFAULT_SETTINGS: PlaywrightSettings = {
  * Settings as saved, with defaults for what's missing or the wrong kind.
  * Settings no longer used are dropped, so they aren't saved again.
  */
-export function readSettings(saved: unknown): PlaywrightSettings {
+export function readSettings(saved: unknown): FountainStageSettings {
   const s = (typeof saved === "object" && saved !== null ? saved : {}) as Record<string, unknown>;
-  const string = (key: keyof PlaywrightSettings, fallback: string) => (typeof s[key] === "string" ? s[key] : fallback);
-  const positive = (key: keyof PlaywrightSettings, fallback: number) => {
+  const string = (key: keyof FountainStageSettings, fallback: string) => (typeof s[key] === "string" ? s[key] : fallback);
+  const positive = (key: keyof FountainStageSettings, fallback: number) => {
     const value = s[key];
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
   };
@@ -103,7 +103,7 @@ export class Library {
 
   constructor(
     private readonly app: App,
-    private readonly settings: () => PlaywrightSettings,
+    private readonly settings: () => FountainStageSettings,
   ) {}
 
   /** Files anywhere under a folder with one of the extensions, in path order. */

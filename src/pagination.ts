@@ -1,7 +1,7 @@
 /** Lays out a script for the editor, to show where its pages break: in the style and fonts its PDF would use. */
 
 import type { ParsedScript } from "./fountain/parser";
-import type { Library, PlaywrightSettings } from "./library";
+import type { Library, FountainStageSettings } from "./library";
 import type { FontSet } from "./pdf/fonts";
 import { layoutScript } from "./pdf/layout";
 import { type ScriptPages, scriptPages } from "./pdf/pageBreaks";
@@ -25,7 +25,7 @@ export class Paginator {
 
   constructor(
     private readonly library: Library,
-    private readonly settings: () => PlaywrightSettings,
+    private readonly settings: () => FountainStageSettings,
   ) {}
 
   /** The style a script's `Style:` key names, else the one in settings, else Modern. */

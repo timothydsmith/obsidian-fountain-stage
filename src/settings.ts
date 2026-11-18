@@ -1,5 +1,5 @@
 /**
- * Playwright's settings tab: page breaks and runtime in the editor, and the
+ * Fountain Stage's settings tab: page breaks and runtime in the editor, and the
  * styles and fonts folders and what's in them. Obsidian 1.13 and later draw
  * it from getSettingDefinitions(), which puts the settings in Obsidian's
  * settings search; older versions draw it with display().
@@ -15,7 +15,7 @@ import {
   type SettingDefinitionItem,
   TFolder,
 } from "obsidian";
-import type { Library, LoadedFonts, PlaywrightSettings } from "./library";
+import type { Library, LoadedFonts, FountainStageSettings } from "./library";
 import { PauseWordsModal } from "./pauseWordsModal";
 import type { LoadedStyles } from "./pdf/userStyles";
 import { listFamilies } from "./pdf/vaultFonts";
@@ -68,13 +68,13 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
 /** A positive number, or the reason it isn't. */
 const positive = (n: number): string | undefined => (Number.isFinite(n) && n > 0 ? undefined : "Enter a number more than 0.");
 
-export class PlaywrightSettingTab extends PluginSettingTab {
+export class FountainStageSettingTab extends PluginSettingTab {
   private refreshTimer: number | null = null;
 
   constructor(
     app: App,
     plugin: Plugin,
-    private readonly settings: PlaywrightSettings,
+    private readonly settings: FountainStageSettings,
     private readonly save: () => Promise<void>,
     private readonly library: Library,
   ) {
@@ -330,14 +330,14 @@ export class PlaywrightSettingTab extends PluginSettingTab {
   }
 
   private styleList(el: HTMLElement, { styles, problems }: LoadedStyles): void {
-    const listEl = el.createEl("ul", { cls: "playwright-settings-list" });
+    const listEl = el.createEl("ul", { cls: "fountain-stage-settings-list" });
     for (const style of styles) {
       const item = listEl.createEl("li");
       item.createSpan({ text: style.name });
-      item.createSpan({ cls: "playwright-settings-detail", text: ` (Style: ${style.id}) ${style.source ?? "built in"}` });
+      item.createSpan({ cls: "fountain-stage-settings-detail", text: ` (Style: ${style.id}) ${style.source ?? "built in"}` });
     }
     for (const problem of problems) {
-      const item = listEl.createEl("li", { cls: "playwright-settings-problem" });
+      const item = listEl.createEl("li", { cls: "fountain-stage-settings-problem" });
       item.createSpan({ text: `${problem.path} is left out:` });
       const reasons = item.createEl("ul");
       for (const message of problem.messages) reasons.createEl("li", { text: message });
@@ -345,16 +345,16 @@ export class PlaywrightSettingTab extends PluginSettingTab {
   }
 
   private fontList(el: HTMLElement, { fonts, problems }: LoadedFonts): void {
-    const listEl = el.createEl("ul", { cls: "playwright-settings-list" });
+    const listEl = el.createEl("ul", { cls: "fountain-stage-settings-list" });
     const families = listFamilies(fonts);
     if (families.length === 0 && problems.length === 0) {
-      listEl.createEl("li", { cls: "playwright-settings-detail", text: "No fonts yet. PDFs use the standard fonts every PDF reader has." });
+      listEl.createEl("li", { cls: "fountain-stage-settings-detail", text: "No fonts yet. PDFs use the standard fonts every PDF reader has." });
     }
     for (const { family, count } of families) {
       listEl.createEl("li", { text: `${family} (${count} ${count === 1 ? "face" : "faces"})` });
     }
     for (const { path, message } of problems) {
-      listEl.createEl("li", { cls: "playwright-settings-problem", text: `${path} ${message}.` });
+      listEl.createEl("li", { cls: "fountain-stage-settings-problem", text: `${path} ${message}.` });
     }
   }
 }

@@ -6,7 +6,7 @@ import type { ScriptReport } from "./fountain/report";
 import { firstAndLast, formatCount, formatPages, formatRuntime, formatShare, sceneLabel, totalsRows } from "./fountain/reportMarkdown";
 import { formatDuration } from "./fountain/runtime";
 
-export const VIEW_TYPE_REPORT = "playwright-report";
+export const VIEW_TYPE_REPORT = "fountain-stage-report";
 
 /** How long after you stop typing the report catches up. */
 const REFRESH_DELAY_MS = 1000;
@@ -44,7 +44,7 @@ export class ReportView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.contentEl.addClass("playwright-report");
+    this.contentEl.addClass("fountain-stage-report");
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
     this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
     this.app.workspace.onLayoutReady(() => this.follow());
@@ -101,7 +101,7 @@ export class ReportView extends ItemView {
       return;
     }
     const report = this.host.reportOf(script);
-    contentEl.createDiv({ cls: "playwright-report-title", text: script.file.basename });
+    contentEl.createDiv({ cls: "fountain-stage-report-title", text: script.file.basename });
     if (report.scenes.length === 0 && report.totals.speeches === 0) {
       contentEl.createDiv({ cls: "pane-empty", text: "Nothing to report yet. The report counts speeches, scenes and characters once the script has some." });
       return;
@@ -120,7 +120,7 @@ export class ReportView extends ItemView {
       parent.setText(text);
       return;
     }
-    const a = parent.createEl("a", { text, cls: "playwright-report-link", href: "#" });
+    const a = parent.createEl("a", { text, cls: "fountain-stage-report-link", href: "#" });
     a.addEventListener("click", (evt) => {
       evt.preventDefault();
       const script = this.script;
@@ -131,8 +131,8 @@ export class ReportView extends ItemView {
   }
 
   private table(parent: HTMLElement, header: string[], numeric: boolean[]): HTMLTableSectionElement {
-    const wrap = parent.createDiv({ cls: "playwright-report-table-wrap" });
-    const table = wrap.createEl("table", { cls: "playwright-report-table" });
+    const wrap = parent.createDiv({ cls: "fountain-stage-report-table-wrap" });
+    const table = wrap.createEl("table", { cls: "fountain-stage-report-table" });
     const row = table.createEl("thead").createEl("tr");
     header.forEach((h, i) => row.createEl("th", { text: h, cls: numeric[i] ? "is-number" : undefined }));
     return table.createEl("tbody");
@@ -140,11 +140,11 @@ export class ReportView extends ItemView {
 
   private renderTotals(el: HTMLElement, report: ScriptReport): void {
     el.createEl("h4", { text: "Totals" });
-    const list = el.createDiv({ cls: "playwright-report-totals" });
+    const list = el.createDiv({ cls: "fountain-stage-report-totals" });
     for (const [label, value] of totalsRows(report)) {
-      const item = list.createDiv({ cls: "playwright-report-total" });
-      item.createDiv({ cls: "playwright-report-total-value", text: value });
-      item.createDiv({ cls: "playwright-report-total-label", text: label });
+      const item = list.createDiv({ cls: "fountain-stage-report-total" });
+      item.createDiv({ cls: "fountain-stage-report-total-value", text: value });
+      item.createDiv({ cls: "fountain-stage-report-total-label", text: label });
     }
   }
 
@@ -181,7 +181,7 @@ export class ReportView extends ItemView {
       for (const text of [formatPages(s.pages), formatRuntime(s.seconds), formatCount(s.speeches), formatCount(s.words)]) {
         row.createEl("td", { text, cls: "is-number" });
       }
-      row.createEl("td", { text: s.characters.join(", "), cls: "playwright-report-cast" });
+      row.createEl("td", { text: s.characters.join(", "), cls: "fountain-stage-report-cast" });
     }
   }
 
@@ -189,9 +189,9 @@ export class ReportView extends ItemView {
     const cast = characters.filter((c) => c.scenes.length > 0);
     if (cast.length === 0 || scenes.length === 0) return;
     el.createEl("h4", { text: "Who's in each scene" });
-    el.createEl("p", { cls: "playwright-report-note", text: "Scenes are numbered as in the table above. A character is in a scene if they speak or are named in a stage direction there." });
-    const wrap = el.createDiv({ cls: "playwright-report-table-wrap" });
-    const table = wrap.createEl("table", { cls: "playwright-report-table playwright-report-chart" });
+    el.createEl("p", { cls: "fountain-stage-report-note", text: "Scenes are numbered as in the table above. A character is in a scene if they speak or are named in a stage direction there." });
+    const wrap = el.createDiv({ cls: "fountain-stage-report-table-wrap" });
+    const table = wrap.createEl("table", { cls: "fountain-stage-report-table fountain-stage-report-chart" });
     const head = table.createEl("thead").createEl("tr");
     head.createEl("th", { text: "Character" });
     for (const s of scenes) {
@@ -218,11 +218,11 @@ export class ReportView extends ItemView {
     const doubles = characters.filter((c) => c.scenes.length > 0 && c.couldDouble.length > 0);
     el.createEl("h4", { text: "Doubling" });
     if (doubles.length === 0) {
-      el.createEl("p", { cls: "playwright-report-note", text: "Every character shares a scene with every other, so no one actor can play two of them." });
+      el.createEl("p", { cls: "fountain-stage-report-note", text: "Every character shares a scene with every other, so no one actor can play two of them." });
       return;
     }
-    el.createEl("p", { cls: "playwright-report-note", text: "Characters who never share a scene, so one actor could play both:" });
-    const list = el.createEl("ul", { cls: "playwright-report-doubling" });
+    el.createEl("p", { cls: "fountain-stage-report-note", text: "Characters who never share a scene, so one actor could play both:" });
+    const list = el.createEl("ul", { cls: "fountain-stage-report-doubling" });
     for (const c of doubles) {
       const item = list.createEl("li");
       item.createEl("strong", { text: c.name });

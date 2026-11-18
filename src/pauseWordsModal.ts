@@ -1,4 +1,4 @@
-/** The pause words page of Playwright's settings: which words add pauses to the runtime, and for how long. */
+/** The pause words page of Fountain Stage's settings: which words add pauses to the runtime, and for how long. */
 
 import { type App, ButtonComponent, Modal, setIcon } from "obsidian";
 import { defaultPauseWords, LONG_WORDS, normalizeWord, type PauseWord, SHORT_WORDS } from "./fountain/pauses";
@@ -26,7 +26,7 @@ export class PauseWordsModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     this.setTitle("Pause words");
-    contentEl.addClass("playwright-pause-words");
+    contentEl.addClass("fountain-stage-pause-words");
 
     contentEl.createEl("p", {
       text:
@@ -42,12 +42,12 @@ export class PauseWordsModal extends Modal {
         "A number multiplies it, so “two beats” is twice a beat. A word can be a phrase, such as “lights fade”.",
     });
     contentEl.createEl("p", {
-      cls: "playwright-pause-words-source",
+      cls: "fountain-stage-pause-words-source",
       text: "The defaults for pause and silence follow the Author's Note to Annie Baker's Circle Mirror Transformation.",
     });
 
-    const table = contentEl.createDiv({ cls: "playwright-pause-words-table" });
-    const header = table.createDiv({ cls: "playwright-pause-words-row playwright-pause-words-header" });
+    const table = contentEl.createDiv({ cls: "fountain-stage-pause-words-table" });
+    const header = table.createDiv({ cls: "fountain-stage-pause-words-row fountain-stage-pause-words-header" });
     for (const label of ["Word", "Seconds", "Short", "Long", ""]) header.createSpan({ text: label });
     this.rowsEl = table.createDiv();
     this.renderRows();
@@ -65,7 +65,7 @@ export class PauseWordsModal extends Modal {
         this.words.push({ word: "", seconds: 2, short: 1, long: 4 });
         this.renderRows();
         this.commit();
-        this.rowsEl.querySelector<HTMLInputElement>(".playwright-pause-words-row:last-child input")?.focus();
+        this.rowsEl.querySelector<HTMLInputElement>(".fountain-stage-pause-words-row:last-child input")?.focus();
       });
   }
 
@@ -85,7 +85,7 @@ export class PauseWordsModal extends Modal {
   private renderRows(): void {
     this.rowsEl.empty();
     this.words.forEach((pause, i) => {
-      const row = this.rowsEl.createDiv({ cls: "playwright-pause-words-row" });
+      const row = this.rowsEl.createDiv({ cls: "fountain-stage-pause-words-row" });
 
       const word = row.createEl("input", { type: "text", value: pause.word, attr: { "aria-label": "Word", placeholder: "Word" } });
       word.addEventListener("change", () => {
