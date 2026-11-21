@@ -12,9 +12,11 @@ import type { Cut } from "../fountain/cuts";
 
 export interface CutsFileChange {
   op: "add" | "remove";
-  /** The cuts file's vault path. */
+  /** The cuts file's vault path, or the line bank's. */
   path: string;
+  /** For the line bank, the entry is the cut's body, and its heading is ignored. */
   cut: Cut;
+  bank?: boolean;
   /** Already made to the file, as a cut is before its text leaves the script. */
   done?: boolean;
 }
@@ -28,8 +30,8 @@ export function cutHistory(apply: (change: CutsFileChange) => void): Extension {
       tr.effects
         .filter((effect) => effect.is(cutsFileEffect))
         .map((effect) => {
-          const { op, path, cut } = effect.value;
-          return cutsFileEffect.of({ op: op === "add" ? "remove" : "add", path, cut });
+          const { op, path, cut, bank } = effect.value;
+          return cutsFileEffect.of({ op: op === "add" ? "remove" : "add", path, cut, bank });
         }),
     ),
     EditorView.updateListener.of((update) => {

@@ -108,6 +108,19 @@ Decided:
 - [x] Undo in the script takes the cut out of the cuts file again, and redo puts it back. Restoring a cut takes it out of the working draft's cuts file, and undo of that puts it back.
 - [x] Cuts files are files of their own, so a script's outline, report and runtime never count them.
 
+### The rest of 0.3.0 (built, on dev)
+
+Line bank, moving scenes, split and merge, renumbering and jump commands, from the drafting aids below.
+
+Decided:
+
+- [x] Line bank: one file beside the script, `Play - Line bank.fountain`, rather than one per draft or one in the drafts folder. Entries are paragraphs.
+- [x] Putting in a line takes it out of the bank, and undo puts it back, using the cuts file's undo machinery.
+- [x] A scene runs from its heading to the next scene heading or section. Moving swaps it with the unit next to it, so a scene can move from one act into the next. Text before the first heading never moves.
+- [x] Split asks for the new heading, suggesting the current one with its number one on.
+- [x] Renumber lets the user choose: from 1 in each act, or straight through the play. The choice is remembered. Numbers in words keep their case, and `#3#` scene numbers change too.
+- [x] Jumps go to scene headings, acts included, and to the next speech by the character whose speech the cursor is in.
+
 ### 3. Changes since a draft
 
 - Compares the working file with any frozen draft (the latest by default), or two frozen drafts with each other.
@@ -147,8 +160,8 @@ All agreed. The release plan sets the order.
 
 ### Restructuring
 
-- **Move scenes in the outline.** Drag a scene in the outline sidebar, or use Move scene up and Move scene down, and the text moves with it.
-- **Split and merge scenes** at the cursor, keeping headings and synopses tidy.
+- **Move scenes in the outline.** Built for 0.3.0. Drag a scene in the outline sidebar, or use Move scene up and Move scene down, and the text moves with it.
+- **Split and merge scenes** (built for 0.3.0) at the cursor, keeping headings and synopses tidy.
 
 ### Checking the draft
 
@@ -178,13 +191,13 @@ All agreed. The release plan sets the order.
 
 ### Structure and navigation
 
-- **Renumber scenes** after moving or splitting them: scene headings and any scene numbers.
+- **Renumber scenes** (built for 0.3.0) after moving or splitting them: scene headings and any scene numbers.
 - **Runtime targets** for the play, an act or a scene, shown over or under in the outline.
-- **Jump commands:** next or previous scene, and the next speech by the character at the cursor.
+- **Jump commands** (built for 0.3.0): next or previous scene, and the next speech by the character at the cursor.
 
 ### Ideas and history
 
-- **Line bank.** The opposite of the cuts file: lines not yet placed. Quick capture on the phone, then drop one at the cursor. Shares the cuts file's machinery.
+- **Line bank.** Built for 0.3.0. The opposite of the cuts file: lines not yet placed. Quick capture on the phone, then drop one at the cursor. Shares the cuts file's machinery.
 - **Draft notes on freeze.** Freeze asks "What's this draft for?" and keeps the answer on the frozen copy in a title-page key that isn't printed. Built with Freeze draft in 0.2.0.
 - **Side by side.** The working file and a frozen draft, scrolling together.
 

@@ -9,6 +9,7 @@ import type { CutsFileChange } from "./editor/cutHistory";
 import type { FountainView } from "./editor/FountainView";
 import { FOUNTAIN_EXTENSION, isInFolder } from "./files";
 import { addCut, cutAtLine, cutBody, cutHeading, cutsFileName, isFrozenDraftOf, parseCutsFileName, removeCut, restoreText } from "./fountain/cuts";
+import { addToBank, bankEntries, isLineBankName, lineBankName, removeFromBank } from "./fountain/lineBank";
 import { draftNumber, frozenDraftName, plainTitle } from "./fountain/titlePage";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -94,7 +95,7 @@ export class CutsFiles {
       new Notice("Put the cursor in a cut to restore it.");
       return;
     }
-    const open = this.scripts().filter((script) => script.file && !script.isDraft());
+    const open = this.scripts().filter((script) => script.file && !script.isDraft() && !this.isLineBank(script.file));
     const target = open.find((script) => this.pathFor(script) === file.path) ?? (open.length === 1 ? open[0] : undefined);
     if (!target) {
       new Notice("Open the script, put the cursor where the cut goes, then restore it.");
@@ -119,15 +120,39 @@ export class CutsFiles {
     return next;
   }
 
-  private async write({ op, path, cut }: CutsFileChange): Promise<void> {
+  private async write({ op, path, cut, bank }: CutsFileChange): Promise<void> {
     const { vault } = this.app;
+    const add = (source: string) => (bank ? addToBank(source, cut.body) : addCut(source, cut));
+    const remove = (source: string) => (bank ? removeFromBank(source, cut.body) : removeCut(source, cut));
     const file = vault.getFileByPath(path);
     if (file) {
-      await vault.process(file, (source) => (op === "add" ? addCut(source, cut) : removeCut(source, cut)));
+      await vault.process(file, op === "add" ? add : remove);
     } else if (op === "add") {
       const folder = path.split("/").slice(0, -1).join("/");
       if (folder && !vault.getFolderByPath(folder)) await vault.createFolder(folder);
-      await vault.create(path, addCut("", cut));
+      await vault.create(path, add(""));
     }
+  }
+
+  // --- The line bank ------------------------------------------------------
+
+  /** Whether a file is a line bank. */
+  isLineBank(file: TFile): boolean {
+    return isLineBankName(file.basename);
+  }
+
+  /** The line bank beside a script. */
+  bankPathFor(view: FountainView): string | undefined {
+    const file = view.file;
+    if (!file) return undefined;
+    const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";
+    return normalizePath(`${folder}${lineBankName(plainTitle(view.script()) || file.basename)}.${FOUNTAIN_EXTENSION}`);
+  }
+
+  /** Reads the line bank beside a script: its entries, or none if there's no bank yet. */
+  async bankEntriesFor(view: FountainView): Promise<string[]> {
+    const path = this.bankPathFor(view);
+    const file = path ? this.app.vault.getFileByPath(path) : null;
+    return file ? bankEntries(await this.app.vault.read(file)) : [];
   }
 }

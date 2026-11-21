@@ -5,6 +5,8 @@ import { exportScript } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { freezeDraft } from "./freezeDraft";
 import { CutsFiles } from "./cutsCommands";
+import { addToLineBank, dropFromLineBank } from "./lineBankCommands";
+import { jumpToScene, jumpToSpeech, mergeWithPreviousScene, moveSceneBy, moveSceneToLine, renumber, splitSceneAtCursor } from "./sceneCommands";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
@@ -65,6 +67,7 @@ export default class FountainStagePlugin extends Plugin {
           inDraftsFolder: (file) => this.cuts.inDraftsFolder(file),
           isFrozen: (file) => this.cuts.isFrozen(file),
           isCutsFile: (file) => this.cuts.isCutsFile(file),
+          isLineBank: (file) => this.cuts.isLineBank(file),
           freezeDraft: (view) => this.freezeDraft(view),
           changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
           cutFromDraft: (view) => void this.cuts.cut(view),
@@ -73,7 +76,10 @@ export default class FountainStagePlugin extends Plugin {
 
     this.showStatusBar();
 
-    this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf, (view) => this.timelineOf(view)));
+    this.registerView(
+      VIEW_TYPE_OUTLINE,
+      (leaf) => new OutlineView(leaf, { timelineOf: (view) => this.timelineOf(view), moveScene: moveSceneToLine }),
+    );
     this.registerView(
       VIEW_TYPE_REPORT,
       (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
@@ -124,7 +130,7 @@ export default class FountainStagePlugin extends Plugin {
       name: "Freeze draft",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view || view.isDraft()) return false;
+        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
         if (!checking) this.freezeDraft(view);
         return true;
       },
@@ -144,7 +150,7 @@ export default class FountainStagePlugin extends Plugin {
       name: "Cut from this draft",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view || view.isDraft()) return false;
+        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
         if (!checking) void this.cuts.cut(view);
         return true;
       },
@@ -159,6 +165,29 @@ export default class FountainStagePlugin extends Plugin {
         return true;
       },
     });
+    // The line bank goes with a script, not with its drafts or with itself.
+    const scriptCommand = (id: string, name: string, run: (view: FountainView) => void) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const view = this.app.workspace.getActiveViewOfType(FountainView);
+          if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
+          if (!checking) run(view);
+          return true;
+        },
+      });
+    scriptCommand("add-to-line-bank", "Add to line bank", (view) => addToLineBank(this.app, this.cuts, view));
+    scriptCommand("drop-from-line-bank", "Put in a line from the line bank", (view) => void dropFromLineBank(this.app, this.cuts, view));
+    viewCommand("next-scene", "Go to next scene", (view) => jumpToScene(view, 1));
+    viewCommand("previous-scene", "Go to previous scene", (view) => jumpToScene(view, -1));
+    viewCommand("next-speech", "Go to this character's next speech", (view) => jumpToSpeech(view, 1));
+    viewCommand("previous-speech", "Go to this character's previous speech", (view) => jumpToSpeech(view, -1));
+    viewCommand("move-scene-up", "Move scene up", (view) => moveSceneBy(view, -1));
+    viewCommand("move-scene-down", "Move scene down", (view) => moveSceneBy(view, 1));
+    viewCommand("split-scene", "Split scene", (view) => splitSceneAtCursor(this.app, view));
+    viewCommand("merge-scene", "Merge with previous scene", (view) => mergeWithPreviousScene(view));
+    viewCommand("renumber-scenes", "Renumber scenes", (view) => this.renumberScenes(view));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
@@ -193,6 +222,14 @@ export default class FountainStagePlugin extends Plugin {
     await exportScript(this.app, this.library, file, source, this.settings.export, (choices) => {
       this.settings.export = choices;
       // Nothing else depends on these, so there's nothing to refresh.
+      void this.saveData(this.settings);
+    });
+  }
+
+  private renumberScenes(view: FountainView): void {
+    renumber(this.app, view, this.settings.renumberRestart, (restart) => {
+      this.settings.renumberRestart = restart;
+      // Nothing else depends on this, so there's nothing to refresh.
       void this.saveData(this.settings);
     });
   }

@@ -23,9 +23,16 @@ export class OutlineView extends ItemView {
   private refreshTimer: number | null = null;
   private highlightFrame: number | null = null;
 
+  /** The scene being dragged. */
+  private dragged: OutlineItem | null = null;
+
   constructor(
     leaf: WorkspaceLeaf,
-    private readonly timelineOf: (script: FountainView) => Timeline | undefined,
+    private readonly host: {
+      timelineOf: (script: FountainView) => Timeline | undefined;
+      /** Moves the scene whose heading is on `sceneLine` to just before or after the heading on `targetLine`. */
+      moveScene: (script: FountainView, sceneLine: number, targetLine: number, after: boolean) => void;
+    },
   ) {
     super(leaf);
   }
@@ -110,7 +117,7 @@ export class OutlineView extends ItemView {
       return;
     }
     this.outline = buildOutline(this.script.getViewData(), this.script.isAct());
-    const timeline = this.timelineOf(this.script);
+    const timeline = this.host.timelineOf(this.script);
     this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map<OutlineItem, number>();
     if (this.outline.length === 0) {
       contentEl.createDiv({
@@ -162,9 +169,45 @@ export class OutlineView extends ItemView {
         selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair fountain-stage-outline-runtime", text: formatDuration(runtime) });
       }
       selfEl.addEventListener("click", () => this.reveal(item));
+      this.dragAndDrop(selfEl, item);
 
       if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path);
     }
+  }
+
+  /**
+   * Scenes can be dragged to another place in the outline, and the text
+   * moves with them: dropped on the top half of a row, a scene goes before
+   * it; on the bottom half, after its heading.
+   */
+  private dragAndDrop(rowEl: HTMLElement, item: OutlineItem): void {
+    const clear = () => rowEl.removeClasses(["is-drop-before", "is-drop-after"]);
+    const after = (evt: DragEvent) => evt.offsetY > rowEl.clientHeight / 2;
+    if (item.kind === "scene" && !this.script?.isFrozen()) {
+      rowEl.draggable = true;
+      rowEl.addEventListener("dragstart", (evt) => {
+        this.dragged = item;
+        evt.dataTransfer?.setData("text/plain", item.text);
+        if (evt.dataTransfer) evt.dataTransfer.effectAllowed = "move";
+      });
+      rowEl.addEventListener("dragend", () => (this.dragged = null));
+    }
+    rowEl.addEventListener("dragover", (evt) => {
+      if (!this.dragged || this.dragged === item) return;
+      evt.preventDefault();
+      if (evt.dataTransfer) evt.dataTransfer.dropEffect = "move";
+      rowEl.toggleClass("is-drop-before", !after(evt));
+      rowEl.toggleClass("is-drop-after", after(evt));
+    });
+    rowEl.addEventListener("dragleave", clear);
+    rowEl.addEventListener("drop", (evt) => {
+      clear();
+      const dragged = this.dragged;
+      this.dragged = null;
+      if (!dragged || dragged === item || !this.script) return;
+      evt.preventDefault();
+      this.host.moveScene(this.script, dragged.line, item.line, after(evt));
+    });
   }
 
   private reveal(item: OutlineItem): void {

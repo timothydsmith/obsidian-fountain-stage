@@ -72,6 +72,7 @@ export interface FountainHost {
   changeCutsFile(change: CutsFileChange): void;
   /** Whether a file is a cuts file, in the drafts folder. */
   isCutsFile(file: TFile): boolean;
+  isLineBank(file: TFile): boolean;
   cutFromDraft(view: FountainView): void;
   restoreCut(view: FountainView): void;
 }
@@ -203,6 +204,11 @@ export class FountainView extends TextFileView {
     return this.file ? this.host.inDraftsFolder(this.file) : false;
   }
 
+  /** Whether the script is a line bank, beside the script it belongs to. */
+  isLineBank(): boolean {
+    return this.file ? this.host.isLineBank(this.file) : false;
+  }
+
   /** Whether the script is frozen: read-only, in reading view, until it's unfrozen. */
   isFrozen(): boolean {
     return this.file ? this.host.isFrozen(this.file) && !this.unfrozen : false;
@@ -288,7 +294,7 @@ export class FountainView extends TextFileView {
           .setIcon("lock-open")
           .onClick(() => this.unfreeze()),
       );
-    } else if (!this.isDraft()) {
+    } else if (!this.isDraft() && !this.isLineBank()) {
       menu.addItem((item) =>
         item
           .setSection("action")
@@ -297,7 +303,7 @@ export class FountainView extends TextFileView {
           .onClick(() => this.host.freezeDraft(this)),
       );
     }
-    if (!this.isDraft()) {
+    if (!this.isDraft() && !this.isLineBank()) {
       menu.addItem((item) =>
         item
           .setSection("action")
@@ -494,7 +500,9 @@ export class FountainView extends TextFileView {
 
   setEphemeralState(state: unknown): void {
     super.setEphemeralState(state);
-    if (!state || typeof state !== "object") return;
+    // Obsidian can still focus a view after it's closed, such as while a
+    // plugin reloads, and focusing a destroyed editor throws.
+    if (this.closed || !state || typeof state !== "object") return;
     const s = state as EphemeralState;
     const doc = this.editor.state.doc;
     const offset = (p?: LineCh): number | undefined => {
@@ -561,6 +569,31 @@ export class FountainView extends TextFileView {
   applyChanges(changes: { from: number; to: number; insert: string }[]): void {
     if (changes.length === 0) return;
     this.editor.dispatch({ changes, userEvent: "edit.rename", scrollIntoView: false });
+  }
+
+  /**
+   * Changes the script as one step to undo, unless it's frozen, then puts
+   * the cursor at `cursor` (in the changed text) and brings it into view.
+   * Changes are in the text as it was, and mustn't overlap.
+   */
+  applyEdit(changes: { from: number; to: number; insert: string }[], cursor?: number): boolean {
+    if (this.refuseIfFrozen() || changes.length === 0) return false;
+    this.editor.dispatch({
+      changes,
+      selection: cursor === undefined ? undefined : EditorSelection.cursor(cursor),
+      scrollIntoView: true,
+      userEvent: "input",
+    });
+    if (!this.reading) this.editor.focus();
+    return true;
+  }
+
+  /** Moves the cursor to the start of a line, counting from 0, and brings it into view in the middle of the screen. */
+  goToLine(line: number): void {
+    const doc = this.editor.state.doc;
+    const from = doc.line(Math.min(Math.max(line + 1, 1), doc.lines)).from;
+    this.editor.dispatch({ selection: EditorSelection.cursor(from), effects: EditorView.scrollIntoView(from, { y: "center" }) });
+    if (!this.reading) this.editor.focus();
   }
 
   /** Moves to a line, counting from 0: scrolled to the top, with the cursor at its start. */

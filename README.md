@@ -27,7 +27,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
 - **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
 - The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction.
-- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts, sections and scenes, nested (scenes inside the section or act they follow, sections inside their act), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
+- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts, sections and scenes, nested (scenes inside the section or act they follow, sections inside their act), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there, or drag a scene to move it. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
 - A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Fountain Stage's settings:
   - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Fountain Stage's settings.
@@ -51,6 +51,8 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
 - Frozen drafts. **Freeze draft**, from the command palette or a script's **More options** menu, saves a copy of the script as it is now in your drafts folder (`Drafts` unless you change it in Fountain Stage's settings), and moves the script on to the next draft. **Cut from this draft** moves text you take out into the draft's cuts file, and **Restore cut** puts it back. See [Drafts](#drafts) and [Cuts](#cuts).
+- Scene commands: move a scene up or down (or drag it in the outline), split a scene at the cursor, merge one with the scene before, renumber scenes, and go to the next or previous scene, or the next or previous speech by the character you're in. See [Scenes](#scenes).
+- A line bank beside each script, for lines you haven't found a place for yet. See [Line bank](#line-bank).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -86,6 +88,28 @@ To put a cut back, open the cuts file, put the cursor in the cut, and run **Rest
 A draft's cuts file can be edited until the draft is frozen. After that it's frozen with it: it opens read-only, and **Restore cut** copies cuts from it rather than taking them out. Reading view of a cuts file shows the cut headings, unlike other scripts, where sections are hidden.
 
 A cut restored partway along a line goes in as it is, such as a phrase back in a speech. On a blank line, or at the start of a line of text, it goes in as a paragraph of its own, with blank lines around it.
+
+## Scenes
+
+A scene runs from its scene heading to the next scene heading or section. Acts are scene headings too (see the Features list), so a scene ends where the next act starts. Each of these is a command, and each is one step to undo.
+
+- **Move scene up** and **Move scene down** move the scene the cursor is in past the scene, act or section next to it, with all its text. A scene at the top of an act moves up into the act before. In the outline, drag a scene and drop it above or below another heading to do the same.
+- **Split scene** starts a new scene at the cursor's line. It asks for the new scene's heading, suggesting the current one with its number one on (`.SCENE 3` in scene 2). A heading that doesn't start like `INT.` or `EXT.` gets a full stop to force it.
+- **Merge with previous scene** takes out the heading of the scene the cursor is in, joining it to the scene before. A synopsis under the heading moves up to join the earlier scene's.
+- **Renumber scenes** rewrites the numbers in scene headings so they count in order: `SCENE 3`, or `SCENE THREE` in words (kept in the case it was written), and any `#3#` scene number. Choose whether to count from 1 in each act or straight through the play; Fountain Stage remembers which. Acts aren't counted, and headings without a number count but aren't changed. You see every heading that will change before anything does.
+- **Go to next scene** and **Go to previous scene** move the cursor to the next or previous scene heading, acts included.
+- **Go to this character's next speech** and **Go to this character's previous speech**, with the cursor in a speech, go to the next or previous speech by the same character.
+
+Scenes in the drafts folder can't be moved, split, merged or renumbered while they're frozen.
+
+## Line bank
+
+The line bank keeps lines you want to use but haven't placed yet. It's a file beside the script, named after the play's title (or the script's file name, if it has no title): `Play - Line bank.fountain`. It's made the first time you add to it.
+
+- **Add to line bank** asks for the line, starting from any text selected in the script, and adds it to the end of the bank. The script isn't changed. Ctrl/Cmd+Enter adds it. An entry can be several lines, such as a cue and its speech.
+- **Put in a line from the line bank** lists the bank's entries. Type to narrow them, and pick one to put it in at the cursor. It's taken out of the bank, and undo in the script puts it back. It goes in the way a restored cut does: as it is partway along a line, or as a paragraph of its own on a blank line.
+
+The bank is an ordinary script, so you can also open it and edit it, or add lines on your phone. Entries are separated by blank lines.
 
 ## Exporting to PDF
 
@@ -208,7 +232,10 @@ Layout:
 | `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
 | `src/fountain/rename.ts`, `src/renameCharacterModal.ts` | Renaming a character: finding every place to change, and the dialog |
 | `src/fountain/titlePage.ts`, `src/freezeDraft.ts` | Freezing drafts: reading and rewriting title-page keys, and the freeze dialog |
-| `src/fountain/cuts.ts`, `src/cutsCommands.ts`, `src/editor/cutHistory.ts` | Cuts: the cuts file's format and order, the commands, and keeping the cuts file in step with undo |
+| `src/fountain/cuts.ts`, `src/cutsCommands.ts`, `src/editor/cutHistory.ts` | Cuts: the cuts file's format and order, the commands, and keeping the cuts file (and line bank) in step with undo |
+| `src/fountain/lineBank.ts`, `src/lineBankCommands.ts` | The line bank: its format, and adding and putting in lines |
+| `src/fountain/insert.ts` | Putting text in at the cursor as a phrase or a paragraph, for restored cuts and the line bank |
+| `src/fountain/scenes.ts`, `src/sceneCommands.ts` | Scenes: moving, splitting, merging and renumbering them, the jump commands, and their dialogs |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

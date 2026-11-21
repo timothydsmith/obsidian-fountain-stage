@@ -11,6 +11,7 @@
  */
 
 import type { ParsedScript } from "./parser";
+import { insertionText } from "./insert";
 import { formatDraftDate } from "./titlePage";
 
 /** One cut: its heading line and its text. */
@@ -119,27 +120,8 @@ export function cutAtLine(source: string, line: number): Cut | undefined {
   return cut && { heading: cut.heading, body: cut.body };
 }
 
-/**
- * The text to put in for a cut restored in place of the selection from
- * `from` to `to`. Partway along a line it goes in as it is, such as a
- * phrase back in a speech. At the start of a line of text, or on a blank
- * line, it goes in as a paragraph of its own, with blank lines around it,
- * so a cue after it is still a cue.
- */
-export function restoreText(source: string, from: number, to: number, body: string): string {
-  const lineStart = source.lastIndexOf("\n", from - 1) + 1;
-  const end = source.indexOf("\n", to);
-  const lineEnd = end < 0 ? source.length : end;
-  if (source.slice(lineStart, from).trim() !== "") return body;
-  if (source.slice(to, lineEnd).trim() !== "") return `${body}\n\n`;
-  const lineOf = (start: number) => {
-    const stop = source.indexOf("\n", start);
-    return source.slice(start, stop < 0 ? source.length : stop);
-  };
-  const previous = lineStart > 0 ? lineOf(source.lastIndexOf("\n", lineStart - 2) + 1) : "";
-  const next = lineEnd < source.length ? lineOf(lineEnd + 1) : "";
-  return (previous.trim() !== "" ? "\n" : "") + body + (next.trim() !== "" ? "\n" : "");
-}
+/** The text to put in for a cut restored in place of the selection from `from` to `to`: see {@link insertionText}. */
+export const restoreText = insertionText;
 
 /** The file name, without extension, of a draft's cuts file, such as "Play - Draft 04 - Cuts". */
 export function cutsFileName(draftName: string): string {
