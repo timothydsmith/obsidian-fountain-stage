@@ -1,6 +1,6 @@
 /** The script outline sidebar: the acts, sections and scenes of the script you're in, and how long each runs. */
 
-import { FileView, ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
+import { FileView, ItemView, Menu, Platform, setIcon, type WorkspaceLeaf } from "obsidian";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
 import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
@@ -32,6 +32,8 @@ export class OutlineView extends ItemView {
       timelineOf: (script: FountainView) => Timeline | undefined;
       /** Moves the scene whose heading is on `sceneLine` to just before or after the heading on `targetLine`. */
       moveScene: (script: FountainView, sceneLine: number, targetLine: number, after: boolean) => void;
+      /** Moves the scene whose heading is on `sceneLine` up or down past the heading next to it. */
+      moveSceneBy: (script: FountainView, sceneLine: number, direction: -1 | 1) => void;
     },
   ) {
     super(leaf);
@@ -169,18 +171,42 @@ export class OutlineView extends ItemView {
         selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair fountain-stage-outline-runtime", text: formatDuration(runtime) });
       }
       selfEl.addEventListener("click", () => this.reveal(item));
+      if (item.kind === "scene") selfEl.addEventListener("contextmenu", (evt) => this.showSceneMenu(evt, item));
       this.dragAndDrop(selfEl, item);
 
       if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path);
     }
   }
 
+  /** A scene's menu, on right-click or a long press: moving it up or down, for where dragging doesn't work, such as on a phone. */
+  private showSceneMenu(evt: MouseEvent, item: OutlineItem): void {
+    const script = this.script;
+    if (!script || script.isFrozen()) return;
+    evt.preventDefault();
+    const menu = new Menu();
+    menu.addItem((menuItem) =>
+      menuItem
+        .setTitle("Move scene up")
+        .setIcon("arrow-up")
+        .onClick(() => this.host.moveSceneBy(script, item.line, -1)),
+    );
+    menu.addItem((menuItem) =>
+      menuItem
+        .setTitle("Move scene down")
+        .setIcon("arrow-down")
+        .onClick(() => this.host.moveSceneBy(script, item.line, 1)),
+    );
+    menu.showAtMouseEvent(evt);
+  }
+
   /**
    * Scenes can be dragged to another place in the outline, and the text
    * moves with them: dropped on the top half of a row, a scene goes before
-   * it; on the bottom half, after its heading.
+   * it; on the bottom half, after its heading. Not on phones and tablets,
+   * where a long press opens the scene's menu instead.
    */
   private dragAndDrop(rowEl: HTMLElement, item: OutlineItem): void {
+    if (Platform.isMobile) return;
     const clear = () => rowEl.removeClasses(["is-drop-before", "is-drop-after"]);
     const after = (evt: DragEvent) => evt.offsetY > rowEl.clientHeight / 2;
     if (item.kind === "scene" && !this.script?.isFrozen()) {

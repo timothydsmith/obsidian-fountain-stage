@@ -120,6 +120,8 @@ Decided:
 - [x] Split asks for the new heading, suggesting the current one with its number one on.
 - [x] Renumber lets the user choose: from 1 in each act, or straight through the play. The choice is remembered. Numbers in words keep their case, and `#3#` scene numbers change too.
 - [x] Jumps go to scene headings, acts included, and to the next speech by the character whose speech the cursor is in.
+- [x] Phones can't drag in the outline, so a scene's menu (right-click, or press and hold) has Move scene up and Move scene down. Rows aren't draggable on phones and tablets, so a long press opens the menu.
+- [x] The outline is central now, so it opens in the right sidebar the first time a script opens in the vault. Only once, remembered in settings, so closing it sticks.
 
 ### 3. Changes since a draft
 

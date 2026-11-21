@@ -248,6 +248,13 @@ export class FountainView extends TextFileView {
     });
   }
 
+  /** Says to switch to editing, in reading view, where there's no cursor to put text in at. True in reading view. */
+  refuseIfReading(): boolean {
+    if (!this.reading) return false;
+    new Notice(`${this.file?.basename ?? "The script"} is in reading view. Switch to editing and put the cursor where the text goes.`);
+    return true;
+  }
+
   /** Says the script is frozen, if it is. True if it is, so the edit shouldn't go ahead. */
   refuseIfFrozen(): boolean {
     if (!this.isFrozen()) return false;

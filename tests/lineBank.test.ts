@@ -22,6 +22,12 @@ describe("line bank", () => {
     expect(removeFromBank("# Line bank\n\nOne.\n", "One.")).toBe("# Line bank\n");
   });
 
+  it("removes an entry edited by hand with space at the ends of its lines", () => {
+    const bank = "# Line bank\n\nNORA  \nHello. \n\nTwo.\n";
+    const [entry] = bankEntries(bank);
+    expect(removeFromBank(bank, entry)).toBe("# Line bank\n\nTwo.\n");
+  });
+
   it("takes an entry out and puts it back at the end, as undo does", () => {
     const bank = "# Line bank\n\nOne.\n\nTwo.\n";
     expect(addToBank(removeFromBank(bank, "One."), "One.")).toBe("# Line bank\n\nTwo.\n\nOne.\n");
@@ -29,6 +35,7 @@ describe("line bank", () => {
 
   it("names the bank after the play", () => {
     expect(lineBankName("Play")).toBe("Play - Line bank");
+    expect(lineBankName("Still: A Play?")).toBe("Still A Play - Line bank");
     expect(isLineBankName("Play - Line bank")).toBe(true);
     expect(isLineBankName("Play")).toBe(false);
   });

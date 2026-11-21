@@ -101,6 +101,7 @@ export class CutsFiles {
       new Notice("Open the script, put the cursor where the cut goes, then restore it.");
       return;
     }
+    if (target.refuseIfReading()) return;
     // A frozen draft's cuts file keeps its cuts; the working draft's gives them up.
     const frozen = this.isFrozen(file);
     const { from, to } = target.selection();

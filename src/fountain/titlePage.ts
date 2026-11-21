@@ -52,8 +52,12 @@ export function plainTitle(script: ParsedScript): string {
 
 /** The file name, without the extension, of a frozen draft, such as "Play - Draft 03 - 2026-11-21". */
 export function frozenDraftName(title: string, draft: number, date: Date): string {
-  const safe = title.replace(UNSAFE_FILE_NAME_RE, "").replace(/\s+/g, " ").trim().replace(/^\.+/, "") || "Untitled";
-  return `${safe} - Draft ${String(draft).padStart(2, "0")} - ${isoDate(date)}`;
+  return `${safeFileName(title)} - Draft ${String(draft).padStart(2, "0")} - ${isoDate(date)}`;
+}
+
+/** A title made safe to name a file with: characters some systems refuse taken out, and "Untitled" if nothing's left. */
+export function safeFileName(title: string): string {
+  return title.replace(UNSAFE_FILE_NAME_RE, "").replace(/\s+/g, " ").trim().replace(/^\.+/, "") || "Untitled";
 }
 
 /**

@@ -140,9 +140,14 @@ export function headingLine(text: string): string {
   return heading.startsWith(".") || SCENE_HEADING_RE.test(heading) ? heading : `.${heading}`;
 }
 
-/** Starts a new scene at the start of a line, with a heading. Undefined on a scene heading, which already starts one. */
+/** Whether a scene can start at a line: not on a scene heading, which already starts one, nor in the title page. */
+export function canSplitAt(script: ParsedScript, line: number): boolean {
+  return script.lineRoles.get(line) !== "title-page" && !script.elements.some((el) => el.type === "scene_heading" && el.line === line);
+}
+
+/** Starts a new scene at the start of a line, with a heading. Undefined where a scene can't start (see canSplitAt). */
 export function splitScene(source: string, script: ParsedScript, line: number, heading: string): ScriptEdit | undefined {
-  if (script.elements.some((el) => el.type === "scene_heading" && el.line === line)) return undefined;
+  if (!canSplitAt(script, line)) return undefined;
   const starts = lineStarts(source);
   const at = starts[Math.min(line, starts.length - 1)];
   const insert = insertionText(source, at, at, headingLine(heading));
@@ -202,7 +207,8 @@ const FORCED_NUMBER_RE = /#([0-9A-Za-z][0-9A-Za-z.-]*)#\s*$/;
 
 /** The number written the way `like` was: digits, or words in its case. */
 function writeLike(like: string, n: number): string {
-  if (/^\d+$/.test(like)) return String(n);
+  // Words only go up to ninety-nine.
+  if (/^\d+$/.test(like) || n > 99) return String(n);
   const word = numberWord(n);
   if (like === like.toUpperCase()) return word.toUpperCase();
   if (like[0] === like[0].toUpperCase()) return word[0].toUpperCase() + word.slice(1);

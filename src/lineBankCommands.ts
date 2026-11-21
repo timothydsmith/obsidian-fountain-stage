@@ -91,7 +91,7 @@ export function addToLineBank(app: App, cuts: CutsFiles, view: FountainView): vo
 
 /** Lists the line bank's entries, and puts the one chosen in at the cursor, taking it out of the bank. */
 export async function dropFromLineBank(app: App, cuts: CutsFiles, view: FountainView): Promise<void> {
-  if (view.refuseIfFrozen()) return;
+  if (view.refuseIfFrozen() || view.refuseIfReading()) return;
   const path = cuts.bankPathFor(view);
   const entries = await cuts.bankEntriesFor(view);
   if (!path || entries.length === 0) {

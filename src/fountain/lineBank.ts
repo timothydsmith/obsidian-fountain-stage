@@ -11,6 +11,8 @@
  *     You always say that.
  */
 
+import { safeFileName } from "./titlePage";
+
 const HEADING = "# Line bank";
 
 /** The bank's entries, in order: its paragraphs, other than headings. */
@@ -48,7 +50,7 @@ export function removeFromBank(source: string, text: string): string {
   const parts = normal.split(/(\n[ \t]*\n)/);
   // Even indexes are paragraphs, odd ones the blank lines between them.
   for (let i = 0; i < parts.length; i += 2) {
-    if (parts[i].trim() !== entry) continue;
+    if (entryText(parts[i]) !== entry) continue;
     if (i + 1 < parts.length) parts.splice(i, 2);
     else if (i > 0) parts.splice(i - 1, 2);
     else parts.splice(i, 1);
@@ -60,7 +62,7 @@ export function removeFromBank(source: string, text: string): string {
 
 /** The file name, without extension, of a script's line bank, such as "Play - Line bank". */
 export function lineBankName(title: string): string {
-  return `${title} - Line bank`;
+  return `${safeFileName(title)} - Line bank`;
 }
 
 /** Whether a file name, without extension, is a line bank's. */

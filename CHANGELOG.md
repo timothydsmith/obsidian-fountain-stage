@@ -11,12 +11,15 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 - **Cut from this draft**, from the command palette or a script's **More options** menu. It moves the selected text into the current draft's cuts file in the drafts folder (`Play - Draft 04 - Cuts.fountain`), under a heading saying which scene and line it came from and when. Cuts are kept in the order of where they came from in the play. Undo in the script puts the text back and takes it out of the cuts file.
 - **Restore cut**, in a cuts file, puts the cut at the cursor back into the script, at the script's cursor, and takes it out of the cuts file. Undo puts it back in the cuts file.
 - A draft's cuts file stays editable until the draft is frozen, then opens read-only like the frozen draft. Restoring from it copies the cut and leaves the file as it is. Reading view of a cuts file shows the cut headings, though sections are hidden elsewhere.
-- **Move scene up** and **Move scene down** move the scene at the cursor, with all its text, past the scene, act or section next to it. In the outline, drag a scene above or below another heading to move it there.
+- **Move scene up** and **Move scene down** move the scene at the cursor, with all its text, past the scene, act or section next to it. In the outline, drag a scene above or below another heading to move it there, or right-click it (press and hold, on a phone) to move it up or down.
 - **Split scene** starts a new scene at the cursor's line, asking for its heading and suggesting the current heading with its number one on.
 - **Merge with previous scene** takes out the heading of the scene at the cursor, joining it to the scene before, and moves its synopsis up to join that scene's.
 - **Renumber scenes** rewrites `SCENE 3` or `SCENE THREE` in scene headings, and `#3#` scene numbers, so scenes count in order, from 1 in each act or straight through the play. It shows every change first, and remembers which way you count.
 - **Go to next scene**, **Go to previous scene**, **Go to this character's next speech** and **Go to this character's previous speech**.
 - A **line bank** beside each script (`Play - Line bank.fountain`) for lines not yet placed. **Add to line bank** adds a line, starting from the selection. **Put in a line from the line bank** puts one in at the cursor and takes it out of the bank; undo puts it back.
+
+### Changed
+- The script outline opens in the right sidebar the first time you open a script in a vault, so you don't have to find **Show script outline**. It only does this once; if you close it, it stays closed. On a phone it's added to the right sidebar without opening the sidebar.
 
 ### Fixed
 - Ctrl+Shift+Z redoes in scripts on Windows and Linux, as it does in notes. Only Ctrl+Y did before.

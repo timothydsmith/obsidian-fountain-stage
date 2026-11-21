@@ -6,6 +6,7 @@
 import { type App, Modal, Notice, Setting } from "obsidian";
 import type { FountainView } from "./editor/FountainView";
 import {
+  canSplitAt,
   mergeWithPrevious,
   moveScene,
   moveSceneTo,
@@ -35,11 +36,11 @@ export function jumpToSpeech(view: FountainView, direction: -1 | 1): void {
   else view.goToLine(next.line);
 }
 
-export function moveSceneBy(view: FountainView, direction: -1 | 1): void {
+/** Moves the scene a line is in (the cursor's, unless given) up or down past the heading next to it. */
+export function moveSceneBy(view: FountainView, direction: -1 | 1, line = view.currentLine()): void {
   if (view.refuseIfFrozen()) return;
   const source = view.getViewData();
   const script = view.script();
-  const line = view.currentLine();
   const edit = moveScene(source, script, view.isAct(), line, direction);
   if (edit) view.applyEdit([edit], edit.cursor);
   else if (!sceneHeadingAt(source, script, view.isAct(), line)) new Notice("Put the cursor in a scene to move it.");
@@ -105,8 +106,8 @@ export function splitSceneAtCursor(app: App, view: FountainView): void {
   const source = view.getViewData();
   const script = view.script();
   const line = view.currentLine();
-  if (script.elements.some((el) => el.type === "scene_heading" && el.line === line)) {
-    new Notice("Put the cursor where the new scene starts, below the heading.");
+  if (!canSplitAt(script, line)) {
+    new Notice(script.lineRoles.get(line) === "title-page" ? "Put the cursor where the new scene starts, below the title page." : "Put the cursor where the new scene starts, below the heading.");
     return;
   }
   const current = sceneHeadingAt(source, script, view.isAct(), line);

@@ -1,4 +1,4 @@
-import { normalizePath, Notice, Plugin, TFile } from "obsidian";
+import { normalizePath, Notice, Platform, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
@@ -55,7 +55,8 @@ export default class FountainStagePlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       this.registerEvent(this.app.vault.on("create", refreshFrozen));
       this.registerEvent(this.app.vault.on("delete", refreshFrozen));
-    });    this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
+    });
+    this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
     this.registerView(
       VIEW_TYPE_FOUNTAIN,
@@ -71,15 +72,22 @@ export default class FountainStagePlugin extends Plugin {
           freezeDraft: (view) => this.freezeDraft(view),
           changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
           cutFromDraft: (view) => void this.cuts.cut(view),
-          restoreCut: (view) => this.cuts.restore(view),        }),
+          restoreCut: (view) => this.cuts.restore(view),
+        }),
     );
 
     this.showStatusBar();
 
     this.registerView(
       VIEW_TYPE_OUTLINE,
-      (leaf) => new OutlineView(leaf, { timelineOf: (view) => this.timelineOf(view), moveScene: moveSceneToLine }),
+      (leaf) =>
+        new OutlineView(leaf, {
+          timelineOf: (view) => this.timelineOf(view),
+          moveScene: moveSceneToLine,
+          moveSceneBy: (view, line, direction) => moveSceneBy(view, direction, line),
+        }),
     );
+    this.addOutlineOnce();
     this.registerView(
       VIEW_TYPE_REPORT,
       (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
@@ -383,15 +391,37 @@ export default class FountainStagePlugin extends Plugin {
     }
   }
 
-  /** Shows the script outline, opening it in the right sidebar if it isn't open yet. */
-  private async showOutline(): Promise<void> {
+  /** Shows the script outline, opening it in the right sidebar if it isn't open yet. Without `reveal`, it's opened but not brought into view. */
+  private async showOutline(reveal = true): Promise<void> {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_OUTLINE)[0];
     if (!leaf) {
       leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf("split");
       await leaf.setViewState({ type: VIEW_TYPE_OUTLINE, active: false });
     }
-    await workspace.revealLeaf(leaf);
+    if (reveal) await workspace.revealLeaf(leaf);
+  }
+
+  /**
+   * Opens the outline in the right sidebar the first time a script is open
+   * in the vault. Only once: after that, Obsidian keeps it where you leave
+   * it, and if you close it, it stays closed until Show script outline. On
+   * a phone it's added to the sidebar without opening the sidebar over the
+   * script.
+   */
+  private addOutlineOnce(): void {
+    const { workspace } = this.app;
+    const add = () => {
+      if (this.settings.outlineAdded || !workspace.getActiveViewOfType(FountainView)) return;
+      this.settings.outlineAdded = true;
+      // Nothing else depends on this, so there's nothing to refresh.
+      void this.saveData(this.settings);
+      if (workspace.getLeavesOfType(VIEW_TYPE_OUTLINE).length === 0) void this.showOutline(!Platform.isMobile);
+    };
+    workspace.onLayoutReady(() => {
+      add();
+      this.registerEvent(workspace.on("active-leaf-change", add));
+    });
   }
 
   onunload(): void {

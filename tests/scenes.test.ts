@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actMatcher } from "../src/fountain/acts";
 import { parseFountain } from "../src/fountain/parser";
 import {
+  canSplitAt,
   headingLine,
   mergeWithPrevious,
   moveScene,
@@ -121,6 +122,14 @@ describe("splitting and merging", () => {
     expect(splitScene(source, parseFountain(source), 0, "X")).toBeUndefined();
   });
 
+  it("doesn't start a scene in the title page", () => {
+    const source = "Title: Play\nAuthor: Me\n\nINT. ROOM\n\nA chair.\n";
+    const script = parseFountain(source);
+    expect(canSplitAt(script, 0)).toBe(false);
+    expect(splitScene(source, script, 1, "X")).toBeUndefined();
+    expect(apply(source, splitScene(source, script, 2, ".PROLOGUE"))).toBe("Title: Play\nAuthor: Me\n\n.PROLOGUE\n\nINT. ROOM\n\nA chair.\n");
+  });
+
   it("splits partway through a paragraph with blank lines around the heading", () => {
     const source = "INT. ROOM\n\nOne.\nTwo.\n";
     expect(apply(source, splitScene(source, parseFountain(source), 3, ".SCENE 2"))).toBe("INT. ROOM\n\nOne.\n\n.SCENE 2\n\nTwo.\n");
@@ -165,6 +174,13 @@ describe("renumbering", () => {
   it("leaves scenes already in order alone", () => {
     const ordered = ".SCENE 1\n\nA.\n\n.SCENE 2\n\nB.\n";
     expect(renumberScenes(ordered, parseFountain(ordered), isAct, true)).toEqual([]);
+  });
+
+  it("writes numbers past ninety-nine in digits", () => {
+    const many = Array.from({ length: 100 }, () => ".SCENE ONE\n\nA.\n").join("\n");
+    const changes = renumberScenes(many, parseFountain(many), isAct, false);
+    expect(changes.at(-2)?.after).toBe(".SCENE NINETY-NINE");
+    expect(changes.at(-1)?.after).toBe(".SCENE 100");
   });
 
   it("writes numbers in words", () => {
