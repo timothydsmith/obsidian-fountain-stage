@@ -2,8 +2,9 @@ import { normalizePath, Notice, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
-import { FOUNTAIN_EXTENSION, isInFolder, untitledScriptPath } from "./files";
+import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { freezeDraft } from "./freezeDraft";
+import { CutsFiles } from "./cutsCommands";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
@@ -24,11 +25,13 @@ export default class FountainStagePlugin extends Plugin {
   settings: FountainStageSettings = { ...DEFAULT_SETTINGS };
   private library!: Library;
   private paginator!: Paginator;
+  private cuts!: CutsFiles;
 
   async onload(): Promise<void> {
     this.settings = readSettings(await this.loadData());
     this.library = new Library(this.app, () => this.settings);
     this.paginator = new Paginator(this.library, () => this.settings);
+    this.cuts = new CutsFiles(this.app, () => this.draftsFolder(), () => this.scriptViews());
     this.addSettingTab(new FountainStageSettingTab(this.app, this, this.settings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
@@ -42,7 +45,15 @@ export default class FountainStagePlugin extends Plugin {
         for (const view of this.scriptViews()) if (view.file === file) view.refreshFrozen();
       }),
     );
-    this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
+    // Freezing a draft freezes its cuts file too.
+    const refreshFrozen = () => {
+      for (const view of this.scriptViews()) view.refreshFrozen();
+    };
+    // Not while the vault loads, when every file is announced as created.
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on("create", refreshFrozen));
+      this.registerEvent(this.app.vault.on("delete", refreshFrozen));
+    });    this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
     this.registerView(
       VIEW_TYPE_FOUNTAIN,
@@ -51,9 +62,13 @@ export default class FountainStagePlugin extends Plugin {
           exportPdf: (view) => view.file && void this.exportPdf(view.file),
           paginate: (script) => this.paginator.paginate(script),
           showPageBreaks: () => this.settings.showPageBreaks,
-          isDraft: (file) => isInFolder(file.path, this.draftsFolder()),
+          inDraftsFolder: (file) => this.cuts.inDraftsFolder(file),
+          isFrozen: (file) => this.cuts.isFrozen(file),
+          isCutsFile: (file) => this.cuts.isCutsFile(file),
           freezeDraft: (view) => this.freezeDraft(view),
-        }),
+          changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
+          cutFromDraft: (view) => void this.cuts.cut(view),
+          restoreCut: (view) => this.cuts.restore(view),        }),
     );
 
     this.showStatusBar();
@@ -121,6 +136,26 @@ export default class FountainStagePlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(FountainView);
         if (!view?.isFrozen()) return false;
         if (!checking) view.unfreeze();
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "cut-from-draft",
+      name: "Cut from this draft",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view || view.isDraft()) return false;
+        if (!checking) void this.cuts.cut(view);
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "restore-cut",
+      name: "Restore cut",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view?.file || !this.cuts.isCutsFile(view.file)) return false;
+        if (!checking) this.cuts.restore(view);
         return true;
       },
     });

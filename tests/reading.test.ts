@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { readingText } from "../src/fountain/reading";
+import { readingHiddenRanges, readingText } from "../src/fountain/reading";
 
 describe("readingText", () => {
   it("hides forcing marks and emphasis marks", () => {
@@ -49,5 +49,15 @@ describe("readingText", () => {
     const text = readingText(sample);
     expect(text).not.toMatch(/\[\[|\/\*|\*\*/);
     expect(text).not.toMatch(/\n\n\n/);
+  });
+});
+
+describe("reading view of a cuts file", () => {
+  it("keeps section headings, without their #", () => {
+    const source = "# 1. INT. ROOM, line 2 · 22 November 2026\n\nA chair.\n";
+    let shown = source;
+    for (const { from, to } of readingHiddenRanges(source, { showSections: true }).reverse()) shown = shown.slice(0, from) + shown.slice(to);
+    expect(shown).toBe("1. INT. ROOM, line 2 · 22 November 2026\n\nA chair.\n");
+    expect(readingText(source)).toBe("A chair.\n");
   });
 });

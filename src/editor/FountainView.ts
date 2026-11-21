@@ -1,6 +1,6 @@
 import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { characterCompletion } from "./completion";
@@ -14,6 +14,7 @@ import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
 import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
 import { renameCharacter } from "../renameCharacterModal";
+import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain-stage-script";
 
@@ -62,9 +63,17 @@ export interface FountainHost {
   /** Lays the script out as its PDF would be, to find its pages. */
   paginate(script: ParsedScript): Promise<PaginatedScript>;
   showPageBreaks(): boolean;
-  /** Whether a file is a frozen draft, in the drafts folder. */
-  isDraft(file: TFile): boolean;
+  /** Whether a file is in the drafts folder: a frozen draft or a cuts file. */
+  inDraftsFolder(file: TFile): boolean;
+  /** Whether a file is read-only until unfrozen: a frozen draft, or the cuts file of one. */
+  isFrozen(file: TFile): boolean;
   freezeDraft(view: FountainView): void;
+  /** Adds a cut to its cuts file, or takes one out, as a cut or restore is made, undone or redone. */
+  changeCutsFile(change: CutsFileChange): void;
+  /** Whether a file is a cuts file, in the drafts folder. */
+  isCutsFile(file: TFile): boolean;
+  cutFromDraft(view: FountainView): void;
+  restoreCut(view: FountainView): void;
 }
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
@@ -188,15 +197,49 @@ export class FountainView extends TextFileView {
     this.setMode(false, !this.sourceMode);
   }
 
-  /** Whether the script is a draft in the drafts folder, frozen or not. */
+  /** Whether the script is in the drafts folder: a frozen draft or a cuts file, frozen or not. */
   isDraft(): boolean {
     // No file yet while the view is being made.
-    return this.file ? this.host.isDraft(this.file) : false;
+    return this.file ? this.host.inDraftsFolder(this.file) : false;
   }
 
-  /** Whether the script is a frozen draft: read-only, in reading view, until it's unfrozen. */
+  /** Whether the script is frozen: read-only, in reading view, until it's unfrozen. */
   isFrozen(): boolean {
-    return this.isDraft() && !this.unfrozen;
+    return this.file ? this.host.isFrozen(this.file) && !this.unfrozen : false;
+  }
+
+  /** The main selection, as offsets and its text. */
+  selection(): { from: number; to: number; text: string } {
+    const { from, to } = this.editor.state.selection.main;
+    return { from, to, text: this.editor.state.sliceDoc(from, to) };
+  }
+
+  /**
+   * Takes text out of the script as a cut, as one step to undo, if it's
+   * still there. change says what was done to the cuts file, so undo can
+   * take it out again.
+   */
+  removeCut(from: number, to: number, text: string, change: CutsFileChange): boolean {
+    if (this.editor.state.sliceDoc(from, to) !== text) return false;
+    this.editor.dispatch({
+      changes: { from, to },
+      effects: cutsFileEffect.of(change),
+      selection: EditorSelection.cursor(from),
+      userEvent: "delete.cut",
+    });
+    return true;
+  }
+
+  /** Puts text in at the cursor, in place of any selection, as one step to undo. change is made to a cuts file with it. */
+  insertAtCursor(text: string, change?: CutsFileChange): void {
+    const { from, to } = this.editor.state.selection.main;
+    this.editor.dispatch({
+      changes: { from, to, insert: text },
+      effects: change ? cutsFileEffect.of(change) : [],
+      selection: EditorSelection.cursor(from + text.length),
+      scrollIntoView: true,
+      userEvent: "input.paste",
+    });
   }
 
   /** Says the script is frozen, if it is. True if it is, so the edit shouldn't go ahead. */
@@ -252,6 +295,23 @@ export class FountainView extends TextFileView {
           .setTitle("Freeze draft")
           .setIcon("snowflake")
           .onClick(() => this.host.freezeDraft(this)),
+      );
+    }
+    if (!this.isDraft()) {
+      menu.addItem((item) =>
+        item
+          .setSection("action")
+          .setTitle("Cut from this draft")
+          .setIcon("scissors")
+          .onClick(() => this.host.cutFromDraft(this)),
+      );
+    } else if (this.file && this.host.isCutsFile(this.file)) {
+      menu.addItem((item) =>
+        item
+          .setSection("action")
+          .setTitle("Restore cut")
+          .setIcon("undo-2")
+          .onClick(() => this.host.restoreCut(this)),
       );
     }
     menu.addItem((item) =>
@@ -366,7 +426,7 @@ export class FountainView extends TextFileView {
   }
 
   private currentModeExtensions(): Extension {
-    if (this.reading) return [fountainFormatting(), readingView()];
+    if (this.reading) return [fountainFormatting(), readingView({ showSections: this.file ? this.host.isCutsFile(this.file) : false })];
     const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion(), lineTypeCycling()];
     return this.sourceMode ? editing : [fountainFormatting(), editing];
   }
@@ -565,10 +625,12 @@ export class FountainView extends TextFileView {
         actPatternField.init(() => this.actPattern()),
         this.pageDisplay.of(this.currentPageDisplay()),
         history(),
+        cutHistory((change) => this.host.changeCutsFile(change)),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        // Ctrl+Shift+Z redoes too, as in notes; CodeMirror only has Ctrl+Y on Windows.
+        keymap.of([...defaultKeymap, ...historyKeymap, { key: "Mod-Shift-z", run: redo, preventDefault: true }]),
         EditorView.updateListener.of((update) => {
           const external = update.transactions.some((tr) => tr.annotation(fromFile));
           if (update.docChanged && !external) this.requestSave();

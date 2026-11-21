@@ -93,19 +93,20 @@ Decided:
 - [x] A script with no title page gets one on freeze, in both the frozen copy and the working file.
 - [x] Draft notes on freeze, from Ideas and history, are part of it.
 
-### 2. Cut from this draft
+### 2. Cut from this draft (built, on dev)
 
 - A command cuts the selection from the script and adds it to `Play - Cuts.fountain`.
 - Each cut sits under its own heading, filled in automatically, with an optional label: `# 21 Nov 2026 · Draft 4 · from 2.3 KITCHEN`.
 - **Restore cut**, run from the cuts file, puts a cut back at the cursor in the script.
 - It does boneyard's job without bringing boneyard back into scope.
 
-To decide:
+Decided:
 
-- [ ] Order: newest at the bottom (chronological) or the top (easier to find)?
-- [ ] Partial lines: cut exactly what's selected, or widen to whole lines?
-- [ ] Undo in the script leaves the copy in the cuts file. Accept that?
-- [ ] Where the cuts file lives, and whether the outline, report and runtime ignore it.
+- [x] Order: script order, by where each cut came from in the play. The heading records the scene number and the line in that scene, which keep the order.
+- [x] One cuts file per draft, `Play - Draft 04 - Cuts.fountain`, in the drafts folder. It's editable until its draft is frozen, then frozen with it.
+- [x] Partial lines: cut exactly what's selected.
+- [x] Undo in the script takes the cut out of the cuts file again, and redo puts it back. Restoring a cut takes it out of the working draft's cuts file, and undo of that puts it back.
+- [x] Cuts files are files of their own, so a script's outline, report and runtime never count them.
 
 ### 3. Changes since a draft
 

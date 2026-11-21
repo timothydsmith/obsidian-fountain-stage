@@ -7,6 +7,14 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- **Cut from this draft**, from the command palette or a script's **More options** menu. It moves the selected text into the current draft's cuts file in the drafts folder (`Play - Draft 04 - Cuts.fountain`), under a heading saying which scene and line it came from and when. Cuts are kept in the order of where they came from in the play. Undo in the script puts the text back and takes it out of the cuts file.
+- **Restore cut**, in a cuts file, puts the cut at the cursor back into the script, at the script's cursor, and takes it out of the cuts file. Undo puts it back in the cuts file.
+- A draft's cuts file stays editable until the draft is frozen, then opens read-only like the frozen draft. Restoring from it copies the cut and leaves the file as it is. Reading view of a cuts file shows the cut headings, though sections are hidden elsewhere.
+
+### Fixed
+- Ctrl+Shift+Z redoes in scripts on Windows and Linux, as it does in notes. Only Ctrl+Y did before.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added
