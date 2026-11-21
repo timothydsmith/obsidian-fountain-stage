@@ -73,7 +73,7 @@ The Fountain spec says sections are ignored completely in formatted output, but 
 - **No convert command.** Scripts are assumed to follow the spec; the changelog says how to rewrite `#` acts and `##` scenes by hand.
 - **Tests:** layout snapshots change on purpose. Parity with fountain2pdf ends for sections.
 
-### 1. Freeze draft (decided)
+### 1. Freeze draft (built, on dev)
 
 - **Freeze draft** command, also in the script's More options menu.
 - Reads the draft number from the working file's `Draft:` key. No key means Draft 1.
@@ -85,12 +85,13 @@ The Fountain spec says sections are ignored completely in formatted output, but 
 - On the title page, draft and date print bottom right, with contact details staying bottom left. A new style field, `titlePage.draft`, sets the corner or hides them. APT hides them by default.
 - PDFs exported from the working file print "Draft 4 (working)".
 
-Code notes: `Draft:` and `Draft date:` currently fall into the contact block with their labels dropped (`NOT_CONTACT` in `src/pdf/layout.ts`). The new style field needs adding to `src/pdf/userStyles.ts` and the README settings table.
+Decided while building: the copy is named from the title-page `Title:` (as plain text), or the file name without one. Draft notes from Ideas and history came in with it, in a `Draft notes:` key that never prints. **Unfreeze** lasts until the tab closes, so nothing records which drafts are unfrozen. The drafts folder is `Drafts` to start with.
 
-Still open:
+Decided:
 
-- [ ] Date format: "21 November 2026" assumed.
-- [ ] A script with no title page: create one on freeze?
+- [x] Date format: "21 November 2026".
+- [x] A script with no title page gets one on freeze, in both the frozen copy and the working file.
+- [x] Draft notes on freeze, from Ideas and history, are part of it.
 
 ### 2. Cut from this draft
 
@@ -183,7 +184,7 @@ All agreed. The release plan sets the order.
 ### Ideas and history
 
 - **Line bank.** The opposite of the cuts file: lines not yet placed. Quick capture on the phone, then drop one at the cursor. Shares the cuts file's machinery.
-- **Draft notes on freeze.** Freeze asks "What's this draft for?" and keeps the answer on the frozen copy in a title-page key that isn't printed.
+- **Draft notes on freeze.** Freeze asks "What's this draft for?" and keeps the answer on the frozen copy in a title-page key that isn't printed. Built with Freeze draft in 0.2.0.
 - **Side by side.** The working file and a frozen draft, scrolling together.
 
 ### Readings

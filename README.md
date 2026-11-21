@@ -50,6 +50,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
   The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
+- Frozen drafts. **Freeze draft**, from the command palette or a script's **More options** menu, saves a copy of the script as it is now in your drafts folder (`Drafts` unless you change it in Fountain Stage's settings), and moves the script on to the next draft. See [Drafts](#drafts).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -58,6 +59,19 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Your own fonts, from font files in your vault.
 - An export dialog to pick the style, add a watermark (such as DRAFT) across every page, and include notes and synopses. A `Style:` key on a script's title page picks its style to start with.
 - Works on desktop and mobile.
+
+## Drafts
+
+A script's draft number is its title page's `Draft:` key. A script with no `Draft:` key is draft 1.
+
+**Freeze draft** asks what the draft is for (you can leave it blank) and whether to export a PDF of it. Then, for draft 3 of a play called *Play*, frozen on 21 November 2026:
+
+- A copy of the script goes in the drafts folder as `Play - Draft 03 - 2026-11-21.fountain`. Its title page says `Draft: 3` and `Draft date: 21 November 2026`, and what the draft is for goes in a `Draft notes:` key, which never prints.
+- The script itself becomes `Draft: 4 (working)`, without a draft date. Undo puts it back.
+
+A script with no title page gets one, with its file name as the title. Scripts in the drafts folder open read-only, in reading view. To change one, choose **Unfreeze** from its **More options** menu, or run **Unfreeze draft**. It stays editable until you close its tab.
+
+The draft and its date print in the bottom right corner of the title page, so a PDF of the working script says "Draft 4 (working)". A style can put them bottom left or leave them off with `titlePage.draft`; APT leaves them off.
 
 ## Exporting to PDF
 
@@ -110,7 +124,7 @@ Every setting:
 | `page` | `size` (`"A4"`, `"A5"`, `"letter"`, `"legal"`), `width`, `height`, `margins` (`top`, `right`, `bottom`, `left`) |
 | `fonts` | `family`: a font family name, or a list tried in order; `fallback`: `"times"`, `"helvetica"` or `"courier"` |
 | `text` | `size`, `leading` (baseline to baseline) |
-| `titlePage` | `titleSize`, `bylineSize` |
+| `titlePage` | `titleSize`, `bylineSize`, `draft` (where the draft number and date print: `"right"` or `"left"` bottom corner, or `"hide"`) |
 | `character` | `size`, `bold`, `ownLine` (name above the speech, or beside its first line), `alignment`, `shortParentheticalInline` ("JOHN (laughing)"), `nameColumnWidth` and `gutter` (when beside) |
 | `speech` | `gap` (between speeches), `moreContinued` (mark speeches that break across a page), `moreText`, `continuedText`, `dualLabel` (added to both names of dual dialogue) |
 | `parenthetical` | `italic`, `indent` |
@@ -179,6 +193,7 @@ Layout:
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
 | `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
 | `src/fountain/rename.ts`, `src/renameCharacterModal.ts` | Renaming a character: finding every place to change, and the dialog |
+| `src/fountain/titlePage.ts`, `src/freezeDraft.ts` | Freezing drafts: reading and rewriting title-page keys, and the freeze dialog |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

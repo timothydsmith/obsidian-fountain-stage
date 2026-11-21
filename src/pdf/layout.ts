@@ -23,8 +23,8 @@ const PRELIMINARY_SECTIONS: { heading: string; keys: string[] }[] = [
 ];
 const PRELIMINARY_KEYS = new Set(PRELIMINARY_SECTIONS.flatMap((s) => s.keys));
 
-/** Title-page keys with a place of their own, kept out of the contact block. `style` picks the export style and is never printed. */
-const NOT_CONTACT = new Set(["title", "author", "authors", "credit", "style"]);
+/** Title-page keys with a place of their own, kept out of the contact block. The draft and its date go in a bottom corner. */
+const NOT_CONTACT = new Set(["title", "author", "authors", "credit", "draft", "draft date"]);
 
 /** A "Name<two or more spaces>Description" line, or failing that "Name: Description". */
 const NAME_DESCRIPTION_RE = /^(\S.*?)\s{2,}(\S.*)$/;
@@ -493,11 +493,20 @@ class StoryBuilder {
   }
 }
 
+/** Title-page keys that never print: `style` picks the export style, and `draft notes` says what a frozen draft was for. */
+const NEVER_PRINTED = ["style", "draft notes"];
+
 /** The title-page values that print. */
 function titleValues(script: ParsedScript): Record<string, string[]> {
   const values = { ...script.titleValues };
-  delete values.style;
+  for (const key of NEVER_PRINTED) delete values[key];
   return values;
+}
+
+/** The draft and its date, as they print in a corner of the title page: "Draft 4 (working)" from `Draft: 4 (working)`. */
+export function draftLines(values: Record<string, string[]>): string[] {
+  const draft = join(values.draft);
+  return [/^\d/.test(draft) ? `Draft ${draft}` : draft, join(values["draft date"])].filter(Boolean);
 }
 
 const ROMAN: [number, string][] = [
@@ -569,6 +578,19 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
       ], style.text.size);
     }
   });
+
+  // The draft and its date, in a bottom corner of the title page, the last line on the bottom margin.
+  const corner = style.titlePage.draft;
+  const draft = draftLines(values);
+  if (hasTitlePage && corner !== "hide" && draft.length > 0 && result.pages.length > 0) {
+    const { size, leading } = style.text;
+    draft.forEach((line, i) => {
+      const text = fonts.clean(line);
+      const x = corner === "left" ? margins.left : width - margins.right - fonts.width(text, "regular", size);
+      const y = margins.bottom + (draft.length - 1 - i) * leading;
+      result.pages[0].texts.push({ x, y, text, face: "regular", size, color: BLACK });
+    });
+  }
 
   const watermark = options.watermark?.trim();
   if (watermark) {

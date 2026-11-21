@@ -25,7 +25,7 @@ export const apt: PlayStyle = {
   page: { ...A4, margins: { top: 40 * MM, right: 25 * MM, bottom: 25 * MM, left: 25 * MM } },
   fonts: { family: ["Palatino", "TeX Gyre Pagella"], fallback: "times" },
   text: { size: 10, leading: 13 },
-  titlePage: { titleSize: 35, bylineSize: 18 },
+  titlePage: { titleSize: 35, bylineSize: 18, draft: "hide" },
   character: {
     size: 10,
     bold: false,

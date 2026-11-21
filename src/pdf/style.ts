@@ -58,7 +58,12 @@ export interface PlayStyle {
     leading: number;
   };
 
-  titlePage: { titleSize: number; bylineSize: number };
+  titlePage: {
+    titleSize: number;
+    bylineSize: number;
+    /** Which bottom corner of the title page the draft number and date print in, or "hide" not to print them. */
+    draft: "left" | "right" | "hide";
+  };
 
   character: {
     size: number;

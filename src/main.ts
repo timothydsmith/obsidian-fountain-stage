@@ -2,7 +2,8 @@ import { normalizePath, Notice, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
-import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
+import { FOUNTAIN_EXTENSION, isInFolder, untitledScriptPath } from "./files";
+import { freezeDraft } from "./freezeDraft";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
@@ -34,7 +35,13 @@ export default class FountainStagePlugin extends Plugin {
       load: (): unknown => this.app.loadLocalStorage(POSITIONS_KEY),
       save: (data) => this.app.saveLocalStorage(POSITIONS_KEY, data),
     });
-    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.positions.rename(oldPath, file.path)));
+    this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) => {
+        this.positions.rename(oldPath, file.path);
+        // A script moved into the drafts folder is frozen now, or one moved out isn't.
+        for (const view of this.scriptViews()) if (view.file === file) view.refreshFrozen();
+      }),
+    );
     this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
     this.registerView(
@@ -44,6 +51,8 @@ export default class FountainStagePlugin extends Plugin {
           exportPdf: (view) => view.file && void this.exportPdf(view.file),
           paginate: (script) => this.paginator.paginate(script),
           showPageBreaks: () => this.settings.showPageBreaks,
+          isDraft: (file) => isInFolder(file.path, this.draftsFolder()),
+          freezeDraft: (view) => this.freezeDraft(view),
         }),
     );
 
@@ -95,6 +104,26 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
     viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
     viewCommand("rename-character", "Rename character", (view) => renameCharacter(this.app, view));
+    this.addCommand({
+      id: "freeze-draft",
+      name: "Freeze draft",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view || view.isDraft()) return false;
+        if (!checking) this.freezeDraft(view);
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "unfreeze-draft",
+      name: "Unfreeze draft",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view?.isFrozen()) return false;
+        if (!checking) view.unfreeze();
+        return true;
+      },
+    });
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
@@ -124,10 +153,7 @@ export default class FountainStagePlugin extends Plugin {
 
   /** Exports a script, using unsaved changes if it's open. */
   private async exportPdf(file: TFile): Promise<void> {
-    const open = this.app.workspace
-      .getLeavesOfType(VIEW_TYPE_FOUNTAIN)
-      .map((leaf) => leaf.view)
-      .find((view): view is FountainView => view instanceof FountainView && view.file?.path === file.path);
+    const open = this.scriptViews().find((view) => view.file?.path === file.path);
     const source = open ? open.getViewData() : await this.app.vault.read(file);
     await exportScript(this.app, this.library, file, source, this.settings.export, (choices) => {
       this.settings.export = choices;
@@ -136,10 +162,28 @@ export default class FountainStagePlugin extends Plugin {
     });
   }
 
+  private freezeDraft(view: FountainView): void {
+    freezeDraft(this.app, view, this.draftsFolder(), (file) => void this.exportPdf(file));
+  }
+
+  /** The drafts folder, or the default if the setting is blank. */
+  private draftsFolder(): string {
+    return normalizePath(this.settings.draftsFolder.trim() || DEFAULT_SETTINGS.draftsFolder);
+  }
+
+  /** The open scripts. */
+  private scriptViews(): FountainView[] {
+    return this.app.workspace
+      .getLeavesOfType(VIEW_TYPE_FOUNTAIN)
+      .map((leaf) => leaf.view)
+      .filter((view): view is FountainView => view instanceof FountainView);
+  }
+
   private async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
-    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN)) {
-      if (leaf.view instanceof FountainView) leaf.view.refreshPages();
+    for (const view of this.scriptViews()) {
+      view.refreshPages();
+      view.refreshFrozen();
     }
   }
 

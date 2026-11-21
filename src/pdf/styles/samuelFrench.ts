@@ -23,7 +23,7 @@ export const samuelFrench: PlayStyle = {
   page: { ...LETTER, margins: { top: INCH, right: INCH, bottom: INCH, left: 1.5 * INCH } },
   fonts: { family: [], fallback: "times" },
   text: { size: 12, leading: 14 },
-  titlePage: { titleSize: 24, bylineSize: 14 },
+  titlePage: { titleSize: 24, bylineSize: 14, draft: "right" },
   character: {
     size: 12,
     bold: false,

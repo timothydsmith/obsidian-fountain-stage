@@ -7,7 +7,6 @@ exports[`built-in styles > lays out the sample script in apt 1`] = `
     "264.64 460.23 regular 18 a play by",
     "282.63 432.63 regular 18 Tim",
     "76.87 228.75 regular 10 tim@example.com",
-    "76.87 215.75 regular 10 August 2026",
   ],
   [
     "262.64 712.50 bold 10 CHARACTERS",
@@ -96,7 +95,7 @@ exports[`built-in styles > lays out the sample script in modern 1`] = `
     "298.34 468.93 regular 14 a play by",
     "312.33 446.13 regular 14 Tim",
     "114.00 241.05 regular 12 tim@example.com",
-    "114.00 227.05 regular 12 August 2026",
+    "478.33 72.00 regular 12 August 2026",
   ],
   [
     "282.00 702.00 bold 12 CHARACTERS",
@@ -192,7 +191,7 @@ exports[`built-in styles > lays out the sample script in samuel_french 1`] = `
     "298.34 468.93 regular 14 a play by",
     "312.33 446.13 regular 14 Tim",
     "114.00 241.05 regular 12 tim@example.com",
-    "114.00 227.05 regular 12 August 2026",
+    "478.33 72.00 regular 12 August 2026",
   ],
   [
     "284.33 702.00 regular 12 CHARACTERS",

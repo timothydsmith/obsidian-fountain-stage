@@ -32,6 +32,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - The engine has no style-specific logic. A new layout behaviour becomes a new style field whose default leaves existing styles unchanged.
 - Layout (pages of positioned text) is separate from PDF drawing (pdf-lib), and layout output is snapshot-tested per style.
 - Fonts come from files in the vault, falling back to the standard PDF fonts with a notice. Vault fonts are matched by the family, weight and italic flag inside the file, not the file name, and are embedded without ligatures or kerning, as reportlab drew them.
-- Layout must keep matching fountain2pdf (reportlab): same page breaks and line positions. It matched on 3 scripts × 3 styles, and with real Palatino. The intended differences: list bullets use the body font, not Helvetica; and sections never print (from 0.2.0), so parity doesn't cover them.
+- Layout must keep matching fountain2pdf (reportlab): same page breaks and line positions. It matched on 3 scripts × 3 styles, and with real Palatino. The intended differences: list bullets use the body font, not Helvetica; sections never print (from 0.2.0), so parity doesn't cover them; and `Draft:` and `Draft date:` print in a title-page corner (`titlePage.draft`), not with the contact details.
 - User style files: `src/pdf/userStyles.ts` holds the schema of every overridable setting. A new style field needs adding there and to the README's settings table.
-- A title-page `Style:` key picks the export style and is never printed. Without one, the user picks on export.
+- A title-page `Style:` key picks the export style and is never printed. Without one, the user picks on export. `Draft notes:` never prints either.
+- Frozen drafts are the scripts in the drafts folder. Changes to the working file on freeze go through `FountainView.applyChanges`, so one undo puts them back.

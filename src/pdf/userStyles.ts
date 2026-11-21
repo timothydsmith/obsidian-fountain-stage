@@ -75,7 +75,7 @@ const SCHEMA: Group = {
   },
   fonts: { family: { kind: "families" }, fallback: choice("times", "helvetica", "courier") },
   text: { size, leading: size },
-  titlePage: { titleSize: size, bylineSize: size },
+  titlePage: { titleSize: size, bylineSize: size, draft: choice("left", "right", "hide") },
   character: {
     size,
     bold: bool,
