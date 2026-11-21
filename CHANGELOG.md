@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
 ### Added
 - **Freeze draft**, from the command palette or a script's **More options** menu. It saves a copy of the script as it is now in the drafts folder, named for the play, draft and date (`Play - Draft 03 - 2026-11-21.fountain`), with `Draft: 3` and `Draft date: 21 November 2026` on its title page. The script itself moves on to `Draft: 4 (working)`, and undo puts it back. The draft number comes from the `Draft:` key, and a script without one is draft 1. Freezing asks what the draft is for, kept on the copy in a `Draft notes:` key that never prints, and whether to export a PDF of it. A script with no title page gets one.
 - A **Drafts folder** setting, `Drafts` to start with. Scripts in it open read-only, in reading view. **Unfreeze**, in a draft's **More options** menu or as the **Unfreeze draft** command, makes one editable until you close its tab.
@@ -67,7 +69,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...0.2.0
 [0.1.3]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...0.1.1
