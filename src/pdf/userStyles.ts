@@ -10,6 +10,7 @@
  * a file is reported with the setting and the reason.
  */
 
+import { actPatternProblem } from "../fountain/acts";
 import { A4, INCH, LETTER, MM, type PlayStyle } from "./style";
 
 export interface StyleFile {
@@ -37,7 +38,10 @@ type Kind =
   | { kind: "enum"; values: readonly string[] }
   | { kind: "color" }
   | { kind: "families" }
-  | { kind: "pageSize" };
+  | { kind: "pageSize" }
+  | { kind: "pattern" }
+  /** A setting that no longer does anything, accepted so older style files still load. */
+  | { kind: "retired" };
 interface Group {
   [key: string]: Kind | Group;
 }
@@ -84,8 +88,9 @@ const SCHEMA: Group = {
   speech: { gap: length, moreContinued: bool, moreText: text, continuedText: text, dualLabel: text },
   parenthetical: { italic: bool, indent: length },
   action: { size, italic: bool, alignment, leftIndent: length, rightIndent: length, color },
-  act: { size, bold: bool, italic: bool, underline: bool, alignment },
-  scene: { size, bold: bool, italic: bool, underline: bool, alignment, uppercaseSections: bool },
+  act: { size, bold: bool, italic: bool, underline: bool, alignment, pattern: { kind: "pattern" }, newPage: bool },
+  // uppercaseSections set how `##` scene sections printed. Sections no longer print.
+  scene: { size, bold: bool, italic: bool, underline: bool, alignment, uppercaseSections: { kind: "retired" } },
   sceneNumbers: { position: choice("hide", "before", "after"), format: text, inHeader: bool },
   header: { strap: bool },
   pagination: {
@@ -229,6 +234,15 @@ function applyValue(target: Record<string, unknown>, key: string, value: unknown
       target.height = page.height;
       return;
     }
+    case "pattern": {
+      if (typeof value !== "string") return `"${path}" must be a regular expression in quotes, such as "^ACT\\\\b".`;
+      const problem = actPatternProblem(value);
+      if (problem) return `"${path}" isn't a regular expression that can be used: ${problem}.`;
+      target[key] = value;
+      return;
+    }
+    case "retired":
+      return;
   }
 }
 

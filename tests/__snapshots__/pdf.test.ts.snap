@@ -117,7 +117,7 @@ exports[`built-in styles > lays out the sample script in modern 1`] = `
   ],
   [
     "298.17 702.00 regular 12 ACT ONE",
-    "298.18 670.00 regular 12 Scene One",
+    "291.17 670.00 regular 12 SCENE ONE",
     "312.00 638.00 regular 12 A cramped community theatre green room,",
     "312.00 624.00 regular 12 late at night. A single bare bulb hangs from",
     "312.00 610.00 regular 12 the ceiling. Two mismatched armchairs face",
@@ -149,10 +149,10 @@ exports[`built-in styles > lays out the sample script in modern 1`] = `
     "150.00 164.00 regular 12 (quietly)",
     "114.00 150.00 regular 12 I don't know how it ends. That's the problem.",
     "269.32 122.00 bold 12 LIGHTS SHIFT TO:",
-    "297.17 98.00 regular 12 Scene Two",
+    "289.84 98.00 regular 12 SCENE TWO",
     "531.00 756.00 regular 12 1.",
-    "rule 298.18-349.82 668.50",
-    "rule 297.17-350.83 96.50",
+    "rule 291.17-356.83 668.50",
+    "rule 289.84-358.16 96.50",
   ],
   [
     "312.00 702.00 regular 12 The stage itself, empty except for a single",
@@ -168,7 +168,7 @@ exports[`built-in styles > lays out the sample script in modern 1`] = `
   ],
   [
     "296.84 702.00 regular 12 ACT TWO",
-    "298.18 670.00 regular 12 Scene One",
+    "291.17 670.00 regular 12 SCENE ONE",
     "256.35 638.00 regular 12 THE FOLLOWING WEEK",
     "312.00 614.00 regular 12 The green room again, tidier now. DAVID",
     "312.00 600.00 regular 12 enters, already in costume.",
@@ -180,7 +180,7 @@ exports[`built-in styles > lays out the sample script in modern 1`] = `
     "114.00 478.00 regular 12 Liar.",
     "312.00 450.00 regular 12 They laugh. Blackout.",
     "531.00 756.00 regular 12 3.",
-    "rule 298.18-349.82 668.50",
+    "rule 291.17-356.83 668.50",
   ],
 ]
 `;
@@ -218,7 +218,7 @@ exports[`built-in styles > lays out the sample script in samuel_french 1`] = `
   ],
   [
     "298.17 702.00 regular 12 ACT ONE",
-    "298.18 670.00 regular 12 Scene One",
+    "291.17 670.00 regular 12 SCENE ONE",
     "114.70 638.00 regular 12 A cramped community theatre green room, late at night. A single bare bulb hangs from",
     "189.87 624.00 regular 12 the ceiling. Two mismatched armchairs face each other.",
     "131.36 600.00 italic 12 MARGARET",
@@ -244,15 +244,15 @@ exports[`built-in styles > lays out the sample script in samuel_french 1`] = `
     "282.51 248.00 regular 12 DAVID (quietly)",
     "114.00 234.00 regular 12 I don't know how it ends. That's the problem.",
     "269.32 206.00 bold 12 LIGHTS SHIFT TO:",
-    "297.17 182.00 regular 12 Scene Two",
+    "289.84 182.00 regular 12 SCENE TWO",
     "163.03 150.00 regular 12 The stage itself, empty except for a single chair under a work light.",
     "238.84 126.00 regular 12 MARGARET enters alone and sits.",
     "290.33 102.00 regular 12 MARGARET",
     "114.00 88.00 regular 12 Some nights the theatre is the only honest room left.",
     "531.00 756.00 regular 12 1.",
     "rule 298.17-349.83 700.50",
-    "rule 298.18-349.82 668.50",
-    "rule 297.17-350.83 180.50",
+    "rule 291.17-356.83 668.50",
+    "rule 289.84-358.16 180.50",
   ],
   [
     "245.50 702.00 regular 12 She looks out at the empty seats.",
@@ -263,7 +263,7 @@ exports[`built-in styles > lays out the sample script in samuel_french 1`] = `
   ],
   [
     "296.84 702.00 regular 12 ACT TWO",
-    "298.18 670.00 regular 12 Scene One",
+    "291.17 670.00 regular 12 SCENE ONE",
     "256.35 638.00 regular 12 THE FOLLOWING WEEK",
     "155.71 614.00 regular 12 The green room again, tidier now. DAVID enters, already in costume.",
     "304.67 590.00 regular 12 DAVID",
@@ -275,7 +275,7 @@ exports[`built-in styles > lays out the sample script in samuel_french 1`] = `
     "270.67 464.00 regular 12 They laugh. Blackout.",
     "531.00 756.00 regular 12 3.",
     "rule 296.84-351.16 700.50",
-    "rule 298.18-349.82 668.50",
+    "rule 291.17-356.83 668.50",
   ],
 ]
 `;

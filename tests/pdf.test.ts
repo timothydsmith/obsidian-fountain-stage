@@ -105,9 +105,30 @@ describe("layout", () => {
   });
 
   it("starts each act on a new page", () => {
-    const doc = layoutScript(parseFountain("# Act One\n\nA chair.\n\n# Act Two\n\nAnother chair.\n"), style("modern"), fonts);
+    const doc = layoutScript(parseFountain(".ACT ONE\n\nA chair.\n\n.Act Two\n\nAnother chair.\n"), style("modern"), fonts);
     expect(doc.pages).toHaveLength(2);
     expect(texts(doc)[1]).toContain("ACT TWO");
+  });
+
+  it("keeps acts on the page when the style says so", () => {
+    const sameStyle = { ...style("modern"), act: { ...style("modern").act, newPage: false } };
+    const doc = layoutScript(parseFountain(".ACT ONE\n\nA chair.\n\n.ACT TWO\n\nAnother chair.\n"), sameStyle, fonts);
+    expect(doc.pages).toHaveLength(1);
+  });
+
+  it("finds acts by the style's act pattern", () => {
+    const interval = { ...style("modern"), act: { ...style("modern").act, pattern: "^(ACT|INTERVAL)\\b" } };
+    const source = ".ACT ONE\n\nA chair.\n\n.INTERVAL\n\nAnother chair.\n";
+    expect(layoutScript(parseFountain(source), style("modern"), fonts).pages).toHaveLength(1);
+    expect(layoutScript(parseFountain(source), interval, fonts).pages).toHaveLength(2);
+  });
+
+  it("never prints sections", () => {
+    const doc = layoutScript(parseFountain("# Act One\n\n## Scene One\n\nINT. ROOM\n\nA chair.\n\n# Act Two\n\nAnother chair.\n"), style("modern"), fonts);
+    expect(doc.pages).toHaveLength(1);
+    const all = texts(doc).flat().join(" ");
+    expect(all).not.toMatch(/act one|scene one|act two/i);
+    expect(all).toContain("INT. ROOM");
   });
 
   it("draws links in blue with an annotation", () => {

@@ -23,7 +23,7 @@ describe("wordsTimeline", () => {
     "",
     "A note before the play.",
     "",
-    "# Act One",
+    ".ACT ONE",
     "",
     "INT. ROOM",
     "",
@@ -33,7 +33,7 @@ describe("wordsTimeline", () => {
     "(beat)",
     "One two three four five six.",
     "",
-    "# Act Two",
+    ".ACT TWO",
     "",
     "Silence.",
   ].join("\n");
@@ -60,7 +60,7 @@ describe("wordsTimeline", () => {
 
 describe("pagesTimeline", () => {
   it("times by how far down the pages each line is, from where the play starts", () => {
-    const script = parseFountain("A preface.\n\n# Act One\n\nA chair.\n\n# Act Two\n\nAnother chair.\n");
+    const script = parseFountain("A preface.\n\n.ACT ONE\n\nA chair.\n\n.ACT TWO\n\nAnother chair.\n");
     const placements: Placement[] = [
       { page: 0, line: 0, continues: false, at: 0, end: 0.1 },
       { page: 1, line: 2, continues: false, at: 0, end: 0.05 },

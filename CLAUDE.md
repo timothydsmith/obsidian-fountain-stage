@@ -11,11 +11,15 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 
 ## Constraints
 
+- **One play per vault.** Settings such as the drafts folder apply to the whole vault; there's no dashboard across several scripts.
 - **Mobile is in scope** (`isDesktopOnly: false`). Don't use Node or Electron APIs, the system filesystem, or system font lookup. Use Obsidian's vault APIs only.
 - **Editor settings follow Obsidian's**, not settings of our own. Line numbers use Obsidian's `showLineNumber`; the starting mode uses `defaultViewMode` and `livePreview`; mode hotkeys are those of Obsidian's own mode commands. Access to these unofficial vault-config APIs goes only through `src/obsidianConfig.ts`.
 - **CodeMirror is provided by Obsidian.** `@codemirror/*` and `@lezer/*` are external in esbuild and must never be bundled.
 - Published as a community plugin, so every release must still meet the rules: follow Obsidian's plugin guidelines (no `innerHTML` with user content, use `registerEvent`/`register*` for cleanup, sentence case in UI text, no "Obsidian" in the plugin name).
-- Out of scope (don't build): index cards, rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), links, boneyard features, margin marks.
+- Out of scope (don't build): rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), boneyard features.
+- **Links to vault notes** use the Fountain plugin's syntax, `[[>target]]` or `[[>target|display text]]`, so scripts move between the two plugins unchanged. They go in stage directions and on lines of their own, not in dialogue, scene headings or cues.
+- **Sections never print**, as the Fountain spec says. `#` sections are structure only (outline, runtime, report); printed act and scene titles come from scene headings, centred text and `===`.
+- `ROADMAP.md` holds the release plan and the decisions behind each feature.
 
 ## Parser
 
@@ -28,6 +32,6 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - The engine has no style-specific logic. A new layout behaviour becomes a new style field whose default leaves existing styles unchanged.
 - Layout (pages of positioned text) is separate from PDF drawing (pdf-lib), and layout output is snapshot-tested per style.
 - Fonts come from files in the vault, falling back to the standard PDF fonts with a notice. Vault fonts are matched by the family, weight and italic flag inside the file, not the file name, and are embedded without ligatures or kerning, as reportlab drew them.
-- Layout must keep matching fountain2pdf (reportlab): same page breaks and line positions. It matched on 3 scripts × 3 styles, and with real Palatino. The one intended difference: list bullets use the body font, not Helvetica.
+- Layout must keep matching fountain2pdf (reportlab): same page breaks and line positions. It matched on 3 scripts × 3 styles, and with real Palatino. The intended differences: list bullets use the body font, not Helvetica; and sections never print (from 0.2.0), so parity doesn't cover them.
 - User style files: `src/pdf/userStyles.ts` holds the schema of every overridable setting. A new style field needs adding there and to the README's settings table.
 - A title-page `Style:` key picks the export style and is never printed. Without one, the user picks on export.

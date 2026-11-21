@@ -5,6 +5,7 @@
  * choice comes from the style; nothing here knows about any one style.
  */
 
+import { actMatcher, type IsAct } from "../fountain/acts";
 import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
@@ -179,6 +180,7 @@ class StoryBuilder {
   readonly styles: Record<StyleName, ParaStyle>;
   /** Width inside the margins. Tables span this, 12pt wider than the text frame, as in fountain2pdf. */
   readonly available: number;
+  readonly isAct: IsAct;
 
   constructor(
     readonly style: PlayStyle,
@@ -187,6 +189,7 @@ class StoryBuilder {
   ) {
     this.styles = paragraphStyles(style);
     this.available = style.page.width - style.page.margins.left - style.page.margins.right;
+    this.isAct = actMatcher(style.act.pattern);
   }
 
   para(spans: Span[], name: StyleName, bullet?: string): Paragraph {
@@ -431,18 +434,18 @@ class StoryBuilder {
       extrasBefore(el.line);
 
       switch (el.type) {
-        case "section": {
-          const act = (el.depth ?? 1) === 1;
-          const upper = act || this.style.scene.uppercaseSections;
-          const underline = act ? this.style.act.underline : this.style.scene.underline;
-          const title = upper ? el.text.toUpperCase() : el.text;
-          const block = this.plain(title, act ? "act" : "scene", underline, this.notesIn(el, title));
-          if (act && story.length > 0 && !fresh) story.push(PAGE_BREAK);
-          heading(block, el.text.toUpperCase(), el.line);
+        // Sections are structure only, and never print (as the Fountain spec says).
+        case "section":
           break;
-        }
         case "scene_heading":
-          heading(...this.sceneHeading(el), el.line);
+          if (this.isAct(el.text)) {
+            const title = el.text.toUpperCase();
+            const block = this.plain(title, "act", this.style.act.underline, this.notesIn(el, title));
+            if (this.style.act.newPage && story.length > 0 && !fresh) story.push(PAGE_BREAK);
+            heading(block, title, el.line);
+          } else {
+            heading(...this.sceneHeading(el), el.line);
+          }
           break;
         case "action":
           add(this.para(inlineSpans(el.text, {}, this.notesIn(el, el.text)), "action"), el.line);

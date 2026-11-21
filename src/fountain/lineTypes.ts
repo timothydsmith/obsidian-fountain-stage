@@ -15,6 +15,7 @@
  * adds a forcing mark (`!`, `@`, `.`, `>`) when the text alone wouldn't do.
  */
 
+import { actMatcher, type IsAct } from "./acts";
 import { type ElementType, parseFountain, type ParsedScript } from "./parser";
 
 export type CycleType = "action" | "character" | "scene_heading" | "transition";
@@ -129,7 +130,7 @@ export function tabOnLine(source: string, line: number, direction: 1 | -1, memor
 }
 
 /** What a line is, in words, for the status bar: "Character", "Stage direction", "Act" and so on. */
-export function describeLine(script: ParsedScript, line: number, text: string): string {
+export function describeLine(script: ParsedScript, line: number, text: string, isAct: IsAct = actMatcher()): string {
   const role = script.lineRoles.get(line);
   if (role === "title-page") return "Title page";
   if (role === "synopsis") return "Synopsis";
@@ -146,13 +147,13 @@ export function describeLine(script: ParsedScript, line: number, text: string): 
     case "parenthetical":
       return "Parenthetical";
     case "scene_heading":
-      return "Scene heading";
+      return isAct(el.text) ? "Act" : "Scene heading";
     case "transition":
       return "Transition";
     case "centered":
       return "Centred";
     case "section":
-      return el.depth === 1 ? "Act" : el.depth === 2 ? "Scene" : "Section";
+      return "Section";
     case "page_break":
       return "Page break";
     case "preface":

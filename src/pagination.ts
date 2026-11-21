@@ -61,6 +61,6 @@ export class Paginator {
     const style = await this.styleFor(script);
     const { choice, notice } = await this.library.fontsFor(style);
     const fonts = await this.fontSetFor(choice);
-    return { ...scriptPages(layoutScript(script, style, fonts), style.name), fontNotice: notice };
+    return { ...scriptPages(layoutScript(script, style, fonts), style.name, style.act.pattern), fontNotice: notice };
   }
 }

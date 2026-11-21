@@ -101,17 +101,21 @@ export interface PlayStyle {
     color: Rgb;
   };
 
-  act: { size: number; bold: boolean; italic: boolean; underline: boolean; alignment: Alignment };
-
-  scene: {
+  /** Act headings: scene headings that match `pattern`, such as `.ACT ONE`. */
+  act: {
     size: number;
     bold: boolean;
     italic: boolean;
     underline: boolean;
     alignment: Alignment;
-    /** Upper-case `##` scene sections. Acts and INT./EXT. headings are always upper case. */
-    uppercaseSections: boolean;
+    /** A regular expression, matched against each scene heading ignoring case. */
+    pattern: string;
+    /** Start each act on a new page. */
+    newPage: boolean;
   };
+
+  /** Scene headings that aren't acts. Always printed in upper case. */
+  scene: { size: number; bold: boolean; italic: boolean; underline: boolean; alignment: Alignment };
 
   sceneNumbers: {
     /** Where a forced scene number (`#2A#`) goes. */

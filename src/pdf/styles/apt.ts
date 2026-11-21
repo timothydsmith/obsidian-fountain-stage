@@ -1,3 +1,4 @@
+import { DEFAULT_ACT_PATTERN } from "../../fountain/acts";
 import { A4, MM, EXTRAS_DEFAULTS, type PlayStyle } from "../style";
 
 /**
@@ -37,8 +38,8 @@ export const apt: PlayStyle = {
   speech: { gap: 13, moreContinued: true, moreText: "(MORE)", continuedText: "(CONT'D)", dualLabel: "(together)" },
   parenthetical: { italic: true, indent: 0 },
   action: { size: 10, italic: true, alignment: "left", leftIndent: 0, rightIndent: 0, color: [0.1, 0.1, 0.1] },
-  act: { size: 10, bold: true, italic: false, underline: false, alignment: "left" },
-  scene: { size: 10, bold: true, italic: false, underline: false, alignment: "left", uppercaseSections: true },
+  act: { size: 10, bold: true, italic: false, underline: false, alignment: "left", pattern: DEFAULT_ACT_PATTERN, newPage: true },
+  scene: { size: 10, bold: true, italic: false, underline: false, alignment: "left" },
   sceneNumbers: { position: "before", format: "SCENE {n}:", inHeader: false },
   header: { strap: true },
   pagination: { fromBody: true, prefaceRoman: true, face: "bold", size: 10, format: "{n}", position: "bottom", alignment: "center" },

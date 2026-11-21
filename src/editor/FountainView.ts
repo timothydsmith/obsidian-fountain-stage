@@ -6,7 +6,8 @@ import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineL
 import { characterCompletion } from "./completion";
 import { cycleLineType, lineTypeCycling } from "./cycling";
 import { describeLine } from "../fountain/lineTypes";
-import { fountainFormatting, scriptOf } from "./formatting";
+import { actPatternField, fountainFormatting, scriptOf, setActPattern } from "./formatting";
+import { actMatcher, DEFAULT_ACT_PATTERN, type IsAct } from "../fountain/acts";
 import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
 import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
@@ -284,8 +285,22 @@ export class FountainView extends TextFileView {
     // Changed since, so another layout is on its way.
     if (this.closed || this.editor.state.doc !== state.doc) return;
     this.pages = pages;
-    this.editor.dispatch({ effects: setPages.of(pages) });
+    this.editor.dispatch({ effects: [setPages.of(pages), setActPattern.of(this.actPattern())] });
     this.notify("pages");
+  }
+
+  /** The act pattern of the script's style, from its latest layout. */
+  private actPattern(): string {
+    return this.pages?.actPattern ?? DEFAULT_ACT_PATTERN;
+  }
+
+  private actTest: { pattern: string; isAct: IsAct } | null = null;
+
+  /** Which scene headings are acts, by the script's style, so the outline and status bar agree with the PDF. */
+  isAct(): IsAct {
+    const pattern = this.actPattern();
+    if (this.actTest?.pattern !== pattern) this.actTest = { pattern, isAct: actMatcher(pattern) };
+    return this.actTest.isAct;
   }
 
   private currentModeExtensions(): Extension {
@@ -407,7 +422,7 @@ export class FountainView extends TextFileView {
   cursorLineType(): string {
     const { state } = this.editor;
     const line = state.doc.lineAt(state.selection.main.head);
-    return describeLine(scriptOf(state), line.number - 1, line.text);
+    return describeLine(scriptOf(state), line.number - 1, line.text, this.isAct());
   }
 
   /** The cursor's line (counting from 0), its text, and the cursor's place in it. */
@@ -483,6 +498,7 @@ export class FountainView extends TextFileView {
         this.lineNumbers.of(this.lineNumberGutter()),
         this.modeExtensions.of(this.currentModeExtensions()),
         pageRuleField,
+        actPatternField.init(() => this.actPattern()),
         this.pageDisplay.of(this.currentPageDisplay()),
         history(),
         drawSelection(),

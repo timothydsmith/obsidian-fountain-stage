@@ -218,7 +218,7 @@ export default class FountainStagePlugin extends Plugin {
   /** The script's report, with lengths by the runtime method in settings. */
   private reportOf(view: FountainView): ScriptReport {
     const pages = view.scriptPages();
-    return buildReport(view.script(), buildOutline(view.getViewData()), {
+    return buildReport(view.script(), buildOutline(view.getViewData(), view.isAct()), {
       wordsPerMinute: this.settings.wordsPerMinute,
       timeline: this.timelineOf(view),
       positions: pages ? pagePositions(pages.placements) : undefined,

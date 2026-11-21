@@ -7,6 +7,15 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Changed
+- **Breaking:** sections never print, as the Fountain spec says. `#` and `##` lines used to print as acts and scenes; now they're structure only, for the outline. Reading view hides them, and the editor shows them faintly. To print act and scene titles, write them as scene headings: `# Act One` becomes `.ACT ONE`, and `## Scene Two` becomes `.SCENE TWO`.
+- Act headings are scene headings that match the style's new `act.pattern` setting (by default, those starting with "Act"). They print in the act style, and a new `act.newPage` setting chooses whether each starts a new page; the built-in styles do. The outline, report, status bar and editor find acts the same way, using the script's style.
+- The outline nests scenes under acts, and sections inside acts. The report counts scene headings as scenes, and acts from act headings.
+- Scene headings always print in capitals, so a scene that was a `## Scene Two` section prints as SCENE TWO once it's a scene heading.
+
+### Removed
+- The `scene.uppercaseSections` style setting, since sections no longer print. Style files that set it still load, and it's ignored.
+
 ## [0.1.3] - 2026-11-18
 
 ### Changed
