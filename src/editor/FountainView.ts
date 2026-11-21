@@ -1,12 +1,13 @@
 import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { type Menu, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
+import { type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { characterCompletion } from "./completion";
 import { cycleLineType, lineTypeCycling } from "./cycling";
 import { describeLine } from "../fountain/lineTypes";
-import { fountainFormatting, scriptOf } from "./formatting";
+import { actPatternField, fountainFormatting, scriptOf, setActPattern } from "./formatting";
+import { actMatcher, DEFAULT_ACT_PATTERN, type IsAct } from "../fountain/acts";
 import { readingView } from "./reading";
 import type { PositionStore, ScriptPosition } from "./positions";
 import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
@@ -61,6 +62,9 @@ export interface FountainHost {
   /** Lays the script out as its PDF would be, to find its pages. */
   paginate(script: ParsedScript): Promise<PaginatedScript>;
   showPageBreaks(): boolean;
+  /** Whether a file is a frozen draft, in the drafts folder. */
+  isDraft(file: TFile): boolean;
+  freezeDraft(view: FountainView): void;
 }
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
@@ -87,6 +91,8 @@ export class FountainView extends TextFileView {
   private reading: boolean;
   private sourceMode: boolean;
   private modeButton: HTMLElement;
+  /** A frozen draft unfrozen for editing, until the view closes or opens another file. */
+  private unfrozen = false;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -99,7 +105,7 @@ export class FountainView extends TextFileView {
     // Actions are added right to left, so the mode button sits beside the menu, as for notes.
     this.modeButton = this.addAction("book-open", "", (evt) => {
       evt.preventDefault();
-      this.setMode(!this.reading, this.sourceMode);
+      this.toggleReading();
     });
     this.addAction("file-down", "Export to PDF", () => host.exportPdf(this));
     this.contentEl.addClass("fountain-stage-view");
@@ -167,6 +173,7 @@ export class FountainView extends TextFileView {
 
   /** Switches between editing and reading view. */
   toggleReading(): void {
+    if (this.reading && this.refuseIfFrozen()) return;
     this.setMode(!this.reading, this.sourceMode);
   }
 
@@ -177,7 +184,41 @@ export class FountainView extends TextFileView {
   }
 
   toggleSource(): void {
+    if (this.refuseIfFrozen()) return;
     this.setMode(false, !this.sourceMode);
+  }
+
+  /** Whether the script is a draft in the drafts folder, frozen or not. */
+  isDraft(): boolean {
+    // No file yet while the view is being made.
+    return this.file ? this.host.isDraft(this.file) : false;
+  }
+
+  /** Whether the script is a frozen draft: read-only, in reading view, until it's unfrozen. */
+  isFrozen(): boolean {
+    return this.isDraft() && !this.unfrozen;
+  }
+
+  /** Says the script is frozen, if it is. True if it is, so the edit shouldn't go ahead. */
+  refuseIfFrozen(): boolean {
+    if (!this.isFrozen()) return false;
+    new Notice("This draft is frozen. To edit it, choose Unfreeze from its More options menu.");
+    return true;
+  }
+
+  /** Makes a frozen draft editable until the tab is closed or opens another file. */
+  unfreeze(): void {
+    if (!this.isFrozen()) return;
+    this.unfrozen = true;
+    this.setMode(false, this.sourceMode);
+    this.showMode();
+    new Notice("You can edit this draft until you close it.");
+  }
+
+  /** Catches up with whether the script is a frozen draft, which changes with the drafts folder setting or a move. */
+  refreshFrozen(): void {
+    if (this.isFrozen() && !this.reading) this.setMode(true, this.sourceMode);
+    this.showMode();
   }
 
   onPaneMenu(menu: Menu, source: string): void {
@@ -196,6 +237,23 @@ export class FountainView extends TextFileView {
         .setChecked(!this.reading && this.sourceMode)
         .onClick(() => this.toggleSource()),
     );
+    if (this.isFrozen()) {
+      menu.addItem((item) =>
+        item
+          .setSection("action")
+          .setTitle("Unfreeze")
+          .setIcon("lock-open")
+          .onClick(() => this.unfreeze()),
+      );
+    } else if (!this.isDraft()) {
+      menu.addItem((item) =>
+        item
+          .setSection("action")
+          .setTitle("Freeze draft")
+          .setIcon("snowflake")
+          .onClick(() => this.host.freezeDraft(this)),
+      );
+    }
     menu.addItem((item) =>
       item
         .setSection("action")
@@ -228,8 +286,13 @@ export class FountainView extends TextFileView {
   private showMode(): void {
     this.contentEl.toggleClass("is-reading", this.reading);
     this.contentEl.toggleClass("is-source", !this.reading && this.sourceMode);
-    setIcon(this.modeButton, this.reading ? "pencil" : "book-open");
-    this.modeButton.setAttribute("aria-label", this.reading ? "Current view: reading\nClick to edit" : "Current view: editing\nClick to read");
+    const frozen = this.isFrozen();
+    this.contentEl.toggleClass("is-frozen", frozen);
+    setIcon(this.modeButton, frozen ? "lock" : this.reading ? "pencil" : "book-open");
+    this.modeButton.setAttribute(
+      "aria-label",
+      frozen ? "Frozen draft\nUnfreeze it to edit" : this.reading ? "Current view: reading\nClick to edit" : "Current view: editing\nClick to read",
+    );
   }
 
   /** Line numbers while editing, following Obsidian's "Show line number" setting. */
@@ -284,8 +347,22 @@ export class FountainView extends TextFileView {
     // Changed since, so another layout is on its way.
     if (this.closed || this.editor.state.doc !== state.doc) return;
     this.pages = pages;
-    this.editor.dispatch({ effects: setPages.of(pages) });
+    this.editor.dispatch({ effects: [setPages.of(pages), setActPattern.of(this.actPattern())] });
     this.notify("pages");
+  }
+
+  /** The act pattern of the script's style, from its latest layout. */
+  private actPattern(): string {
+    return this.pages?.actPattern ?? DEFAULT_ACT_PATTERN;
+  }
+
+  private actTest: { pattern: string; isAct: IsAct } | null = null;
+
+  /** Which scene headings are acts, by the script's style, so the outline and status bar agree with the PDF. */
+  isAct(): IsAct {
+    const pattern = this.actPattern();
+    if (this.actTest?.pattern !== pattern) this.actTest = { pattern, isAct: actMatcher(pattern) };
+    return this.actTest.isAct;
   }
 
   private currentModeExtensions(): Extension {
@@ -303,6 +380,8 @@ export class FountainView extends TextFileView {
       // A different file: start fresh, so undo can't reach the previous one,
       // and go back to where you were in it.
       this.editor.setState(this.createState(data));
+      this.unfrozen = false;
+      this.refreshFrozen();
       this.restorePosition(this.file ? this.positions.get(this.file.path) : undefined);
       this.pages = null;
       this.paginateSoon(0);
@@ -407,7 +486,7 @@ export class FountainView extends TextFileView {
   cursorLineType(): string {
     const { state } = this.editor;
     const line = state.doc.lineAt(state.selection.main.head);
-    return describeLine(scriptOf(state), line.number - 1, line.text);
+    return describeLine(scriptOf(state), line.number - 1, line.text, this.isAct());
   }
 
   /** The cursor's line (counting from 0), its text, and the cursor's place in it. */
@@ -483,6 +562,7 @@ export class FountainView extends TextFileView {
         this.lineNumbers.of(this.lineNumberGutter()),
         this.modeExtensions.of(this.currentModeExtensions()),
         pageRuleField,
+        actPatternField.init(() => this.actPattern()),
         this.pageDisplay.of(this.currentPageDisplay()),
         history(),
         drawSelection(),

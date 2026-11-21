@@ -70,24 +70,20 @@
   color: var(--text-faint);
 }
 
-.fountain-stage-view .pw-section-1 {
-  text-align: center;
-  font-weight: var(--font-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.fountain-stage-view .pw-section-2 {
-  text-align: center;
-  text-decoration: underline;
-}
-
-.fountain-stage-view .pw-section-3 {
-  font-weight: var(--font-semibold);
+/* Sections never print, so they're shown faintly, as structure. */
+.fountain-stage-view .pw-section {
+  color: var(--text-faint);
 }
 
 .fountain-stage-view .pw-scene-heading {
   font-weight: var(--font-bold);
+}
+
+/* Act headings: scene headings the style's act pattern picks out. */
+.fountain-stage-view .pw-scene-heading.pw-act {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .fountain-stage-view .pw-scene-number {
@@ -259,6 +255,14 @@
 
 .fountain-stage-outline .tree-item.is-collapsed > .tree-item-children {
   display: none;
+}
+
+.fountain-stage-outline-act {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-outline-section {
+  color: var(--text-muted);
 }
 
 .fountain-stage-outline-scene {

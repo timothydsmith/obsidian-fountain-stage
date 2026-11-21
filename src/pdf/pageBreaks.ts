@@ -3,6 +3,7 @@
  * between lines where each page starts, and which page a line is on.
  */
 
+import { DEFAULT_ACT_PATTERN } from "../fountain/acts";
 import type { ParsedScript } from "../fountain/parser";
 import type { LayoutDocument, Placement } from "./model";
 
@@ -10,14 +11,16 @@ import type { LayoutDocument, Placement } from "./model";
 export interface ScriptPages {
   /** The style it was laid out in. */
   styleName: string;
+  /** That style's act pattern, so the editor and outline find the same acts as the PDF. */
+  actPattern: string;
   pageCount: number;
   /** Each page's printed number, or undefined where none is printed. */
   pageNumbers: (string | undefined)[];
   placements: Placement[];
 }
 
-export function scriptPages(layout: LayoutDocument, styleName: string): ScriptPages {
-  return { styleName, pageCount: layout.pages.length, pageNumbers: layout.pageNumbers, placements: layout.placements };
+export function scriptPages(layout: LayoutDocument, styleName: string, actPattern: string = DEFAULT_ACT_PATTERN): ScriptPages {
+  return { styleName, actPattern, pageCount: layout.pages.length, pageNumbers: layout.pageNumbers, placements: layout.placements };
 }
 
 export interface PageRule {

@@ -13,7 +13,12 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
   - **Live Preview** formats the script as you type, with the markup shown faintly.
   - **Source mode** is the plain text, unformatted.
-  - **Reading view** shows the formatted script without its markup, notes, synopses or boneyard, and can't be edited.
+  - **Reading view** shows the formatted script without its markup, sections, notes, synopses or boneyard, and can't be edited.
+- Acts, scenes and sections follow the Fountain spec:
+  - **Acts** are scene headings such as `.ACT ONE`. Which headings count as acts is set by the style (`act.pattern`; by default, those starting with "Act"), and so is whether each act starts a new page.
+  - **Scenes** are scene headings: `INT.` and `EXT.` headings, or any line forced with a full stop, such as `.SCENE TWO` or `.A STUDENT SUPPORT OFFICE`.
+  - **Sections** (`#`, `##` and deeper) are structure only. They never print, reading view hides them, and the editor shows them faintly. Use them to group scenes in the outline, for example by story beat.
+  - Other printed titles come from centred text (`> INTERVAL <`) and `===` page breaks.
 - Character names complete as you type. Type two capital letters in a row anywhere in a line, in a cue or a stage direction, and Fountain Stage offers the names that start that way: from the script's cues (most lines first) and its Characters list. Enter or Tab picks one; Escape closes the list. Names of several words work too (`MRS SM` offers MRS SMITH).
 - Tab sets what a line is:
   - On an empty line after a blank line, where you'd start a stage direction, Tab lists the script's character names. Type to narrow the list, then Tab or Enter to pick a name.
@@ -22,7 +27,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
 - **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
 - The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction.
-- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts (`#`), scenes (`##`) and scene headings, nested, with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
+- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts, sections and scenes, nested (scenes inside the section or act they follow, sections inside their act), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there. The part you're in is highlighted, and the outline updates as you type. Open it with **Show script outline**.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
 - A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Fountain Stage's settings:
   - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Fountain Stage's settings.
@@ -39,12 +44,13 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - A script report, opened with **Show script report** in a tab beside the script. It follows the script you're in and updates as you write. Click a character or scene to go there.
   - **Totals:** pages, runtime, words spoken, speeches, acts, scenes and characters.
   - **Characters:** each one's speeches, words, share of the dialogue, time speaking, number of scenes, and first and last scene.
-  - **Scenes:** each one's act, pages, runtime, speeches, words and characters. Scenes are the smallest parts of the outline: scene headings, or `##` scenes where there are none. Text before the first heading is a scene of its own.
+  - **Scenes:** each one's act, pages, runtime, speeches, words and characters. Scenes are scene headings, and acts with no scenes in them. Sections never make a scene. Text before the first scene is a scene of its own.
   - **Who's in each scene:** a chart of characters against scenes. A character is in a scene if they speak there or are named in a stage direction or parenthetical.
   - **Doubling:** characters who never share a scene, so one actor could play both.
 
   The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
+- Frozen drafts. **Freeze draft**, from the command palette or a script's **More options** menu, saves a copy of the script as it is now in your drafts folder (`Drafts` unless you change it in Fountain Stage's settings), and moves the script on to the next draft. See [Drafts](#drafts).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -53,6 +59,19 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Your own fonts, from font files in your vault.
 - An export dialog to pick the style, add a watermark (such as DRAFT) across every page, and include notes and synopses. A `Style:` key on a script's title page picks its style to start with.
 - Works on desktop and mobile.
+
+## Drafts
+
+A script's draft number is its title page's `Draft:` key. A script with no `Draft:` key is draft 1.
+
+**Freeze draft** asks what the draft is for (you can leave it blank) and whether to export a PDF of it. Then, for draft 3 of a play called *Play*, frozen on 21 November 2026:
+
+- A copy of the script goes in the drafts folder as `Play - Draft 03 - 2026-11-21.fountain`. Its title page says `Draft: 3` and `Draft date: 21 November 2026`, and what the draft is for goes in a `Draft notes:` key, which never prints.
+- The script itself becomes `Draft: 4 (working)`, without a draft date. Undo puts it back.
+
+A script with no title page gets one, with its file name as the title. Scripts in the drafts folder open read-only, in reading view. To change one, choose **Unfreeze** from its **More options** menu, or run **Unfreeze draft**. It stays editable until you close its tab.
+
+The draft and its date print in the bottom right corner of the title page, so a PDF of the working script says "Draft 4 (working)". A style can put them bottom left or leave them off with `titlePage.draft`; APT leaves them off.
 
 ## Exporting to PDF
 
@@ -105,13 +124,13 @@ Every setting:
 | `page` | `size` (`"A4"`, `"A5"`, `"letter"`, `"legal"`), `width`, `height`, `margins` (`top`, `right`, `bottom`, `left`) |
 | `fonts` | `family`: a font family name, or a list tried in order; `fallback`: `"times"`, `"helvetica"` or `"courier"` |
 | `text` | `size`, `leading` (baseline to baseline) |
-| `titlePage` | `titleSize`, `bylineSize` |
+| `titlePage` | `titleSize`, `bylineSize`, `draft` (where the draft number and date print: `"right"` or `"left"` bottom corner, or `"hide"`) |
 | `character` | `size`, `bold`, `ownLine` (name above the speech, or beside its first line), `alignment`, `shortParentheticalInline` ("JOHN (laughing)"), `nameColumnWidth` and `gutter` (when beside) |
 | `speech` | `gap` (between speeches), `moreContinued` (mark speeches that break across a page), `moreText`, `continuedText`, `dualLabel` (added to both names of dual dialogue) |
 | `parenthetical` | `italic`, `indent` |
 | `action` | `size`, `italic`, `alignment`, `leftIndent`, `rightIndent`, `color` |
-| `act` | `size`, `bold`, `italic`, `underline`, `alignment` |
-| `scene` | `size`, `bold`, `italic`, `underline`, `alignment`, `uppercaseSections` |
+| `act` | `size`, `bold`, `italic`, `underline`, `alignment`, `pattern` (a regular expression; scene headings it matches, ignoring case, are acts; default `"^ACT\\b"`), `newPage` (start each act on a new page) |
+| `scene` | `size`, `bold`, `italic`, `underline`, `alignment` |
 | `sceneNumbers` | `position` (`"hide"`, `"before"`, `"after"`), `format` (`{n}` is the number), `inHeader` |
 | `header` | `strap` (running "PLAY TITLE \| SCENE" header) |
 | `pagination` | `fromBody`, `prefaceRoman`, `face` (`"regular"`, `"bold"`, `"italic"`, `"boldItalic"`), `size`, `format`, `position` (`"top"`, `"bottom"`), `alignment` |
@@ -174,6 +193,7 @@ Layout:
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
 | `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
 | `src/fountain/rename.ts`, `src/renameCharacterModal.ts` | Renaming a character: finding every place to change, and the dialog |
+| `src/fountain/titlePage.ts`, `src/freezeDraft.ts` | Freezing drafts: reading and rewriting title-page keys, and the freeze dialog |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

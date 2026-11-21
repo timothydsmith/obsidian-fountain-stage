@@ -193,6 +193,7 @@ class RenameModal extends Modal {
  * cursor, if there is one, or else one you choose.
  */
 export function renameCharacter(app: App, view: FountainView): void {
+  if (view.refuseIfFrozen()) return;
   const names = characterNames(view.script());
   if (names.length === 0) {
     new Notice("This script has no characters to rename yet.");

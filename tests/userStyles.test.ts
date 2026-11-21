@@ -161,3 +161,23 @@ describe("notes, synopses and watermark settings", () => {
     expect(bad.problems[0].messages).toEqual([`"watermark.opacity" must be a number from 0 to 1.`, `"watermark.angle" must be a number from -90 to 90.`]);
   });
 });
+
+describe("act settings", () => {
+  it("sets the act pattern and new page, and checks the pattern", () => {
+    const { styles, problems } = load(
+      ["Styles/Prologue.json", { extends: "modern", act: { pattern: "^(ACT|PROLOGUE)\\b", newPage: false } }],
+      ["Styles/Broken.json", { extends: "modern", act: { pattern: "(ACT" } }],
+    );
+    const prologue = findStyle(styles, "prologue")!;
+    expect(prologue.act.pattern).toBe("^(ACT|PROLOGUE)\\b");
+    expect(prologue.act.newPage).toBe(false);
+    expect(findStyle(styles, "broken")).toBeUndefined();
+    expect(problems.map((p) => p.messages[0])).toEqual([expect.stringMatching(/^"act.pattern" isn't a regular expression that can be used/)]);
+  });
+
+  it("still loads a style that sets the retired scene.uppercaseSections", () => {
+    const { styles, problems } = load(["Styles/Old.json", { extends: "modern", scene: { uppercaseSections: true, bold: true } }]);
+    expect(problems).toEqual([]);
+    expect(findStyle(styles, "old")!.scene.bold).toBe(true);
+  });
+});

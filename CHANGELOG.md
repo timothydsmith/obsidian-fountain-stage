@@ -7,6 +7,23 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
+### Added
+- **Freeze draft**, from the command palette or a script's **More options** menu. It saves a copy of the script as it is now in the drafts folder, named for the play, draft and date (`Play - Draft 03 - 2026-11-21.fountain`), with `Draft: 3` and `Draft date: 21 November 2026` on its title page. The script itself moves on to `Draft: 4 (working)`, and undo puts it back. The draft number comes from the `Draft:` key, and a script without one is draft 1. Freezing asks what the draft is for, kept on the copy in a `Draft notes:` key that never prints, and whether to export a PDF of it. A script with no title page gets one.
+- A **Drafts folder** setting, `Drafts` to start with. Scripts in it open read-only, in reading view. **Unfreeze**, in a draft's **More options** menu or as the **Unfreeze draft** command, makes one editable until you close its tab.
+- The draft number and date print in the bottom right corner of the title page, so a PDF of the working script says "Draft 4 (working)". A new `titlePage.draft` style setting puts them bottom left, or `"hide"` leaves them off. APT leaves them off.
+
+### Changed
+- `Draft:` and `Draft date:` no longer print with the contact details on the title page; they go in the corner instead.
+- **Breaking:** sections never print, as the Fountain spec says. `#` and `##` lines used to print as acts and scenes; now they're structure only, for the outline. Reading view hides them, and the editor shows them faintly. To print act and scene titles, write them as scene headings: `# Act One` becomes `.ACT ONE`, and `## Scene Two` becomes `.SCENE TWO`.
+- Act headings are scene headings that match the style's new `act.pattern` setting (by default, those starting with "Act"). They print in the act style, and a new `act.newPage` setting chooses whether each starts a new page; the built-in styles do. The outline, report, status bar and editor find acts the same way, using the script's style.
+- The outline nests scenes under acts, and sections inside acts. The report counts scene headings as scenes, and acts from act headings.
+- Scene headings always print in capitals, so a scene that was a `## Scene Two` section prints as SCENE TWO once it's a scene heading.
+
+### Removed
+- The `scene.uppercaseSections` style setting, since sections no longer print. Style files that set it still load, and it's ignored.
+
 ## [0.1.3] - 2026-11-18
 
 ### Changed
@@ -52,7 +69,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...0.2.0
 [0.1.3]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.0...0.1.1

@@ -2,10 +2,10 @@
 
 exports[`buildOutline > outlines the sample script 1`] = `
 [
-  "section ACT ONE @14",
-  "  section Scene One @16",
-  "  section Scene Two @54",
-  "section ACT TWO @71",
-  "  section Scene One @73",
+  "act ACT ONE @14",
+  "  scene SCENE ONE @16",
+  "  scene SCENE TWO @54",
+  "act ACT TWO @71",
+  "  scene SCENE ONE @73",
 ]
 `;

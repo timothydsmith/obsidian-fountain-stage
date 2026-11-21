@@ -14,9 +14,9 @@ const source = [
   "",
   "A note before the play.",
   "",
-  "# ACT ONE",
+  ".ACT ONE",
   "",
-  "## Scene One",
+  ".SCENE ONE",
   "",
   "MARGARET sits. David is at the door.",
   "",
@@ -27,12 +27,12 @@ const source = [
   "DAVID",
   "Out.",
   "",
-  "## Scene Two",
+  ".SCENE TWO",
   "",
   "ANNIE",
   "Hello hello.",
   "",
-  "# ACT TWO",
+  ".ACT TWO",
   "",
   "INT. KITCHEN",
   "",
@@ -46,11 +46,11 @@ const report = (text = source) => {
 };
 
 describe("buildReport", () => {
-  it("lists the smallest parts of the outline as scenes, with their acts", () => {
+  it("lists scene headings as scenes, with their acts", () => {
     const { scenes } = report();
     expect(scenes.map((s) => [s.number, s.title, s.act])).toEqual([
-      [1, "Scene One", "ACT ONE"],
-      [2, "Scene Two", "ACT ONE"],
+      [1, "SCENE ONE", "ACT ONE"],
+      [2, "SCENE TWO", "ACT ONE"],
       [3, "INT. KITCHEN", "ACT TWO"],
     ]);
   });
@@ -83,12 +83,18 @@ describe("buildReport", () => {
   });
 
   it("makes text before the first heading a scene, or the whole script one", () => {
-    expect(report("MARGARET\nHi.\n\n# ACT ONE\n\nDAVID\nBye.\n").scenes.map((s) => s.title)).toEqual(["Before the first scene", "ACT ONE"]);
+    expect(report("MARGARET\nHi.\n\n.ACT ONE\n\nDAVID\nBye.\n").scenes.map((s) => s.title)).toEqual(["Before the first scene", "ACT ONE"]);
     expect(report("MARGARET\nHi.\n").scenes.map((s) => [s.title, s.characters])).toEqual([["The whole script", ["MARGARET"]]]);
   });
 
+  it("never makes a scene of a section", () => {
+    const { scenes, totals } = report("# A beat\n\nINT. ROOM\n\nMARGARET\nHi.\n\n## Another beat\n\nDAVID\nBye.\n\n# Act Two\n\nMARGARET\nGone.\n");
+    expect(scenes.map((s) => [s.title, s.characters])).toEqual([["INT. ROOM", ["MARGARET", "DAVID"]]]);
+    expect(totals.acts).toBe(0);
+  });
+
   it("puts a direction between an act's heading and its first scene in that scene", () => {
-    const { scenes } = report("# ACT ONE\n\nDAVID waits.\n\n## Scene One\n\nMARGARET\nHi.\n\nDAVID\nBye.\n");
+    const { scenes } = report(".ACT ONE\n\nDAVID waits.\n\n.SCENE ONE\n\nMARGARET\nHi.\n\nDAVID\nBye.\n");
     expect(scenes[0].characters).toEqual(["DAVID", "MARGARET"]);
   });
 

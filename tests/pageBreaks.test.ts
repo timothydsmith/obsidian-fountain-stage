@@ -14,7 +14,7 @@ const pagesOf = (source: string, style = "modern") => {
 
 describe("pageRules", () => {
   it("puts a rule before the element each page starts with, after the title page too", () => {
-    const { script, pages } = pagesOf("Title: A Play\n\n# Act One\n\nA chair.\n\n# Act Two\n\nAnother chair.\n");
+    const { script, pages } = pagesOf("Title: A Play\n\n.ACT ONE\n\nA chair.\n\n.ACT TWO\n\nAnother chair.\n");
     expect(pageRules(pages, script)).toEqual([
       { line: 2, after: false, page: 1 },
       { line: 6, after: false, page: 2 },

@@ -24,6 +24,8 @@ export interface FountainStageSettings {
   minutesPerPage: number;
   /** Words that add pauses to the runtime, going by words spoken. */
   pauseWords: PauseWord[];
+  /** Folder that frozen drafts are saved in, where they open read-only. */
+  draftsFolder: string;
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   wordsPerMinute: 150,
   minutesPerPage: 1,
   pauseWords: defaultPauseWords(),
+  draftsFolder: "Drafts",
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -71,6 +74,7 @@ export function readSettings(saved: unknown): FountainStageSettings {
     wordsPerMinute: positive("wordsPerMinute", d.wordsPerMinute),
     minutesPerPage: positive("minutesPerPage", d.minutesPerPage),
     pauseWords: s.pauseWords === undefined ? defaultPauseWords() : readPauseWords(s.pauseWords),
+    draftsFolder: string("draftsFolder", d.draftsFolder),
     export: readExportChoices(s.export),
   };
 }

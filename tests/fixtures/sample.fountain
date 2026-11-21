@@ -12,9 +12,9 @@ Scene Breakdown:
 Contact: tim@example.com
 Draft date: August 2026
 
-# ACT ONE
+.ACT ONE
 
-## Scene One
+.SCENE ONE
 
 A cramped community theatre green room, late at night. A single bare
 bulb hangs from the ceiling. Two mismatched armchairs face each other.
@@ -52,7 +52,7 @@ I don't know how it ends. That's the problem.
 
 > LIGHTS SHIFT TO:
 
-## Scene Two
+.SCENE TWO
 
 The stage itself, empty except for a single chair under a work light.
 
@@ -69,9 +69,9 @@ You're not here yet. But you will be.
 
 ===
 
-# ACT TWO
+.ACT TWO
 
-## Scene One
+.SCENE ONE
 
 >THE FOLLOWING WEEK<
 

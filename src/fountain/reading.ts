@@ -1,7 +1,7 @@
 /**
- * What reading view hides: the markup (forcing marks, section #s, emphasis
- * marks, link syntax), and the parts of a script that aren't part of the
- * play (notes, boneyard and synopses). Lines left with nothing to show are
+ * What reading view hides: the markup (forcing marks, emphasis marks, link
+ * syntax), and the parts of a script that don't print (sections, notes,
+ * boneyard and synopses). Lines left with nothing to show are
  * removed altogether, without leaving a doubled blank line behind.
  */
 
@@ -46,6 +46,11 @@ export function readingHiddenRanges(source: string): HiddenRange[] {
   }
   for (const el of script.elements) {
     if (el.type === "page_break") continue;
+    // Sections never print, so reading view hides them, as it does synopses.
+    if (el.type === "section") {
+      hide(lineFrom(el.line), lineTo(el.endLine));
+      continue;
+    }
     for (let line = el.line; line <= el.endLine; line++) formatted.add(line);
   }
   for (const line of formatted) {

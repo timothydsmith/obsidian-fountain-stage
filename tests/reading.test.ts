@@ -3,9 +3,14 @@ import { describe, expect, it } from "vitest";
 import { readingText } from "../src/fountain/reading";
 
 describe("readingText", () => {
-  it("hides forcing marks, section marks and emphasis marks", () => {
-    const source = "# Act One\n\n## Scene One\n\n.FLASHBACK\n\n@McCLANE\nHi *there*, **you**.\n\n>THE END<\n";
-    expect(readingText(source)).toBe("Act One\n\nScene One\n\nFLASHBACK\n\nMcCLANE\nHi there, you.\n\nTHE END\n");
+  it("hides forcing marks and emphasis marks", () => {
+    const source = ".ACT ONE\n\n.FLASHBACK\n\n@McCLANE\nHi *there*, **you**.\n\n>THE END<\n";
+    expect(readingText(source)).toBe("ACT ONE\n\nFLASHBACK\n\nMcCLANE\nHi there, you.\n\nTHE END\n");
+  });
+
+  it("hides sections, which never print", () => {
+    const source = "# Act One\n\n## The catalyst\n\nINT. ROOM\n\nA chair.\n\n# Act Two\n\nA table.\n";
+    expect(readingText(source)).toBe("INT. ROOM\n\nA chair.\n\nA table.\n");
   });
 
   it("shows only a link's text", () => {

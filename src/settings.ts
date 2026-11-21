@@ -1,6 +1,6 @@
 /**
- * Fountain Stage's settings tab: page breaks and runtime in the editor, and the
- * styles and fonts folders and what's in them. Drawn from
+ * Fountain Stage's settings tab: page breaks and runtime in the editor, the
+ * drafts folder, and the styles and fonts folders and what's in them. Drawn from
  * getSettingDefinitions(), which also puts the settings in Obsidian's settings
  * search.
  */
@@ -76,6 +76,18 @@ export class FountainStageSettingTab extends PluginSettingTab {
       },
       {
         type: "group",
+        heading: "Drafts",
+        items: [
+          {
+            name: "Drafts folder",
+            desc: "Freeze draft saves a copy of the script here. Scripts in this folder open read-only, in reading view.",
+            aliases: ["Freeze draft", "Frozen drafts"],
+            control: { type: "folder", key: "draftsFolder", placeholder: FOLDER_PLACEHOLDER },
+          },
+        ],
+      },
+      {
+        type: "group",
         heading: "PDF export",
         items: [
           {
@@ -123,7 +135,7 @@ export class FountainStageSettingTab extends PluginSettingTab {
   async setControlValue(key: string, value: unknown): Promise<void> {
     const settings = this.settings as unknown as Record<string, unknown>;
     const folder = key === "stylesFolder" || key === "fontsFolder";
-    if (folder) {
+    if (folder || key === "draftsFolder") {
       const path = typeof value === "string" ? value.trim() : "";
       settings[key] = path ? normalizePath(path) : "";
     } else if (key === "runtimeMethod") {

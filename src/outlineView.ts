@@ -1,4 +1,4 @@
-/** The script outline sidebar: the sections and scenes of the script you're in, and how long each runs. */
+/** The script outline sidebar: the acts, sections and scenes of the script you're in, and how long each runs. */
 
 import { FileView, ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
@@ -109,11 +109,14 @@ export class OutlineView extends ItemView {
       contentEl.createDiv({ cls: "pane-empty", text: "Open a Fountain script to see its outline." });
       return;
     }
-    this.outline = buildOutline(this.script.getViewData());
+    this.outline = buildOutline(this.script.getViewData(), this.script.isAct());
     const timeline = this.timelineOf(this.script);
     this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map<OutlineItem, number>();
     if (this.outline.length === 0) {
-      contentEl.createDiv({ cls: "pane-empty", text: "No sections or scenes yet. Start a line with # for an act, ## for a scene, or INT. or EXT. for a scene heading." });
+      contentEl.createDiv({
+        cls: "pane-empty",
+        text: "No acts, scenes or sections yet. Start a line with .ACT ONE for an act, INT., EXT. or a full stop for a scene heading, or # for a section.",
+      });
       return;
     }
     this.renderItems(contentEl.createDiv({ cls: "fountain-stage-outline-tree" }), this.outline, "");
@@ -132,7 +135,7 @@ export class OutlineView extends ItemView {
       const itemEl = parentEl.createDiv({ cls: "tree-item" });
       itemEl.toggleClass("is-collapsed", collapsed);
       const selfEl = itemEl.createDiv({ cls: "tree-item-self is-clickable" });
-      selfEl.addClass(item.kind === "scene" ? "fountain-stage-outline-scene" : "fountain-stage-outline-section");
+      selfEl.addClass(`fountain-stage-outline-${item.kind}`);
       this.rows.set(item, selfEl);
 
       if (item.children.length > 0) {

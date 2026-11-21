@@ -1,23 +1,37 @@
-import { type EditorState, type Extension, type Range, StateField, type Text } from "@codemirror/state";
+import { type EditorState, type Extension, type Range, StateEffect, StateField, type Text } from "@codemirror/state";
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { actMatcher, DEFAULT_ACT_PATTERN, type IsAct } from "../fountain/acts";
 import { parseInline } from "../fountain/inline";
 import { parseFountain, type ParsedScript, type SyntaxSpan } from "../fountain/parser";
+
+/** Sets the act pattern of the script's style, once its layout knows the style. */
+export const setActPattern = StateEffect.define<string>();
+
+/** The act pattern, kept outside the formatting so it survives switching modes. */
+export const actPatternField = StateField.define<string>({
+  create: () => DEFAULT_ACT_PATTERN,
+  update: (value, tr) => {
+    for (const effect of tr.effects) if (effect.is(setActPattern)) value = effect.value;
+    return value;
+  },
+});
 
 /** The parsed script and each line's CSS classes, kept up to date with the document. */
 interface Formatting {
   script: ParsedScript;
+  actPattern: string;
   /** Classes by line number, counting from 0. Lines with nothing to show are undefined. */
   lineClasses: (string | undefined)[];
   /** Boneyard and notes, which inline emphasis inside them should ignore. */
   hidden: SyntaxSpan[];
 }
 
-function lineClassesFor(script: ParsedScript, lineCount: number): (string | undefined)[] {
+function lineClassesFor(script: ParsedScript, lineCount: number, isAct: IsAct): (string | undefined)[] {
   const classes = new Array<string | undefined>(lineCount);
   for (const [line, role] of script.lineRoles) classes[line] = `pw-${role}`;
   for (const el of script.elements) {
     let cls = `pw-${el.type.replace(/_/g, "-")}`;
-    if (el.type === "section") cls += ` pw-section-${Math.min(el.depth ?? 1, 3)}`;
+    if (el.type === "scene_heading" && isAct(el.text)) cls += " pw-act";
     if (el.dual) cls += " pw-dual";
     if (el.italic) cls += " pw-lyric";
     for (let line = el.line; line <= el.endLine; line++) classes[line] = cls;
@@ -25,18 +39,24 @@ function lineClassesFor(script: ParsedScript, lineCount: number): (string | unde
   return classes;
 }
 
-function compute(doc: string, lineCount: number): Formatting {
-  const script = parseFountain(doc);
+function compute(state: EditorState, script = parseFountain(state.doc.toString())): Formatting {
+  const actPattern = state.field(actPatternField, false) ?? DEFAULT_ACT_PATTERN;
   return {
     script,
-    lineClasses: lineClassesFor(script, lineCount),
+    actPattern,
+    lineClasses: lineClassesFor(script, state.doc.lines, actMatcher(actPattern)),
     hidden: script.spans.filter((s) => s.kind === "boneyard" || s.kind === "note"),
   };
 }
 
 const formattingField = StateField.define<Formatting>({
-  create: (state) => compute(state.doc.toString(), state.doc.lines),
-  update: (value, tr) => (tr.docChanged ? compute(tr.newDoc.toString(), tr.newDoc.lines) : value),
+  create: (state) => compute(state),
+  update: (value, tr) => {
+    if (tr.docChanged) return compute(tr.state);
+    // A new act pattern changes which headings look like acts, but not the parse.
+    if (tr.state.field(actPatternField, false) !== value.actPattern) return compute(tr.state, value.script);
+    return value;
+  },
 });
 
 const parsed = new WeakMap<Text, ParsedScript>();
@@ -140,7 +160,8 @@ const formattingPlugin = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) this.decorations = buildDecorations(update.view);
+      const restyled = update.startState.field(formattingField) !== update.state.field(formattingField);
+      if (restyled || update.viewportChanged) this.decorations = buildDecorations(update.view);
     }
   },
   { decorations: (plugin) => plugin.decorations },

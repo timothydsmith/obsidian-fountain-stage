@@ -105,9 +105,59 @@ describe("layout", () => {
   });
 
   it("starts each act on a new page", () => {
-    const doc = layoutScript(parseFountain("# Act One\n\nA chair.\n\n# Act Two\n\nAnother chair.\n"), style("modern"), fonts);
+    const doc = layoutScript(parseFountain(".ACT ONE\n\nA chair.\n\n.Act Two\n\nAnother chair.\n"), style("modern"), fonts);
     expect(doc.pages).toHaveLength(2);
     expect(texts(doc)[1]).toContain("ACT TWO");
+  });
+
+  it("keeps acts on the page when the style says so", () => {
+    const sameStyle = { ...style("modern"), act: { ...style("modern").act, newPage: false } };
+    const doc = layoutScript(parseFountain(".ACT ONE\n\nA chair.\n\n.ACT TWO\n\nAnother chair.\n"), sameStyle, fonts);
+    expect(doc.pages).toHaveLength(1);
+  });
+
+  it("finds acts by the style's act pattern", () => {
+    const interval = { ...style("modern"), act: { ...style("modern").act, pattern: "^(ACT|INTERVAL)\\b" } };
+    const source = ".ACT ONE\n\nA chair.\n\n.INTERVAL\n\nAnother chair.\n";
+    expect(layoutScript(parseFountain(source), style("modern"), fonts).pages).toHaveLength(1);
+    expect(layoutScript(parseFountain(source), interval, fonts).pages).toHaveLength(2);
+  });
+
+  it("never prints sections", () => {
+    const doc = layoutScript(parseFountain("# Act One\n\n## Scene One\n\nINT. ROOM\n\nA chair.\n\n# Act Two\n\nAnother chair.\n"), style("modern"), fonts);
+    expect(doc.pages).toHaveLength(1);
+    const all = texts(doc).flat().join(" ");
+    expect(all).not.toMatch(/act one|scene one|act two/i);
+    expect(all).toContain("INT. ROOM");
+  });
+
+  describe("draft on the title page", () => {
+    const source = "Title: Play\nAuthor: Me\nContact: me@example.com\nDraft: 4 (working)\nDraft date: 21 November 2026\nDraft notes: For the reading\n\nINT. ROOM\n\nA chair.\n";
+    const titlePage = (s: ReturnType<typeof style>) => layoutScript(parseFountain(source), s, fonts).pages[0].texts;
+
+    it("prints the draft and date bottom right, and never the notes", () => {
+      const modern = style("modern");
+      const texts = titlePage(modern);
+      const draft = texts.find((t) => t.text === "Draft 4 (working)");
+      const date = texts.find((t) => t.text === "21 November 2026");
+      expect(draft).toBeDefined();
+      expect(date?.y).toBeCloseTo(modern.page.margins.bottom);
+      expect(draft!.y).toBeCloseTo(date!.y + modern.text.leading);
+      expect(date!.x + fonts.width(date!.text, "regular", modern.text.size)).toBeCloseTo(modern.page.width - modern.page.margins.right);
+      expect(texts.map((t) => t.text)).toContain("me@example.com");
+      expect(texts.map((t) => t.text).join(" ")).not.toMatch(/reading/);
+    });
+
+    it("prints them bottom left, or not at all, as the style says", () => {
+      const left = { ...style("modern"), titlePage: { ...style("modern").titlePage, draft: "left" as const } };
+      expect(titlePage(left).find((t) => t.text === "Draft 4 (working)")?.x).toBeCloseTo(left.page.margins.left);
+      expect(titlePage(style("apt")).map((t) => t.text).join(" ")).not.toMatch(/Draft|November/);
+    });
+
+    it("prints a draft written in words as it is", () => {
+      const doc = layoutScript(parseFountain("Title: Play\nDraft: Rehearsal draft\n\nA chair.\n"), style("modern"), fonts);
+      expect(doc.pages[0].texts.map((t) => t.text)).toContain("Rehearsal draft");
+    });
   });
 
   it("draws links in blue with an annotation", () => {
