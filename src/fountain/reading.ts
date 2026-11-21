@@ -15,8 +15,11 @@ export interface HiddenRange {
 
 const isBlank = (text: string) => text.trim() === "";
 
-/** The ranges of `source` that reading view hides, in order and not overlapping. */
-export function readingHiddenRanges(source: string): HiddenRange[] {
+/**
+ * The ranges of `source` that reading view hides, in order and not overlapping.
+ * `showSections` keeps section headings, as a cuts file's headings say where each cut came from.
+ */
+export function readingHiddenRanges(source: string, { showSections = false } = {}): HiddenRange[] {
   const script = parseFountain(source);
   const hidden = new Uint8Array(source.length);
   const hide = (from: number, to: number) => hidden.fill(1, Math.max(from, 0), Math.min(to, source.length));
@@ -47,7 +50,7 @@ export function readingHiddenRanges(source: string): HiddenRange[] {
   for (const el of script.elements) {
     if (el.type === "page_break") continue;
     // Sections never print, so reading view hides them, as it does synopses.
-    if (el.type === "section") {
+    if (el.type === "section" && !showSections) {
       hide(lineFrom(el.line), lineTo(el.endLine));
       continue;
     }

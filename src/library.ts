@@ -26,6 +26,10 @@ export interface FountainStageSettings {
   pauseWords: PauseWord[];
   /** Folder that frozen drafts are saved in, where they open read-only. */
   draftsFolder: string;
+  /** Renumber scenes counts from 1 in each act, rather than straight through the play. */
+  renumberRestart: boolean;
+  /** The outline has been opened in the sidebar for the vault's first script, so it isn't opened again if you close it. */
+  outlineAdded: boolean;
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -50,6 +54,8 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   minutesPerPage: 1,
   pauseWords: defaultPauseWords(),
   draftsFolder: "Drafts",
+  renumberRestart: true,
+  outlineAdded: false,
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -75,6 +81,8 @@ export function readSettings(saved: unknown): FountainStageSettings {
     minutesPerPage: positive("minutesPerPage", d.minutesPerPage),
     pauseWords: s.pauseWords === undefined ? defaultPauseWords() : readPauseWords(s.pauseWords),
     draftsFolder: string("draftsFolder", d.draftsFolder),
+    renumberRestart: typeof s.renumberRestart === "boolean" ? s.renumberRestart : d.renumberRestart,
+    outlineAdded: s.outlineAdded === true,
     export: readExportChoices(s.export),
   };
 }

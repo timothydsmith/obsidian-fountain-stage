@@ -1,9 +1,12 @@
-import { normalizePath, Notice, Plugin, TFile } from "obsidian";
+import { normalizePath, Notice, Platform, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
-import { FOUNTAIN_EXTENSION, isInFolder, untitledScriptPath } from "./files";
+import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { freezeDraft } from "./freezeDraft";
+import { CutsFiles } from "./cutsCommands";
+import { addToLineBank, dropFromLineBank } from "./lineBankCommands";
+import { jumpToScene, jumpToSpeech, mergeWithPreviousScene, moveSceneBy, moveSceneToLine, renumber, splitSceneAtCursor } from "./sceneCommands";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
@@ -24,11 +27,13 @@ export default class FountainStagePlugin extends Plugin {
   settings: FountainStageSettings = { ...DEFAULT_SETTINGS };
   private library!: Library;
   private paginator!: Paginator;
+  private cuts!: CutsFiles;
 
   async onload(): Promise<void> {
     this.settings = readSettings(await this.loadData());
     this.library = new Library(this.app, () => this.settings);
     this.paginator = new Paginator(this.library, () => this.settings);
+    this.cuts = new CutsFiles(this.app, () => this.draftsFolder(), () => this.scriptViews());
     this.addSettingTab(new FountainStageSettingTab(this.app, this, this.settings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
@@ -42,6 +47,15 @@ export default class FountainStagePlugin extends Plugin {
         for (const view of this.scriptViews()) if (view.file === file) view.refreshFrozen();
       }),
     );
+    // Freezing a draft freezes its cuts file too.
+    const refreshFrozen = () => {
+      for (const view of this.scriptViews()) view.refreshFrozen();
+    };
+    // Not while the vault loads, when every file is announced as created.
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on("create", refreshFrozen));
+      this.registerEvent(this.app.vault.on("delete", refreshFrozen));
+    });
     this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
     this.registerView(
@@ -51,14 +65,29 @@ export default class FountainStagePlugin extends Plugin {
           exportPdf: (view) => view.file && void this.exportPdf(view.file),
           paginate: (script) => this.paginator.paginate(script),
           showPageBreaks: () => this.settings.showPageBreaks,
-          isDraft: (file) => isInFolder(file.path, this.draftsFolder()),
+          inDraftsFolder: (file) => this.cuts.inDraftsFolder(file),
+          isFrozen: (file) => this.cuts.isFrozen(file),
+          isCutsFile: (file) => this.cuts.isCutsFile(file),
+          isLineBank: (file) => this.cuts.isLineBank(file),
           freezeDraft: (view) => this.freezeDraft(view),
+          changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
+          cutFromDraft: (view) => void this.cuts.cut(view),
+          restoreCut: (view) => this.cuts.restore(view),
         }),
     );
 
     this.showStatusBar();
 
-    this.registerView(VIEW_TYPE_OUTLINE, (leaf) => new OutlineView(leaf, (view) => this.timelineOf(view)));
+    this.registerView(
+      VIEW_TYPE_OUTLINE,
+      (leaf) =>
+        new OutlineView(leaf, {
+          timelineOf: (view) => this.timelineOf(view),
+          moveScene: moveSceneToLine,
+          moveSceneBy: (view, line, direction) => moveSceneBy(view, direction, line),
+        }),
+    );
+    this.addOutlineOnce();
     this.registerView(
       VIEW_TYPE_REPORT,
       (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
@@ -109,7 +138,7 @@ export default class FountainStagePlugin extends Plugin {
       name: "Freeze draft",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view || view.isDraft()) return false;
+        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
         if (!checking) this.freezeDraft(view);
         return true;
       },
@@ -124,6 +153,49 @@ export default class FountainStagePlugin extends Plugin {
         return true;
       },
     });
+    this.addCommand({
+      id: "cut-from-draft",
+      name: "Cut from this draft",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
+        if (!checking) void this.cuts.cut(view);
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "restore-cut",
+      name: "Restore cut",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (!view?.file || !this.cuts.isCutsFile(view.file)) return false;
+        if (!checking) this.cuts.restore(view);
+        return true;
+      },
+    });
+    // The line bank goes with a script, not with its drafts or with itself.
+    const scriptCommand = (id: string, name: string, run: (view: FountainView) => void) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const view = this.app.workspace.getActiveViewOfType(FountainView);
+          if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
+          if (!checking) run(view);
+          return true;
+        },
+      });
+    scriptCommand("add-to-line-bank", "Add to line bank", (view) => addToLineBank(this.app, this.cuts, view));
+    scriptCommand("drop-from-line-bank", "Put in a line from the line bank", (view) => void dropFromLineBank(this.app, this.cuts, view));
+    viewCommand("next-scene", "Go to next scene", (view) => jumpToScene(view, 1));
+    viewCommand("previous-scene", "Go to previous scene", (view) => jumpToScene(view, -1));
+    viewCommand("next-speech", "Go to this character's next speech", (view) => jumpToSpeech(view, 1));
+    viewCommand("previous-speech", "Go to this character's previous speech", (view) => jumpToSpeech(view, -1));
+    viewCommand("move-scene-up", "Move scene up", (view) => moveSceneBy(view, -1));
+    viewCommand("move-scene-down", "Move scene down", (view) => moveSceneBy(view, 1));
+    viewCommand("split-scene", "Split scene", (view) => splitSceneAtCursor(this.app, view));
+    viewCommand("merge-scene", "Merge with previous scene", (view) => mergeWithPreviousScene(view));
+    viewCommand("renumber-scenes", "Renumber scenes", (view) => this.renumberScenes(view));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
@@ -158,6 +230,14 @@ export default class FountainStagePlugin extends Plugin {
     await exportScript(this.app, this.library, file, source, this.settings.export, (choices) => {
       this.settings.export = choices;
       // Nothing else depends on these, so there's nothing to refresh.
+      void this.saveData(this.settings);
+    });
+  }
+
+  private renumberScenes(view: FountainView): void {
+    renumber(this.app, view, this.settings.renumberRestart, (restart) => {
+      this.settings.renumberRestart = restart;
+      // Nothing else depends on this, so there's nothing to refresh.
       void this.saveData(this.settings);
     });
   }
@@ -311,15 +391,37 @@ export default class FountainStagePlugin extends Plugin {
     }
   }
 
-  /** Shows the script outline, opening it in the right sidebar if it isn't open yet. */
-  private async showOutline(): Promise<void> {
+  /** Shows the script outline, opening it in the right sidebar if it isn't open yet. Without `reveal`, it's opened but not brought into view. */
+  private async showOutline(reveal = true): Promise<void> {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_OUTLINE)[0];
     if (!leaf) {
       leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf("split");
       await leaf.setViewState({ type: VIEW_TYPE_OUTLINE, active: false });
     }
-    await workspace.revealLeaf(leaf);
+    if (reveal) await workspace.revealLeaf(leaf);
+  }
+
+  /**
+   * Opens the outline in the right sidebar the first time a script is open
+   * in the vault. Only once: after that, Obsidian keeps it where you leave
+   * it, and if you close it, it stays closed until Show script outline. On
+   * a phone it's added to the sidebar without opening the sidebar over the
+   * script.
+   */
+  private addOutlineOnce(): void {
+    const { workspace } = this.app;
+    const add = () => {
+      if (this.settings.outlineAdded || !workspace.getActiveViewOfType(FountainView)) return;
+      this.settings.outlineAdded = true;
+      // Nothing else depends on this, so there's nothing to refresh.
+      void this.saveData(this.settings);
+      if (workspace.getLeavesOfType(VIEW_TYPE_OUTLINE).length === 0) void this.showOutline(!Platform.isMobile);
+    };
+    workspace.onLayoutReady(() => {
+      add();
+      this.registerEvent(workspace.on("active-leaf-change", add));
+    });
   }
 
   onunload(): void {

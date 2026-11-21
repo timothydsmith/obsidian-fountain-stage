@@ -253,6 +253,20 @@
   color: var(--nav-item-color-active);
 }
 
+/* Where a dragged scene will go. */
+.fountain-stage-outline .tree-item-self.is-drop-before {
+  box-shadow: inset 0 2px 0 var(--interactive-accent);
+}
+
+.fountain-stage-outline .tree-item-self.is-drop-after {
+  box-shadow: inset 0 -2px 0 var(--interactive-accent);
+}
+
+.fountain-stage-renumber-list ul {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
 .fountain-stage-outline .tree-item.is-collapsed > .tree-item-children {
   display: none;
 }
@@ -491,4 +505,14 @@
 .fountain-stage-export-note {
   margin-top: var(--size-4-1);
   color: var(--text-accent);
+}
+
+/* Line bank */
+.fountain-stage-line-bank-input {
+  width: 100%;
+  font-family: var(--font-monospace);
+}
+
+.fountain-stage-line-bank-more {
+  color: var(--text-muted);
 }
