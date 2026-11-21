@@ -4,7 +4,7 @@ Last updated 22 November 2026.
 
 ## Where things stand
 
-The next release focuses on moving between drafts, because rewrites are under way. Version 0.1.3 shipped on 18 November 2026 and is in Obsidian's community plugin directory.
+Rewrites are under way, so releases focus on moving between drafts. Version 0.3.0 (moving text) shipped on 22 November 2026, after 0.2.0 (sections and freezing) earlier the same day. Fountain Stage is in Obsidian's community plugin directory.
 
 Working assumptions:
 
@@ -73,7 +73,7 @@ The Fountain spec says sections are ignored completely in formatted output, but 
 - **No convert command.** Scripts are assumed to follow the spec; the changelog says how to rewrite `#` acts and `##` scenes by hand.
 - **Tests:** layout snapshots change on purpose. Parity with fountain2pdf ends for sections.
 
-### 1. Freeze draft (built, on dev)
+### 1. Freeze draft (released in 0.2.0)
 
 - **Freeze draft** command, also in the script's More options menu.
 - Reads the draft number from the working file's `Draft:` key. No key means Draft 1.
@@ -93,7 +93,7 @@ Decided:
 - [x] A script with no title page gets one on freeze, in both the frozen copy and the working file.
 - [x] Draft notes on freeze, from Ideas and history, are part of it.
 
-### 2. Cut from this draft (built, on dev)
+### 2. Cut from this draft (released in 0.3.0)
 
 - A command cuts the selection from the script and adds it to `Play - Cuts.fountain`.
 - Each cut sits under its own heading, filled in automatically, with an optional label: `# 21 Nov 2026 · Draft 4 · from 2.3 KITCHEN`.
@@ -108,7 +108,7 @@ Decided:
 - [x] Undo in the script takes the cut out of the cuts file again, and redo puts it back. Restoring a cut takes it out of the working draft's cuts file, and undo of that puts it back.
 - [x] Cuts files are files of their own, so a script's outline, report and runtime never count them.
 
-### The rest of 0.3.0 (built, on dev)
+### The rest of 0.3.0 (released)
 
 Line bank, moving scenes, split and merge, renumbering and jump commands, from the drafting aids below.
 

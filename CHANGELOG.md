@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-22
+
 ### Added
 - **Cut from this draft**, from the command palette or a script's **More options** menu. It moves the selected text into the current draft's cuts file in the drafts folder (`Play - Draft 04 - Cuts.fountain`), under a heading saying which scene and line it came from and when. Cuts are kept in the order of where they came from in the play. Undo in the script puts the text back and takes it out of the cuts file.
 - **Restore cut**, in a cuts file, puts the cut at the cursor back into the script, at the script's cursor, and takes it out of the cuts file. Undo puts it back in the cuts file.
@@ -86,7 +88,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...0.2.0
 [0.1.3]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.1...0.1.2

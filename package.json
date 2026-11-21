@@ -1,6 +1,6 @@
 {
   "name": "obsidian-fountain-stage",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Write Fountain scripts in Obsidian and export them as stage-play PDFs.",
   "main": "main.js",
   "type": "module",
