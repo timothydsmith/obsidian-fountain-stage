@@ -14,6 +14,7 @@ import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
 import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
 import { renameCharacter } from "../renameCharacterModal";
+import { changeTint, setChangedLines } from "./changeTint";
 import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain-stage-script";
@@ -55,7 +56,8 @@ interface ModeState {
 }
 
 /** What changed in a script, for views that follow it, such as the outline: its text, where you are, or its page layout. */
-export type ScriptChange = "text" | "position" | "pages";
+/** "position" is the cursor moving or any scrolling; "scroll" is only scrolling you do, not scrollToPlace. */
+export type ScriptChange = "text" | "position" | "scroll" | "pages";
 
 /** What a script's view needs from the plugin. */
 export interface FountainHost {
@@ -75,6 +77,13 @@ export interface FountainHost {
   isLineBank(file: TFile): boolean;
   cutFromDraft(view: FountainView): void;
   restoreCut(view: FountainView): void;
+  /** Opens the Changes tab on a script. */
+  showChanges(view: FountainView): void;
+  /** Opens the draft a script is compared with beside it, scrolling with it. */
+  showSideBySide(view: FountainView): void;
+  /** Whether lines changed since a draft are tinted. */
+  tintingChanges(): boolean;
+  toggleChangeTint(): void;
 }
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
@@ -103,6 +112,8 @@ export class FountainView extends TextFileView {
   private modeButton: HTMLElement;
   /** A frozen draft unfrozen for editing, until the view closes or opens another file. */
   private unfrozen = false;
+  /** Where scrollToPlace last scrolled to, until the scroll event for it. */
+  private syncedTop: number | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -153,6 +164,10 @@ export class FountainView extends TextFileView {
     this.registerDomEvent(this.editor.scrollDOM, "scroll", () => {
       this.rememberPositionSoon();
       this.notify("position");
+      // Scrolling to follow a script beside this one isn't yours, so isn't passed back.
+      const synced = this.syncedTop !== null && Math.abs(this.editor.scrollDOM.scrollTop - this.syncedTop) < 1;
+      this.syncedTop = null;
+      if (!synced) this.notify("scroll");
     });
   }
 
@@ -334,6 +349,32 @@ export class FountainView extends TextFileView {
         .setIcon("users")
         .onClick(() => renameCharacter(this.app, this)),
     );
+    if (!this.isLineBank() && !(this.file && this.host.isCutsFile(this.file))) {
+      menu.addItem((item) =>
+        item
+          .setSection("view")
+          .setTitle("Changes since a draft")
+          .setIcon("git-compare")
+          .onClick(() => this.host.showChanges(this)),
+      );
+      if (!Platform.isPhone) {
+        menu.addItem((item) =>
+          item
+            .setSection("view")
+            .setTitle("Side by side with a draft")
+            .setIcon("columns-2")
+            .onClick(() => this.host.showSideBySide(this)),
+        );
+      }
+      menu.addItem((item) =>
+        item
+          .setSection("view")
+          .setTitle("Tint changes since a draft")
+          .setIcon("highlighter")
+          .setChecked(this.host.tintingChanges())
+          .onClick(() => this.host.toggleChangeTint()),
+      );
+    }
     super.onPaneMenu(menu, source);
   }
 
@@ -595,6 +636,12 @@ export class FountainView extends TextFileView {
     return true;
   }
 
+  /** Tints lines changed since a frozen draft (counting from 0), or takes the tint off with null. */
+  showChangedLines(lines: number[] | null): void {
+    if (this.closed) return;
+    this.editor.dispatch({ effects: setChangedLines.of(lines) });
+  }
+
   /** Moves the cursor to the start of a line, counting from 0, and brings it into view in the middle of the screen. */
   goToLine(line: number): void {
     const doc = this.editor.state.doc;
@@ -612,6 +659,25 @@ export class FountainView extends TextFileView {
       effects: EditorView.scrollIntoView(from, { y: "start", yMargin: 0 }),
     });
     if (!this.reading) this.editor.focus();
+  }
+
+  /** Where the script is scrolled to: the line at the top, counting from 0, and how far down it that is (0 to 1). Undefined while it isn't laid out. */
+  scrollPlace(): { line: number; fraction: number } | undefined {
+    const { scrollDOM, documentPadding } = this.editor;
+    if (scrollDOM.clientHeight === 0) return undefined;
+    const height = scrollDOM.scrollTop - documentPadding.top;
+    const block = this.editor.lineBlockAtHeight(height);
+    const fraction = block.height > 0 ? Math.min(Math.max((height - block.top) / block.height, 0), 1) : 0;
+    return { line: this.editor.state.doc.lineAt(block.from).number - 1, fraction };
+  }
+
+  /** Scrolls a line (counting from 0) to the top, `fraction` of the way down it, leaving the cursor where it is. */
+  scrollToPlace(line: number, fraction: number): void {
+    if (this.closed) return;
+    const { scrollDOM, documentPadding, state } = this.editor;
+    const block = this.editor.lineBlockAt(state.doc.line(Math.min(Math.max(line + 1, 1), state.doc.lines)).from);
+    scrollDOM.scrollTop = block.top + fraction * block.height + documentPadding.top;
+    this.syncedTop = scrollDOM.scrollTop;
   }
 
   /** The offset of the line at the top of the editor, or undefined while it isn't laid out. */
@@ -666,6 +732,7 @@ export class FountainView extends TextFileView {
         this.pageDisplay.of(this.currentPageDisplay()),
         history(),
         cutHistory((change) => this.host.changeCutsFile(change)),
+        changeTint(),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,

@@ -297,6 +297,31 @@
   white-space: nowrap;
 }
 
+/* The current pass, above the outline, and a tick for each scene. */
+.fountain-stage-outline-pass {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  padding: var(--size-4-1) var(--size-4-2) var(--size-4-2);
+  margin-bottom: var(--size-4-1);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-outline-pass-name {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-outline-pass-count {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.fountain-stage-outline .fountain-stage-outline-tick {
+  flex-shrink: 0;
+  margin: 0 var(--size-4-2) 0 0;
+}
+
 /* Character name completion, in Obsidian's look for suggestions. */
 .fountain-stage-view .cm-editor .cm-tooltip {
   background-color: var(--background-primary);
@@ -514,5 +539,35 @@
 }
 
 .fountain-stage-line-bank-more {
+  color: var(--text-muted);
+}
+
+/* Lines changed since a frozen draft: on screen only. */
+.fountain-stage-view .cm-line.fountain-stage-changed {
+  background-color: rgba(var(--color-yellow-rgb), 0.14);
+  box-shadow: inset 3px 0 0 rgba(var(--color-yellow-rgb), 0.6);
+}
+
+.fountain-stage-changes-choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-4);
+}
+
+.fountain-stage-changes .fountain-stage-changes-same {
+  color: var(--text-faint);
+}
+
+.fountain-stage-changes-added td:first-child {
+  color: var(--color-green);
+}
+
+.fountain-stage-changes-cut td:first-child {
+  color: var(--color-red);
+}
+
+.fountain-stage-changes-was {
   color: var(--text-muted);
 }

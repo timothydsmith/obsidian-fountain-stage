@@ -4,6 +4,7 @@ import { FileView, ItemView, Menu, Platform, setIcon, type WorkspaceLeaf } from 
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
 import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
+import type { CurrentPass } from "./passes";
 
 export const VIEW_TYPE_OUTLINE = "fountain-stage-outline";
 
@@ -34,6 +35,12 @@ export class OutlineView extends ItemView {
       moveScene: (script: FountainView, sceneLine: number, targetLine: number, after: boolean) => void;
       /** Moves the scene whose heading is on `sceneLine` up or down past the heading next to it. */
       moveSceneBy: (script: FountainView, sceneLine: number, direction: -1 | 1) => void;
+      /** The script's current pass, if it has one, and each scene's key in it by the line of its heading. */
+      passOf: (script: FountainView, outline: OutlineItem[]) => { pass: CurrentPass; keys: Map<number, string> } | undefined;
+      /** Ticks or unticks a scene in the current pass. */
+      tick: (script: FountainView, key: string, done: boolean) => void;
+      /** Calls `listener` when a passes note changes. */
+      onPassesChange: (listener: () => void) => () => void;
     },
   ) {
     super(leaf);
@@ -55,6 +62,7 @@ export class OutlineView extends ItemView {
     this.contentEl.addClass("fountain-stage-outline");
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
     this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
+    this.register(this.host.onPassesChange(() => this.refreshSoon()));
     this.app.workspace.onLayoutReady(() => this.follow());
   }
 
@@ -81,7 +89,7 @@ export class OutlineView extends ItemView {
     this.cancelTimers();
     this.script = script;
     if (script) {
-      this.unsubscribe = script.subscribe((change) => (change === "position" ? this.highlightSoon() : this.refreshSoon()));
+      this.unsubscribe = script.subscribe((change) => (change === "scroll" ? undefined : change === "position" ? this.highlightSoon() : this.refreshSoon()));
     }
     this.refresh();
   }
@@ -128,11 +136,17 @@ export class OutlineView extends ItemView {
       });
       return;
     }
-    this.renderItems(contentEl.createDiv({ cls: "fountain-stage-outline-tree" }), this.outline, "");
+    const pass = this.host.passOf(this.script, this.outline);
+    if (pass) {
+      const header = contentEl.createDiv({ cls: "fountain-stage-outline-pass" });
+      header.createSpan({ cls: "fountain-stage-outline-pass-name", text: pass.pass.name });
+      header.createSpan({ cls: "fountain-stage-outline-pass-count", text: `${pass.pass.ticked.size} of ${pass.pass.total} done` });
+    }
+    this.renderItems(contentEl.createDiv({ cls: "fountain-stage-outline-tree" }), this.outline, "", pass);
     this.highlight();
   }
 
-  private renderItems(parentEl: HTMLElement, items: OutlineItem[], parentPath: string): void {
+  private renderItems(parentEl: HTMLElement, items: OutlineItem[], parentPath: string, pass?: { pass: CurrentPass; keys: Map<number, string> }): void {
     const seen = new Map<string, number>();
     for (const item of items) {
       // Two scenes can share a name, so the path counts repeats.
@@ -162,6 +176,16 @@ export class OutlineView extends ItemView {
         });
       }
 
+      const key = pass?.keys.get(item.line);
+      if (pass && key && item.kind !== "section") {
+        const box = selfEl.createEl("input", { type: "checkbox", cls: "task-list-item-checkbox fountain-stage-outline-tick" });
+        box.checked = pass.pass.ticked.has(key);
+        box.setAttribute("aria-label", `Done in ${pass.pass.name}`);
+        box.addEventListener("click", (evt) => {
+          evt.stopPropagation();
+          if (this.script) this.host.tick(this.script, key, box.checked);
+        });
+      }
       const inner = selfEl.createDiv({ cls: "tree-item-inner" });
       if (item.sceneNumber) inner.createSpan({ cls: "fountain-stage-outline-number", text: `${item.sceneNumber}. ` });
       inner.createSpan({ text: item.text });
@@ -174,7 +198,7 @@ export class OutlineView extends ItemView {
       if (item.kind === "scene") selfEl.addEventListener("contextmenu", (evt) => this.showSceneMenu(evt, item));
       this.dragAndDrop(selfEl, item);
 
-      if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path);
+      if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path, pass);
     }
   }
 
