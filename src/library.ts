@@ -32,6 +32,12 @@ export interface FountainStageSettings {
   outlineAdded: boolean;
   /** Tint lines changed since a frozen draft, on screen. */
   showChanges: boolean;
+  /** Mark what the checks find in the editor, on screen. */
+  showCheckMarks: boolean;
+  /** Your own phrases for the stage direction check. */
+  directionPhrases: string[];
+  /** Findings you've dismissed, by key, most recent last. */
+  dismissedFindings: string[];
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -59,6 +65,9 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   renumberRestart: true,
   outlineAdded: false,
   showChanges: false,
+  showCheckMarks: false,
+  directionPhrases: [],
+  dismissedFindings: [],
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -87,8 +96,16 @@ export function readSettings(saved: unknown): FountainStageSettings {
     renumberRestart: typeof s.renumberRestart === "boolean" ? s.renumberRestart : d.renumberRestart,
     outlineAdded: s.outlineAdded === true,
     showChanges: s.showChanges === true,
+    showCheckMarks: s.showCheckMarks === true,
+    directionPhrases: strings(s.directionPhrases),
+    dismissedFindings: strings(s.dismissedFindings),
     export: readExportChoices(s.export),
   };
+}
+
+/** A list of strings as saved, or none. */
+function strings(saved: unknown): string[] {
+  return Array.isArray(saved) ? saved.filter((s): s is string => typeof s === "string") : [];
 }
 
 function readExportChoices(saved: unknown): ExportChoices {

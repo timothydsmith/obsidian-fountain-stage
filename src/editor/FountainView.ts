@@ -15,6 +15,7 @@ import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
 import { renameCharacter } from "../renameCharacterModal";
 import { changeTint, setChangedLines } from "./changeTint";
+import { type CheckMark, checkMarks, setCheckMarks } from "./checkMarks";
 import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain-stage-script";
@@ -81,6 +82,8 @@ export interface FountainHost {
   showChanges(view: FountainView): void;
   /** Opens the draft a script is compared with beside it, scrolling with it. */
   showSideBySide(view: FountainView): void;
+  /** Opens the Checks tab on a script. */
+  showChecks(view: FountainView): void;
   /** Whether lines changed since a draft are tinted. */
   tintingChanges(): boolean;
   toggleChangeTint(): void;
@@ -369,6 +372,13 @@ export class FountainView extends TextFileView {
       menu.addItem((item) =>
         item
           .setSection("view")
+          .setTitle("Checks")
+          .setIcon("list-checks")
+          .onClick(() => this.host.showChecks(this)),
+      );
+      menu.addItem((item) =>
+        item
+          .setSection("view")
           .setTitle("Tint changes since a draft")
           .setIcon("highlighter")
           .setChecked(this.host.tintingChanges())
@@ -642,6 +652,12 @@ export class FountainView extends TextFileView {
     this.editor.dispatch({ effects: setChangedLines.of(lines) });
   }
 
+  /** Marks what the checks found, or takes the marks off with null. */
+  showCheckMarks(marks: CheckMark[] | null): void {
+    if (this.closed) return;
+    this.editor.dispatch({ effects: setCheckMarks.of(marks) });
+  }
+
   /** Moves the cursor to the start of a line, counting from 0, and brings it into view in the middle of the screen. */
   goToLine(line: number): void {
     const doc = this.editor.state.doc;
@@ -733,6 +749,7 @@ export class FountainView extends TextFileView {
         history(),
         cutHistory((change) => this.host.changeCutsFile(change)),
         changeTint(),
+        checkMarks(),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,

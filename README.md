@@ -56,6 +56,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Comparing drafts: a Changes tab of what's changed since a frozen draft, a tint on changed lines, and a frozen draft side by side with the script, scrolling with it. See [Changes since a draft](#changes-since-a-draft).
 - Alternate lines: keep other versions of a speech in notes under it, and switch which is live. See [Alternate lines](#alternate-lines).
 - Pass checklists: name a rewrite pass and tick scenes off in the outline, or let the scenes you change tick themselves. See [Passes](#passes).
+- Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -150,6 +151,21 @@ An alternate is of the whole speech, so its notes go after the speech's last lin
 A pass is a run through the play with one thing in mind, such as a dialogue pass. **Start a pass** asks for its name, and adds a checklist of every scene to a Markdown note beside the script, `Play - Passes.md`, made the first time. Each pass is a heading in the note, and the last one is the current pass.
 
 The script outline shows the current pass at the top, with how many scenes are done, and a tick box beside each scene. Tick scenes there or in the note. A scene you change during the pass, so that it differs from the latest frozen draft, ticks itself. Scenes that already differed when the pass started don't, and neither does a scene you've unticked. A scene written since the pass started is added to its list when it's ticked. **Open passes** opens the note.
+
+## Checks
+
+**Show checks**, also in a script's **More options** menu, opens the Checks tab beside the script. It follows the script you're in and updates as you write. Each finding links to its line. The checks point at things to look at, not mistakes, so dismiss any you're happy with: the button beside it hides it until the text it's about changes. **Show dismissed** at the top shows them again, faintly, to bring one back.
+
+- **Names:** two cue names that may be one character, because they're written two ways (`DR. JONES` and `DR JONES`), spelt nearly the same (`CAROLINE` and `CAROLYNE`), one is part of the other (`MRS PIKE` and `PIKE`), or one is a short form of the other (`MAGGIE` and `MARGARET`). With a Characters list on the title page or a cast list section, also characters in the list who never speak, and speakers missing from it. A one-line list such as `Characters: ANNA, TOM and MRS PIKE` counts each name.
+- **Stage directions:** what an actor can't play ("realises", "remembers", "wonders"), screen language ("we see", "camera", "cut to"), your own phrases from settings, and stage directions of more than 60 words.
+- **Overlaps:** a speech with an overlap slash (`/`, where the next speaker comes in) that no speech follows. Overlap slashes in dialogue always show in the accent colour.
+- **Repeated phrases:** phrases of three words or more that come three times or more, in dialogue and stage directions, with each place they come.
+- **Pauses:** scenes with at least four pauses, and twice the play's rate of them or more. Pauses are the pause words in settings.
+- **Voices:** for each character with five speeches or more, how long they typically speak and their longest speech, words only they use, phrases they come back to, and the character whose words are most like theirs.
+- **Filler words:** how often the dialogue says just, really, actually, honestly, you know and the like, and who says each most.
+- **Speech lengths:** a bar for every speech, through the play from left to right by running time, with a dashed line at 150 words (about a minute). Monologues that reach it stand out. Hover a bar for whose speech it is, and click it to go there. A table lists the ten longest.
+
+**Mark check findings**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
 
 ## Exporting to PDF
 
@@ -280,6 +296,7 @@ Layout:
 | `src/editor/changeTint.ts`, `src/sideBySide.ts` | The tint on changed lines, and scrolling a draft side by side with the script |
 | `src/fountain/alternates.ts`, `src/alternateCommands.ts` | Alternate lines: finding a speech's alternates and switching them, and the commands |
 | `src/fountain/passes.ts`, `src/passes.ts` | Pass checklists: the passes note's format, and ticking scenes from the outline and as they change |
+| `src/fountain/checks/`, `src/checks.ts`, `src/checksView.ts`, `src/editor/checkMarks.ts` | Checks: each check, running them and remembering dismissed findings, the Checks tab, and the marks in the editor |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

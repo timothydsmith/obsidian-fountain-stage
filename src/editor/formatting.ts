@@ -1,6 +1,7 @@
 import { type EditorState, type Extension, type Range, StateEffect, StateField, type Text } from "@codemirror/state";
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { actMatcher, DEFAULT_ACT_PATTERN, type IsAct } from "../fountain/acts";
+import { overlapSlashes } from "../fountain/checks/overlaps";
 import { parseInline } from "../fountain/inline";
 import { parseFountain, type ParsedScript, type SyntaxSpan } from "../fountain/parser";
 
@@ -94,6 +95,7 @@ const spanDecorations: Record<SyntaxSpan["kind"], Decoration> = {
   note: Decoration.mark({ class: "pw-note" }),
 };
 const inlineMarker = Decoration.mark({ class: "pw-marker" });
+const overlapMark = Decoration.mark({ class: "pw-overlap", attributes: { title: "Overlap: the next speaker comes in here" } });
 
 const inlineDecorations = new Map<string, Decoration>();
 function inlineDecoration(cls: string): Decoration {
@@ -136,6 +138,12 @@ function buildDecorations(view: EditorView): DecorationSet {
             const styles = [r.bold && "pw-bold", r.italic && "pw-italic", r.underline && "pw-underline", r.link && "pw-link"];
             const name = styles.filter(Boolean).join(" ");
             if (name) ranges.push(inlineDecoration(name).range(line.from + r.from, line.from + r.to));
+          }
+          // Overlap slashes, where the next speaker comes in.
+          if (cls === "pw-dialogue" || cls.startsWith("pw-dialogue ")) {
+            for (const at of overlapSlashes(visibleText(line.text, line.from, hidden).replace(/\0/g, " "))) {
+              ranges.push(overlapMark.range(line.from + at, line.from + at + 1));
+            }
           }
         }
       }
