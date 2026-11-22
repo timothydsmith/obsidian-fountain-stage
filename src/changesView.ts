@@ -76,6 +76,7 @@ export class ChangesView extends ItemView {
     this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
     this.register(this.host.changes.onChange((view) => (view === null || view === this.script) && this.refreshSoon(0)));
     this.app.workspace.onLayoutReady(() => this.follow());
+    this.refreshSoon(0);
   }
 
   async onClose(): Promise<void> {
@@ -91,9 +92,12 @@ export class ChangesView extends ItemView {
       this.setScript(active);
       return;
     }
-    const stillOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).some((leaf) => leaf.view === this.script);
+    const scripts = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).map((leaf) => leaf.view);
+    const stillOpen = scripts.some((view) => view === this.script);
     const otherFile = this.app.workspace.getActiveViewOfType(FileView);
-    if (!stillOpen || otherFile) this.setScript(null);
+    if (otherFile) this.setScript(null);
+    // Opened with this tab active, as Obsidian starts: a script on screen.
+    else if (!stillOpen) this.setScript(scripts.find((view): view is FountainView => view instanceof FountainView && view.containerEl.isShown()) ?? null);
   }
 
   /** Shows the changes in a script, until you go to another. */

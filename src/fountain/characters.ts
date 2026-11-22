@@ -21,7 +21,7 @@ const LIST_SEPARATOR_RE = /,|\s[-–—:]\s|\s{2,}|\t/;
  * of its few words, so a line of prose in the list ("The beats, pauses
  * and silences…") isn't taken for one.
  */
-function listName(entry: string): string | undefined {
+export function listName(entry: string): string | undefined {
   const line = entry.trim();
   const separator = LIST_SEPARATOR_RE.exec(line);
   const name = (separator ? line.slice(0, separator.index) : line).replace(/\s*\(.*$/, "").trim();

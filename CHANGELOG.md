@@ -7,6 +7,16 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- **Show checks** opens a Checks tab beside the script, with checks on the draft: cue names that may be one character written two ways, and names missing from or silent in the cast list; stage directions an actor can't play, screen language, phrases of your own and long stage directions; overlap slashes with no speech after them; phrases repeated three times or more; and scenes with many more pauses than the play. Each finding links to its line, and can be dismissed until the text it's about changes.
+- The Checks tab also shows each character's voice (typical and longest speech, words only they use, phrases they come back to, and whose words are most like theirs), filler words and who says them, and a map of speech lengths through the play with the longest speeches.
+- **Mark check findings** underlines what the checks find in the script. It's off to start with.
+- Overlap slashes in dialogue show in the accent colour.
+- Settings for the checks: marking findings in the editor, your own phrases to check in stage directions, and bringing back dismissed findings.
+
+### Fixed
+- The Changes tab is no longer blank when Obsidian starts with it as the active tab.
+
 ## [0.4.0] - 2026-11-22
 
 ### Added

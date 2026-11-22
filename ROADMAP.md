@@ -35,7 +35,7 @@ Nine minor releases take the plugin from freezing drafts to a story outline, the
 
 To decide:
 
-- [ ] Whether 0.5.0 lands as one release or a check at a time.
+- [x] 0.5.0 lands as one release, all six checks together.
 
 ### Between 1.0 and 2.0
 
@@ -181,6 +181,20 @@ All agreed. The release plan sets the order.
 - **Stage direction check.** Flags directions an actor can't play ("she realises", "he remembers"), film language ("we see"), and directions running past a few lines.
 - **Overused words and pauses.** Repeated phrases across the script, and scenes heavy with beats and pauses. Reuses the pause counting from runtime.
 - **Speech length map.** The longest speeches and monologues, and where they sit in the play.
+
+Decided for 0.5.0:
+
+- [x] Findings go in their own tab, **Checks**, beside the script like Changes, each one a link to its line. Flagged lines are also marked in the editor, with a toggle like the change tint.
+- [x] The stage direction check has built-in phrases, and you can add your own in settings, as with pause words.
+- [x] A finding can be dismissed. The plugin remembers it for the vault until the text it's about changes.
+
+Built in 0.5.0:
+
+- A finding's key is its check, what it's about and a fingerprint of the text, so a dismissal lapses when that text changes. Up to 2000 are kept, oldest forgotten first.
+- Names are alike when written the same but for punctuation, spelt within one letter (two for long names), one is the other plus words that aren't only titles, or the first word is a known short form. `MRS SMITH` and `MR SMITH` aren't alike: different titles are different people.
+- Voices are profiled from five speeches up. "Closest to" is the cosine of word counts, with common words left out.
+- Overlap slashes are marked in dialogue always; a slash is one not between two letters or digits, so "and/or" isn't one.
+- The checks run in about 150 ms on a full-length play, once per version of the text, a second after typing stops.
 
 ### Tracking a rewrite pass
 

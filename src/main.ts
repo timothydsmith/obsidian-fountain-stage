@@ -7,6 +7,8 @@ import { freezeDraft } from "./freezeDraft";
 import { chooseAlternate, keepAsAlternate, nextAlternate } from "./alternateCommands";
 import { Changes } from "./changes";
 import { ChangesView, VIEW_TYPE_CHANGES } from "./changesView";
+import { Checks } from "./checks";
+import { ChecksView, VIEW_TYPE_CHECKS } from "./checksView";
 import { CutsFiles } from "./cutsCommands";
 import type { ScriptVersion } from "./fountain/compare";
 import { addToLineBank, dropFromLineBank } from "./lineBankCommands";
@@ -40,6 +42,7 @@ export default class FountainStagePlugin extends Plugin {
   private changes!: Changes;
   private sideBySide!: SideBySide;
   private passes!: Passes;
+  private checks!: Checks;
   /** Brings the tint on changed lines up to date in every open script. */
   private retint: () => void = () => undefined;
 
@@ -70,6 +73,15 @@ export default class FountainStagePlugin extends Plugin {
     // A new draft, or another chosen, is what changes are counted from now.
     this.register(this.changes.onChange(() => this.passes.recheck()));
     this.register(() => this.passes.stopAll());
+    this.checks = new Checks(
+      () => this.settings,
+      () => void this.saveData(this.settings),
+    );
+    this.app.workspace.onLayoutReady(() => {
+      this.checks.sync(this.scriptViews());
+      this.registerEvent(this.app.workspace.on("layout-change", () => this.checks.sync(this.scriptViews())));
+    });
+    this.register(() => this.checks.stopAll());
     this.addSettingTab(new FountainStageSettingTab(this.app, this, this.settings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
@@ -115,6 +127,7 @@ export default class FountainStagePlugin extends Plugin {
           showSideBySide: (view) => void this.sideBySide.open(view),
           tintingChanges: () => this.settings.showChanges,
           toggleChangeTint: () => this.toggleChangeTint(),
+          showChecks: (view) => void this.showChecks(view),
         }),
     );
     this.tintChanges();
@@ -150,6 +163,10 @@ export default class FountainStagePlugin extends Plugin {
           reportOfVersion: (version) => this.reportOfVersion(version),
           showSideBySide: (view) => void this.sideBySide.open(view),
         }),
+    );
+    this.registerView(
+      VIEW_TYPE_CHECKS,
+      (leaf) => new ChecksView(leaf, { checks: this.checks, settings: () => this.settings, setMarks: (on) => this.setCheckMarks(on) }),
     );
     this.addCommand({
       id: "show-outline",
@@ -263,6 +280,8 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("show-changes", "Show changes since a draft", (view) => void this.showChanges(view));
     viewCommand("tint-changes", "Tint changes since a draft", () => this.toggleChangeTint());
     if (!Platform.isPhone) viewCommand("side-by-side", "Show side by side with a draft", (view) => void this.sideBySide.open(view));
+    viewCommand("show-checks", "Show checks", (view) => void this.showChecks(view));
+    viewCommand("mark-check-findings", "Mark check findings", () => this.setCheckMarks(!this.settings.showCheckMarks, true));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
@@ -332,6 +351,7 @@ export default class FountainStagePlugin extends Plugin {
       view.refreshPages();
       view.refreshFrozen();
     }
+    this.checks.changed();
   }
 
   /** The script's runtime, line by line, by the method in settings. Undefined by pages until they're laid out. */
@@ -451,6 +471,27 @@ export default class FountainStagePlugin extends Plugin {
     }
     if (leaf.view instanceof ChangesView) leaf.view.setScript(view);
     await workspace.revealLeaf(leaf);
+  }
+
+  /** Shows the checks on a script in a tab beside it, opening one if there isn't one. */
+  private async showChecks(view: FountainView): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHECKS)[0];
+    if (!leaf) {
+      leaf = workspace.getLeaf("split", "vertical");
+      await leaf.setViewState({ type: VIEW_TYPE_CHECKS, active: false });
+    }
+    if (leaf.view instanceof ChecksView) leaf.view.setScript(view);
+    await workspace.revealLeaf(leaf);
+  }
+
+  /** Turns the marks on what the checks find on or off, in every script. */
+  private setCheckMarks(on: boolean, notice = false): void {
+    this.settings.showCheckMarks = on;
+    // Nothing else depends on this; the marks are redone below.
+    void this.saveData(this.settings);
+    this.checks.changed();
+    if (notice) new Notice(on ? "Marking what the checks find in each script." : "Stopped marking what the checks find.");
   }
 
   /** Turns the tint on changed lines on or off, in every script. */

@@ -88,6 +88,28 @@ export class FountainStageSettingTab extends PluginSettingTab {
       },
       {
         type: "group",
+        heading: "Checks",
+        items: [
+          {
+            name: "Mark findings in the editor",
+            desc: "Underline what the checks find in the script, such as screen language in a stage direction. The Checks tab lists everything.",
+            control: { type: "toggle", key: "showCheckMarks" },
+          },
+          {
+            name: "Phrases to check in stage directions",
+            desc: "As well as the built-in ones, such as \"realises\" and \"we see\". One phrase a line, matched as whole words in any case.",
+            aliases: ["Stage direction check"],
+            render: (setting) => this.directionPhrasesRow(setting),
+          },
+          {
+            name: "Dismissed findings",
+            desc: "Findings you've dismissed stay hidden until the text they're about changes.",
+            render: (setting) => this.dismissedRow(setting),
+          },
+        ],
+      },
+      {
+        type: "group",
         heading: "PDF export",
         items: [
           {
@@ -200,6 +222,35 @@ export class FountainStageSettingTab extends PluginSettingTab {
           },
           () => this.update(),
         ).open();
+      }),
+    );
+  }
+
+  /** Your phrases for the stage direction check, one a line. */
+  private directionPhrasesRow(setting: Setting): void {
+    setting.addTextArea((text) => {
+      text.setPlaceholder("suddenly\nwe realise").setValue(this.settings.directionPhrases.join("\n"));
+      text.inputEl.rows = 4;
+      text.onChange(async (value) => {
+        this.settings.directionPhrases = value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+        await this.save();
+      });
+    });
+  }
+
+  /** How many findings are dismissed, with a button to bring them all back. */
+  private dismissedRow(setting: Setting): void {
+    const count = this.settings.dismissedFindings.length;
+    setting.setDesc(count === 0 ? "None dismissed." : `${count} dismissed. They stay hidden until the text they're about changes.`);
+    if (count === 0) return;
+    setting.addButton((button) =>
+      button.setButtonText("Bring all back").onClick(async () => {
+        this.settings.dismissedFindings = [];
+        await this.save();
+        this.update();
       }),
     );
   }
