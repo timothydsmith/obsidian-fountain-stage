@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-22
+
 ### Added
 - **Show checks** opens a Checks tab beside the script, with checks on the draft: cue names that may be one character written two ways, and names missing from or silent in the cast list; stage directions an actor can't play, screen language, phrases of your own and long stage directions; overlap slashes with no speech after them; phrases repeated three times or more; and scenes with many more pauses than the play. Each finding links to its line, and can be dismissed until the text it's about changes.
 - The Checks tab also shows each character's voice (typical and longest speech, words only they use, phrases they come back to, and whose words are most like theirs), filler words and who says them, and a map of speech lengths through the play with the longest speeches.
@@ -107,7 +109,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...0.2.0
