@@ -299,6 +299,15 @@ An outline tool over the script itself, not a separate outline note. Structure l
 - [x] A Fountain convention for alternate lines: a note under the live line, `[[alt: …]]` (decided for 0.4.0).
 - [ ] How to detect entrances and exits: phrases such as "enters" and "exits", a stricter convention, or both.
 
+## Not yet placed
+
+Ideas added on 22 November 2026, not yet in a release. Each notes where it might fit.
+
+- **Set up a play.** A command that makes the default folder structure for a new vault: the drafts folder, the styles and fonts folders under `Fountain Stage/`, and perhaps a first script. It uses the folders in settings, so it stays in step with them, and leaves alone any folder that's already there. Small enough for any release; it suits the 1.0 review, or earlier for new users.
+- **Total silence in the report.** The time the script's pauses add up to: every pause word summed with its short and long times, as the runtime already counts them. Shown in the report's totals and for each scene, perhaps with the share of the runtime it makes up. Reuses `pauseSeconds` from the runtime estimate. Fits 0.8.0 or the 1.1.0 reports.
+- **Generate scene breakdowns and character lists.** Write a `Characters:` list on the title page (or a cast list section) from the script's cues, in order of first speech or of size of role, keeping any descriptions already written; and a Scene Breakdown from the scene headings, with who's in each scene. Regenerating updates the list rather than replacing it, so edits to descriptions survive. Fits 0.8.0 (Cast), next to minimum cast and doubling.
+- **Rationalise commands.** Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections. Done once all the features before 1.0 are in, as part of the 1.0 review.
+
 ## After 1.0: project management, alongside reporting
 
 Ideas, not yet committed. With one play per vault, a dashboard across several scripts is dropped.
