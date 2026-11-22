@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-22
+
 ### Added
 - **Start a table read** reads the script aloud from the cursor, with a voice for each character and a narrator for stage directions (or none). Parts you read yourself are highlighted, and the read waits for you to go on.
 - Runtime targets for the play, an act, a scene or a section, set from the outline or the command palette. The outline and status bar show how far over or under each one runs. They're kept in the script, as a `Target:` title-page key and `[[target: 10 min]]` notes, and never print.
@@ -128,7 +130,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...0.4.0
