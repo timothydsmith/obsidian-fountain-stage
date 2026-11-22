@@ -7,6 +7,16 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- **Start a table read** reads the script aloud from the cursor, with a voice for each character and a narrator for stage directions (or none). Parts you read yourself are highlighted, and the read waits for you to go on.
+- Runtime targets for the play, an act, a scene or a section, set from the outline or the command palette. The outline and status bar show how far over or under each one runs. They're kept in the script, as a `Target:` title-page key and `[[target: 10 min]]` notes, and never print.
+- **Time a read-through** times a reading scene by scene, keeps the times in `Play - Readings.md` beside the script, and offers to adjust the runtime estimate to match.
+- **Toggle typewriter mode** keeps the line you're writing in the middle of the screen and fades everything but its paragraph.
+- **Start a sprint** times a burst of writing and counts the words you add.
+
+### Changed
+- The outline's right-click menu (press and hold, on a phone) now works on acts and sections too, for setting runtime targets.
+
 ## [0.6.0] - 2026-11-22
 
 ### Added

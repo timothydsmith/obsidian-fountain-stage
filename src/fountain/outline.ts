@@ -37,6 +37,9 @@ function plain(text: string): string {
   return (out + text.slice(pos)).trim();
 }
 
+/** A runtime target's note on a line of its own, which can sit between a heading and its synopsis. */
+const TARGET_NOTE_LINE_RE = /^\s*\[\[\s*target\s*:[^\]]*\]\]\s*$/i;
+
 /** The outline of a script, as a tree of top-level items. */
 export function buildOutline(source: string, isAct: IsAct = actMatcher()): OutlineItem[] {
   const script = parseFountain(source);
@@ -72,6 +75,7 @@ export function buildOutline(source: string, isAct: IsAct = actMatcher()): Outli
     const synopsis: string[] = [];
     for (let n = item.line + 1; n < lines.length; n++) {
       if (script.lineRoles.get(n) === "synopsis") synopsis.push(plain(lines[n].trim().replace(/^=\s*/, "")));
+      else if (TARGET_NOTE_LINE_RE.test(lines[n])) continue;
       else if (lines[n].trim() !== "" || synopsis.length > 0) break;
     }
     if (synopsis.length > 0) item.synopsis = synopsis.join(" ");

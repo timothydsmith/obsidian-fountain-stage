@@ -41,6 +41,8 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
     The times for pause and silence follow the Author's Note to Annie Baker's *Circle Mirror Transformation*. Baker calls a beat less than a pause, and doesn't time a moment or a short silence, so a beat is 1 second, a moment is taken as a pause, and a short silence is half a silence.
   - **Pages**: a minute a page of the PDF.
+
+  Set a runtime target for the play, an act or a scene, and the outline and status bar show how far over or under it runs. Time a read-through to bring the estimate into line with how the play really reads. See [Runtime targets and read-throughs](#runtime-targets-and-read-throughs).
 - A script report, opened with **Show script report** in a tab beside the script. It follows the script you're in and updates as you write. Click a character or scene to go there.
   - **Totals:** pages, runtime, words spoken, speeches, acts, scenes and characters.
   - **Characters:** each one's speeches, words, share of the dialogue, time speaking, number of scenes, and first and last scene.
@@ -57,6 +59,8 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Alternate lines: keep other versions of a speech in notes under it, and switch which is live. See [Alternate lines](#alternate-lines).
 - Pass checklists: name a rewrite pass and tick scenes off in the outline, or let the scenes you change tick themselves. See [Passes](#passes).
 - Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
+- Table read: the script read aloud, a voice for each character, leaving the parts you read to you. See [Table read](#table-read).
+- Typewriter mode, which keeps the line you're writing in the middle of the screen and fades the rest, and timed writing sprints with a word count. See [Focus](#focus).
 - Rehearsal pages: lock a draft's page numbers for rehearsal, then issue only the pages that change, numbered to fit around the others (23A, 23B) and marked in the margin. See [Rehearsal pages](#rehearsal-pages).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
@@ -167,6 +171,38 @@ The script outline shows the current pass at the top, with how many scenes are d
 - **Speech lengths:** a bar for every speech, through the play from left to right by running time, with a dashed line at 150 words (about a minute). Monologues that reach it stand out. Hover a bar for whose speech it is, and click it to go there. A table lists the ten longest.
 
 **Mark check findings**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
+
+## Table read
+
+**Start a table read** reads the script aloud from the cursor's line, with the device's built-in speech. It works on desktop and on most phones, with whatever voices the device has. A dialog first asks:
+
+- **Read stage directions:** scene headings, stage directions and parentheticals, in the narrator's voice, or left out.
+- **Narrator:** the narrator's voice.
+- **Speed.**
+- **Parts:** a voice for each character, given out in turn to start with. Parts that share a voice are read at different pitches. The play button beside a voice lets you hear it. Turn a part on to read it yourself.
+
+The lines being read are highlighted and kept in view. When it comes to a part you're reading, it highlights your line and waits: tap **Next** when you've said it. A strip at the top of the script has **Pause**, **Skip** and **Stop**. **Go on in the table read**, **Pause or resume the table read** and **Stop the table read** are commands too, so you can give them hotkeys. The dialog remembers your choices.
+
+## Runtime targets and read-throughs
+
+### Targets
+
+Right-click an act, scene or section in the outline (press and hold, on a phone) and choose **Set runtime target**, or **Set runtime target for the play**. The commands **Set runtime target for this scene** (the act, scene or section the cursor is in) and **Set runtime target for the play** do the same. Write the target as `10 min`, `1 h 30 min`, `45 s`, `12:30` (minutes and seconds) or a number of minutes. Leave it blank to take it off.
+
+The outline shows how far over or under its target each one runs, beside its runtime: "2 min over" in red, "3 min under" or "on target" (within 15 seconds, or 5 % of a long target). With a target for the play, a row at the top of the outline shows the whole play's runtime against it, and so does the status bar.
+
+Targets live in the script, so they move with a scene and survive a renamed heading. The play's is a title-page key, `Target: 1 h 30 min`. A heading's is a note on the line under it (after any synopsis), `[[target: 10 min]]`. Neither prints, even with notes included, and neither counts as a change since a draft.
+
+### Read-throughs
+
+**Time a read-through** times a reading scene by scene, starting at the scene the cursor is in. A strip at the top of the script shows the scene and how long it's taken. Tap **Next scene** as each scene ends (it brings the next scene's heading to the top), **Pause** for a break, and **Finish** at the end. **Next scene in the read-through**, **Pause or resume the read-through** and **Finish the read-through** are commands too, for hotkeys.
+
+At the end, the times go in a note beside the script, `Play - Readings.md`, one section for each reading: the date, the draft, and each scene's time read against its estimate. Then you can adjust the runtime estimate to match. It scales the estimate by one factor: how much longer or shorter the scenes read than estimated. By words spoken, that changes words per minute and every pause word's times; by pages, minutes per page. Every script's runtime changes with it, and you can change the numbers back in Fountain Stage's settings.
+
+## Focus
+
+- **Typewriter mode**, from the command palette (**Toggle typewriter mode**) or a script's **More options** menu, keeps the cursor's line in the middle of the screen as you type and move with the keys, and fades everything but the paragraph you're in. Clicking doesn't scroll, so the text stays under the pointer. It stays on, in every script, until you turn it off.
+- **Start a sprint** asks how many minutes to write for, then counts down in a strip at the top of the script, with the words you've added since it started. When the time's up it says how many words you wrote. **Stop the sprint** ends it early.
 
 ## Rehearsal pages
 
@@ -324,6 +360,10 @@ Layout:
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
 | `src/pdf/revisions.ts`, `src/rehearsal.ts` | Rehearsal pages: the locked pages and laying out revised pages, and locking, unlocking and issuing in Obsidian |
+| `src/fountain/tableRead.ts`, `src/tableRead.ts`, `src/editor/readMark.ts` | Table read: what's read and in which voice, the dialog and reading aloud, and the highlight on the lines being read |
+| `src/fountain/targets.ts`, `src/targetCommands.ts` | Runtime targets: reading and writing them, and setting them |
+| `src/fountain/readings.ts`, `src/readThrough.ts` | Read-throughs: the readings note and calibrating the estimate, and timing a reading |
+| `src/editor/typewriter.ts`, `src/sprint.ts` | Typewriter mode and sprints |
 | `src/export.ts` | Export to PDF in Obsidian: the export dialog and saving the PDF |
 | `src/pdf/style.ts` | The `PlayStyle` type: every setting a house style controls |
 | `src/pdf/styles/` | The built-in styles |

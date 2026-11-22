@@ -4,10 +4,13 @@
 .fountain-stage-view {
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .fountain-stage-view .cm-editor {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   background: transparent;
   color: var(--text-normal);
   font-family: var(--font-text);
@@ -27,6 +30,58 @@
 .fountain-stage-view .cm-content {
   padding: var(--file-margins);
   caret-color: var(--caret-color);
+}
+
+/* Strips at the top of a script, for a sprint, read-through or table read going on. */
+.fountain-stage-strips {
+  flex: none;
+}
+
+.fountain-stage-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2);
+  padding: var(--size-4-1) var(--size-4-3);
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-strip-label {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-strip-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fountain-stage-strip button {
+  font-size: var(--font-ui-small);
+}
+
+/* The lines a table read is reading. */
+.fountain-stage-view .cm-line.fountain-stage-read-line {
+  background-color: rgba(var(--color-blue-rgb), 0.14);
+  box-shadow: inset 3px 0 0 rgba(var(--color-blue-rgb), 0.6);
+}
+
+.fountain-stage-view .cm-line.fountain-stage-read-line.fountain-stage-faded {
+  opacity: 1;
+}
+
+/* Typewriter mode: room above and below the text, so any line can sit in the middle, and the rest faded. */
+.fountain-stage-view .fountain-stage-typewriter .cm-content {
+  padding-top: 45vh;
+  padding-bottom: 45vh;
+}
+
+.fountain-stage-view .cm-line.fountain-stage-faded {
+  opacity: 0.3;
+  transition: opacity 150ms ease-out;
 }
 
 /* Obsidian's "Readable line length" setting. */
@@ -294,6 +349,43 @@
 }
 
 .fountain-stage-outline-runtime {
+  white-space: nowrap;
+}
+
+/* How far over or under its target an item runs. */
+.fountain-stage-outline-delta {
+  margin-right: var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
+}
+
+.fountain-stage-outline-delta.is-over {
+  color: var(--text-error);
+}
+
+.fountain-stage-outline-delta.is-under,
+.fountain-stage-outline-delta.is-on-target {
+  color: var(--text-muted);
+}
+
+/* The play's runtime against its target, above the outline. */
+.fountain-stage-outline-play {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--size-4-2);
+  padding: var(--size-4-1) var(--size-4-2) var(--size-4-2);
+  margin-bottom: var(--size-4-1);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-outline-play-name {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-outline-play-time {
+  color: var(--text-muted);
   white-space: nowrap;
 }
 

@@ -27,6 +27,12 @@ import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
 import { Passes } from "./passes";
 import { Rehearsal } from "./rehearsal";
 import { SideBySide } from "./sideBySide";
+import { Sprints } from "./sprint";
+import { ReadThroughs } from "./readThrough";
+import { TableReads, warmUpVoices } from "./tableRead";
+import { calibrate } from "./fountain/readings";
+import { playTarget, targetDelta } from "./fountain/targets";
+import { setPlayTarget, setTargetHere } from "./targetCommands";
 import { FountainStageSettingTab } from "./settings";
 
 /** How long after you stop typing the tint on changed lines catches up. */
@@ -46,6 +52,9 @@ export default class FountainStagePlugin extends Plugin {
   private passes!: Passes;
   private checks!: Checks;
   private rehearsal!: Rehearsal;
+  private sprints!: Sprints;
+  private readThroughs!: ReadThroughs;
+  private tableReads!: TableReads;
   /** Brings the tint on changed lines up to date in every open script. */
   private retint: () => void = () => undefined;
 
@@ -57,6 +66,37 @@ export default class FountainStagePlugin extends Plugin {
     this.changes = new Changes(this.app, () => this.draftsFolder());
     this.sideBySide = new SideBySide(this.app, this.changes);
     this.rehearsal = new Rehearsal(this.app, this.changes, this.library, this.paginator, () => this.draftsFolder());
+    this.sprints = new Sprints(
+      this.app,
+      () => this.settings.sprintMinutes,
+      (minutes) => {
+        this.settings.sprintMinutes = minutes;
+        void this.saveData(this.settings);
+      },
+      () => this.scriptViews(),
+    );
+    this.register(() => this.sprints.cancel());
+    this.readThroughs = new ReadThroughs(
+      this.app,
+      {
+        timelineOf: (view) => this.timelineOf(view),
+        methodDescription: () => (this.settings.runtimeMethod === "words" ? `at ${this.settings.wordsPerMinute} words a minute` : `at ${this.settings.minutesPerPage} minutes a page`),
+        calibrate: (factor) => void this.calibrateRuntime(factor),
+      },
+      () => this.scriptViews(),
+    );
+    this.register(() => this.readThroughs.cancel());
+    this.tableReads = new TableReads(
+      this.app,
+      () => this.settings.tableRead,
+      (choices) => {
+        this.settings.tableRead = choices;
+        void this.saveData(this.settings);
+      },
+      () => this.scriptViews(),
+    );
+    this.register(() => this.tableReads.stop());
+    this.app.workspace.onLayoutReady(() => warmUpVoices());
     this.app.workspace.onLayoutReady(() => {
       this.registerEvent(this.app.workspace.on("layout-change", () => this.sideBySide.layoutChanged(this.scriptViews())));
     });
@@ -133,6 +173,8 @@ export default class FountainStagePlugin extends Plugin {
           toggleChangeTint: () => this.toggleChangeTint(),
           showChecks: (view) => void this.showChecks(view),
           rehearsalActions: (view) => this.rehearsalActions(view),
+          typewriterMode: () => this.settings.typewriter,
+          toggleTypewriter: () => this.toggleTypewriter(),
         }),
     );
     this.tintChanges();
@@ -300,6 +342,47 @@ export default class FountainStagePlugin extends Plugin {
     rehearsalCommand("lock-rehearsal-script", "Lock rehearsal script", "Lock rehearsal script");
     rehearsalCommand("unlock-rehearsal-script", "Unlock rehearsal script", "Unlock rehearsal script");
     rehearsalCommand("issue-revised-pages", "Issue revised pages", "Issue revised pages");
+    scriptCommand("set-play-target", "Set runtime target for the play", (view) => setPlayTarget(this.app, view));
+    scriptCommand("set-target", "Set runtime target for this scene", (view) => setTargetHere(this.app, view));
+    viewCommand("toggle-typewriter", "Toggle typewriter mode", () => this.toggleTypewriter());
+    scriptCommand("start-sprint", "Start a sprint", (view) => this.sprints.start(view));
+    viewCommand("time-read-through", "Time a read-through", (view) => this.readThroughs.start(view));
+    viewCommand("table-read", "Start a table read", (view) => void this.tableReads.start(view));
+    const tableReadCommand = (id: string, name: string, run: () => void) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          if (!this.tableReads.running()) return false;
+          if (!checking) run();
+          return true;
+        },
+      });
+    tableReadCommand("table-read-next", "Go on in the table read", () => this.tableReads.next());
+    tableReadCommand("table-read-pause", "Pause or resume the table read", () => this.tableReads.pause());
+    tableReadCommand("table-read-stop", "Stop the table read", () => this.tableReads.stop());
+    const readThroughCommand = (id: string, name: string, run: () => void) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          if (!this.readThroughs.running()) return false;
+          if (!checking) run();
+          return true;
+        },
+      });
+    readThroughCommand("read-through-next-scene", "Next scene in the read-through", () => this.readThroughs.next());
+    readThroughCommand("read-through-pause", "Pause or resume the read-through", () => this.readThroughs.pause());
+    readThroughCommand("read-through-finish", "Finish the read-through", () => void this.readThroughs.finish());
+    this.addCommand({
+      id: "stop-sprint",
+      name: "Stop the sprint",
+      checkCallback: (checking) => {
+        if (!this.sprints.running()) return false;
+        if (!checking) void this.sprints.stop();
+        return true;
+      },
+    });
     viewCommand("show-checks", "Show checks", (view) => void this.showChecks(view));
     viewCommand("mark-check-findings", "Mark check findings", () => this.setCheckMarks(!this.settings.showCheckMarks, true));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
@@ -411,9 +494,12 @@ export default class FountainStagePlugin extends Plugin {
       const t = this.timelineOf(view);
       runtimeEl.toggle(t !== undefined);
       if (!t) return;
-      runtimeEl.setText(`Runtime ${formatDuration(t.total)}`);
+      const target = playTarget(view.script());
+      const delta = target === undefined ? undefined : targetDelta(t.total, target);
+      const against = delta === undefined ? "" : delta.on ? ", on target" : `, ${formatDuration(delta.seconds)} ${delta.over ? "over" : "under"}`;
+      runtimeEl.setText(`Runtime ${formatDuration(t.total)}${against}`);
       const method = this.settings.runtimeMethod === "words" ? "from the words spoken" : "from the number of pages";
-      runtimeEl.setAttribute("aria-label", `Estimated runtime, ${method}`);
+      runtimeEl.setAttribute("aria-label", [`Estimated runtime, ${method}`, target === undefined ? "" : `Target ${formatDuration(target)}`].filter(Boolean).join("\n"));
       runtimeEl.setAttribute("data-tooltip-position", "top");
     };
     const update = () => {
@@ -541,6 +627,29 @@ export default class FountainStagePlugin extends Plugin {
   }
 
   /** Turns the tint on changed lines on or off, in every script. */
+  /** Scales the runtime estimate, by the method in use, so it takes `factor` times as long. */
+  private async calibrateRuntime(factor: number): Promise<void> {
+    const { wordsPerMinute, minutesPerPage, pauseWords } = this.settings;
+    const rates = calibrate({ wordsPerMinute, minutesPerPage, pauses: pauseWords }, factor);
+    if (this.settings.runtimeMethod === "words") {
+      this.settings.wordsPerMinute = rates.wordsPerMinute;
+      this.settings.pauseWords = rates.pauses;
+      new Notice(`Runtime now estimated at ${rates.wordsPerMinute} words a minute, with pauses ${factor > 1 ? "longer" : "shorter"} to match.`);
+    } else {
+      this.settings.minutesPerPage = rates.minutesPerPage;
+      new Notice(`Runtime now estimated at ${rates.minutesPerPage} minutes a page.`);
+    }
+    await this.saveData(this.settings);
+    for (const view of this.scriptViews()) view.refreshPages();
+  }
+
+  /** Turns typewriter mode on or off in every script, and remembers it. */
+  private toggleTypewriter(): void {
+    this.settings.typewriter = !this.settings.typewriter;
+    void this.saveData(this.settings);
+    for (const view of this.scriptViews()) view.refreshTypewriter();
+  }
+
   private toggleChangeTint(): void {
     this.settings.showChanges = !this.settings.showChanges;
     // Nothing else depends on this; the tint is redrawn below.

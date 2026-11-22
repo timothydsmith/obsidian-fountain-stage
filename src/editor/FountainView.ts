@@ -1,4 +1,4 @@
-import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
+import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type StateEffect, type TransactionSpec } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
@@ -17,6 +17,8 @@ import { renameCharacter } from "../renameCharacterModal";
 import { changeTint, setChangedLines } from "./changeTint";
 import { type CheckMark, checkMarks, setCheckMarks } from "./checkMarks";
 import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
+import { typewriter } from "./typewriter";
+import { readMark, setReadLines } from "./readMark";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain-stage-script";
 
@@ -89,6 +91,9 @@ export interface FountainHost {
   /** The rehearsal script commands that apply to a script: locking, unlocking and issuing revised pages. */
   rehearsalActions(view: FountainView): { title: string; icon: string; run: () => void }[];
   toggleChangeTint(): void;
+  /** Whether typewriter mode is on. */
+  typewriterMode(): boolean;
+  toggleTypewriter(): void;
 }
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
@@ -107,6 +112,10 @@ export class FountainView extends TextFileView {
   private lineNumbers = new Compartment();
   private modeExtensions = new Compartment();
   private pageDisplay = new Compartment();
+  private typewriterMode = new Compartment();
+  /** Strips at the top of the script, by id, for a sprint, read-through or table read going on. */
+  private stripsEl: HTMLElement;
+  private strips = new Map<string, HTMLElement>();
   private pages: PaginatedScript | null = null;
   private paginateTimer: number | null = null;
   private closed = false;
@@ -136,6 +145,7 @@ export class FountainView extends TextFileView {
     this.addAction("file-down", "Export to PDF", () => host.exportPdf(this));
     this.contentEl.addClass("fountain-stage-view");
     this.contentEl.toggleClass("is-readable-line-width", readableLineLength(this.app));
+    this.stripsEl = this.contentEl.createDiv({ cls: "fountain-stage-strips" });
     this.editor = new EditorView({ parent: this.contentEl, state: this.createState("") });
     this.showMode();
 
@@ -390,6 +400,14 @@ export class FountainView extends TextFileView {
           .onClick(() => this.host.toggleChangeTint()),
       );
     }
+    menu.addItem((item) =>
+      item
+        .setSection("view")
+        .setTitle("Typewriter mode")
+        .setIcon("type")
+        .setChecked(this.host.typewriterMode())
+        .onClick(() => this.host.toggleTypewriter()),
+    );
     super.onPaneMenu(menu, source);
   }
 
@@ -404,6 +422,7 @@ export class FountainView extends TextFileView {
         this.modeExtensions.reconfigure(this.currentModeExtensions()),
         this.lineNumbers.reconfigure(this.lineNumberGutter()),
         this.pageDisplay.reconfigure(this.currentPageDisplay()),
+        this.typewriterMode.reconfigure(this.currentTypewriter()),
       ],
     });
     if (top !== undefined) this.editor.dispatch({ effects: EditorView.scrollIntoView(top, { y: "start", yMargin: 0 }) });
@@ -433,6 +452,38 @@ export class FountainView extends TextFileView {
   private currentPageDisplay(): Extension {
     const source = !this.reading && this.sourceMode;
     return this.host.showPageBreaks() && !source ? pageRuleDisplay() : [];
+  }
+
+  /** Typewriter mode while editing, if it's on. */
+  private currentTypewriter(): Extension {
+    return this.host.typewriterMode() && !this.reading ? typewriter() : [];
+  }
+
+  /** Catches up with typewriter mode being turned on or off. */
+  refreshTypewriter(): void {
+    if (this.closed) return;
+    this.editor.dispatch({ effects: this.typewriterMode.reconfigure(this.currentTypewriter()) });
+    if (this.host.typewriterMode()) this.editor.dispatch({ effects: EditorView.scrollIntoView(this.editor.state.selection.main.head, { y: "center" }) });
+  }
+
+  /**
+   * A strip at the top of the script, for something going on such as a
+   * sprint: an empty element to fill, made the first time. With `show`
+   * false it's taken away, and null comes back.
+   */
+  strip(id: string, show: boolean): HTMLElement | null {
+    let el = this.strips.get(id);
+    if (!show) {
+      el?.remove();
+      this.strips.delete(id);
+      return null;
+    }
+    if (!el) {
+      el = this.stripsEl.createDiv({ cls: "fountain-stage-strip" });
+      this.strips.set(id, el);
+    }
+    el.empty();
+    return el;
   }
 
   /** Catches up with changed settings: whether page breaks show, and the style and fonts they're found with. */
@@ -663,6 +714,23 @@ export class FountainView extends TextFileView {
     this.editor.dispatch({ effects: setCheckMarks.of(marks) });
   }
 
+  /** Highlights the lines a table read is reading (counting from 0) and brings them into view, or takes the highlight off with null. */
+  showReadLines(range: { line: number; endLine: number } | null): void {
+    if (this.closed) return;
+    const doc = this.editor.state.doc;
+    const effects: StateEffect<unknown>[] = [setReadLines.of(range)];
+    if (range && range.line < doc.lines) effects.push(EditorView.scrollIntoView(doc.line(range.line + 1).from, { y: "center" }));
+    this.editor.dispatch({ effects });
+  }
+
+  /** Scrolls a line (counting from 0) to the top, leaving the cursor where it is. */
+  scrollLineToTop(line: number): void {
+    if (this.closed) return;
+    const doc = this.editor.state.doc;
+    const from = doc.line(Math.min(Math.max(line + 1, 1), doc.lines)).from;
+    this.editor.dispatch({ effects: EditorView.scrollIntoView(from, { y: "start", yMargin: 0 }) });
+  }
+
   /** Moves the cursor to the start of a line, counting from 0, and brings it into view in the middle of the screen. */
   goToLine(line: number): void {
     const doc = this.editor.state.doc;
@@ -751,10 +819,12 @@ export class FountainView extends TextFileView {
         pageRuleField,
         actPatternField.init(() => this.actPattern()),
         this.pageDisplay.of(this.currentPageDisplay()),
+        this.typewriterMode.of(this.currentTypewriter()),
         history(),
         cutHistory((change) => this.host.changeCutsFile(change)),
         changeTint(),
         checkMarks(),
+        readMark(),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,

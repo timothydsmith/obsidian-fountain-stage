@@ -4,7 +4,9 @@ import { FileView, ItemView, Menu, Platform, setIcon, type WorkspaceLeaf } from 
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { buildOutline, itemAt, type OutlineItem } from "./fountain/outline";
 import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
+import { headingTargets, playTarget, targetDelta } from "./fountain/targets";
 import type { CurrentPass } from "./passes";
+import { setHeadingTarget, setPlayTarget } from "./targetCommands";
 
 export const VIEW_TYPE_OUTLINE = "fountain-stage-outline";
 
@@ -17,6 +19,8 @@ export class OutlineView extends ItemView {
   private unsubscribe: (() => void) | null = null;
   private outline: OutlineItem[] = [];
   private runtimes = new Map<OutlineItem, number>();
+  /** Runtime targets, by the line of their heading. */
+  private targets = new Map<number, number>();
   private rows = new Map<OutlineItem, HTMLElement>();
   private active: HTMLElement | null = null;
   /** Collapsed items, by their path of headings, so they stay collapsed as you type. */
@@ -126,9 +130,17 @@ export class OutlineView extends ItemView {
       contentEl.createDiv({ cls: "pane-empty", text: "Open a Fountain script to see its outline." });
       return;
     }
-    this.outline = buildOutline(this.script.getViewData(), this.script.isAct());
+    const source = this.script.getViewData();
+    const script = this.script.script();
+    this.outline = buildOutline(source, this.script.isAct());
     const timeline = this.host.timelineOf(this.script);
     this.runtimes = timeline ? outlineRuntimes(this.outline, timeline) : new Map<OutlineItem, number>();
+    const lines: number[] = [];
+    const collect = (items: OutlineItem[]) => items.forEach((item) => (lines.push(item.line), collect(item.children)));
+    collect(this.outline);
+    this.targets = headingTargets(source, script, lines);
+    const target = playTarget(script);
+    if (target !== undefined && timeline) this.playRow(contentEl, timeline.total, target);
     if (this.outline.length === 0) {
       contentEl.createDiv({
         cls: "pane-empty",
@@ -192,33 +204,85 @@ export class OutlineView extends ItemView {
       if (item.synopsis) inner.createDiv({ cls: "fountain-stage-outline-synopsis", text: item.synopsis });
       const runtime = this.runtimes.get(item);
       if (runtime !== undefined) {
-        selfEl.createDiv({ cls: "tree-item-flair-outer" }).createSpan({ cls: "tree-item-flair fountain-stage-outline-runtime", text: formatDuration(runtime) });
+        const flair = selfEl.createDiv({ cls: "tree-item-flair-outer" });
+        const target = this.targets.get(item.line);
+        if (target !== undefined) this.showDelta(flair, runtime, target);
+        flair.createSpan({ cls: "tree-item-flair fountain-stage-outline-runtime", text: formatDuration(runtime) });
       }
       selfEl.addEventListener("click", () => this.reveal(item));
-      if (item.kind === "scene") selfEl.addEventListener("contextmenu", (evt) => this.showSceneMenu(evt, item));
+      selfEl.addEventListener("contextmenu", (evt) => this.showItemMenu(evt, item));
       this.dragAndDrop(selfEl, item);
 
       if (item.children.length > 0) this.renderItems(itemEl.createDiv({ cls: "tree-item-children" }), item.children, path, pass);
     }
   }
 
-  /** A scene's menu, on right-click or a long press: moving it up or down, for where dragging doesn't work, such as on a phone. */
-  private showSceneMenu(evt: MouseEvent, item: OutlineItem): void {
+  /** The play's runtime against its target, above the outline. */
+  private playRow(parentEl: HTMLElement, runtime: number, target: number): void {
+    const row = parentEl.createDiv({ cls: "fountain-stage-outline-play" });
+    row.createSpan({ cls: "fountain-stage-outline-play-name", text: "Play" });
+    const flair = row.createDiv({ cls: "fountain-stage-outline-play-time" });
+    this.showDelta(flair, runtime, target);
+    flair.createSpan({ cls: "fountain-stage-outline-runtime", text: formatDuration(runtime) });
+    row.addEventListener("contextmenu", (evt) => {
+      const script = this.script;
+      if (!script || script.isFrozen()) return;
+      evt.preventDefault();
+      new Menu()
+        .addItem((menuItem) =>
+          menuItem
+            .setTitle("Set runtime target for the play")
+            .setIcon("timer")
+            .onClick(() => setPlayTarget(this.app, script)),
+        )
+        .showAtMouseEvent(evt);
+    });
+  }
+
+  /** How far over or under its target an item runs, before its runtime. */
+  private showDelta(parentEl: HTMLElement, runtime: number, target: number): void {
+    const delta = targetDelta(runtime, target);
+    const text = delta.on ? "on target" : `${formatDuration(delta.seconds)} ${delta.over ? "over" : "under"}`;
+    const el = parentEl.createSpan({ cls: "fountain-stage-outline-delta", text });
+    el.addClass(delta.on ? "is-on-target" : delta.over ? "is-over" : "is-under");
+    el.setAttribute("aria-label", `Target ${formatDuration(target)}`);
+  }
+
+  /**
+   * An item's menu, on right-click or a long press: its runtime target, and
+   * for a scene, moving it up or down, for where dragging doesn't work, such
+   * as on a phone.
+   */
+  private showItemMenu(evt: MouseEvent, item: OutlineItem): void {
     const script = this.script;
     if (!script || script.isFrozen()) return;
     evt.preventDefault();
     const menu = new Menu();
+    if (item.kind === "scene") {
+      menu.addItem((menuItem) =>
+        menuItem
+          .setTitle("Move scene up")
+          .setIcon("arrow-up")
+          .onClick(() => this.host.moveSceneBy(script, item.line, -1)),
+      );
+      menu.addItem((menuItem) =>
+        menuItem
+          .setTitle("Move scene down")
+          .setIcon("arrow-down")
+          .onClick(() => this.host.moveSceneBy(script, item.line, 1)),
+      );
+    }
     menu.addItem((menuItem) =>
       menuItem
-        .setTitle("Move scene up")
-        .setIcon("arrow-up")
-        .onClick(() => this.host.moveSceneBy(script, item.line, -1)),
+        .setTitle("Set runtime target")
+        .setIcon("timer")
+        .onClick(() => setHeadingTarget(this.app, script, item)),
     );
     menu.addItem((menuItem) =>
       menuItem
-        .setTitle("Move scene down")
-        .setIcon("arrow-down")
-        .onClick(() => this.host.moveSceneBy(script, item.line, 1)),
+        .setTitle("Set runtime target for the play")
+        .setIcon("timer")
+        .onClick(() => setPlayTarget(this.app, script)),
     );
     menu.showAtMouseEvent(evt);
   }
