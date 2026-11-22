@@ -145,7 +145,7 @@ For 0.4.0 too, from the drafting aids:
 - [x] A scene ticks itself when it comes to differ from the draft during the pass, watched as you write. Scenes that differed when the pass started, or that you untick, don't tick themselves, so ticks never fight you. This needs no copy of the script kept at the start of the pass.
 - [x] Side by side keeps the line at the top of each pane level, mapped through the matched lines. Moved and cut scenes have no counterpart, so scrolling jumps there. Not on phones.
 
-### 4. Revised pages for rehearsal
+### 4. Revised pages for rehearsal (built for 0.6.0)
 
 - Lock a frozen draft as the rehearsal script. Its page breaks stay fixed from then on.
 - After changes, export only the pages that changed. Overflow becomes 23A, 23B; a page that loses text ends short.
@@ -156,10 +156,22 @@ For 0.4.0 too, from the drafting aids:
 
 To decide:
 
-- [ ] Revision numbers separate from draft numbers (Rev. 1, Rev. 2 of the rehearsal draft)?
-- [ ] Revision colours (blue, pink, yellow and so on) named in the header?
-- [ ] A page that loses all its text: number the survivor "23–24"?
-- [ ] Moving the lock to a new draft partway through rehearsals.
+- [x] Revisions are numbered from the lock, Rev. 1, Rev. 2, separate from draft numbers.
+- [x] No revision colours: the header gives the number and date only.
+- [x] A page that loses all its text is combined into the page before, numbered "23–24".
+- [x] The lock can move to a newer frozen draft, after a warning. Revisions count from Rev. 1 again.
+- [x] Issuing revised pages freezes a draft that records its revision number, so the drafts are the record: each revision keeps the page breaks of the one before, and its asterisks mark only what changed since then.
+
+Built for 0.6.0:
+
+- **Lock rehearsal script**, **Issue revised pages** and **Unlock rehearsal script**, in the command palette and a script's More options menu. The lock is a `Locked:` key on the frozen draft, and locking adds `Style:` if it's missing, since the pages are fixed in that style. Neither prints, nor does `Revision:`.
+- Locked pages are recomputed from the locked draft rather than stored, so nothing but title-page keys records them. The cost: changing the style or fonts while locked moves the breaks. The README says to leave them alone.
+- Pages joined by a speech running across them form a group. Each block of the new text goes to the group of the block its text matches, via the line matching from Changes. Text matched out of page order counts as new where it lands. New text goes with the page before, unless a whole page between was replaced.
+- A group whose blocks all match keeps its pages exactly. A changed group is laid out afresh, from its first block to the next unchanged group's, with the style's own flow, running header and page number. Extra pages get the next letter, and fewer pages give a range label.
+- Asterisks go beside every drawn line of a changed element, and beside the element after a cut, so a page that only lost text still shows where. The marks use the source lines each paragraph records as it's drawn.
+- Each revision lays out against the pages after the one before, so its asterisks mark only what changed since then, and its A pages stay as numbered.
+- Matching lines within a scene now passes over lines that can go unmatched first, so a cut run stays together rather than a repeated cue pairing with the first one like it. This improves Changes too.
+- Limits: matching is scene by scene, so cutting or merging a scene heading leaves the rest of that scene unmatched and reissues more pages than needed. The title page and front matter are never revised. Margin marks are right-hand only for now; stage management cues on the left can use the same drawn-line record.
 
 ## Next: drafting aids
 

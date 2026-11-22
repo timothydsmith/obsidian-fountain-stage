@@ -45,6 +45,8 @@ export interface Comparison {
   earlierLine(line: number): number;
   /** The line in the later version that a line of the earlier one matches, or the nearest above it. */
   laterLine(line: number): number;
+  /** Lines with the same text in both versions, from the earlier line to the later. Blank lines and headings that changed aren't in it. */
+  matchedLines: Map<number, number>;
 }
 
 /** Scenes that share at least this much of their text are the same scene. */
@@ -192,16 +194,21 @@ function matchLines(a: Line[], b: Line[]): [number, number][] {
       table[at(i, j)] = a[i].text === b[j].text ? table[at(i + 1, j + 1)] + 1 : Math.max(table[at(i + 1, j)], table[at(i, j + 1)]);
     }
   }
+  // Lines that can go unmatched without shortening the run are passed over first, so a cut or
+  // added run of lines stays together, rather than a line that repeats (a cue, say) pairing with
+  // the first of its kind.
   const pairs: [number, number][] = [];
   let i = 0;
   let j = 0;
   while (i < n && j < m) {
-    if (a[i].text === b[j].text) {
+    const here = table[at(i, j)];
+    if (table[at(i + 1, j)] === here) i++;
+    else if (table[at(i, j + 1)] === here) j++;
+    else {
       pairs.push([a[i].line, b[j].line]);
       i++;
       j++;
-    } else if (table[at(i + 1, j)] >= table[at(i, j + 1)]) i++;
-    else j++;
+    }
   }
   return pairs;
 }
@@ -242,6 +249,7 @@ export function compareScripts(earlier: ScriptVersion, later: ScriptVersion): Co
 
   const changedLines: number[] = [];
   const anchors: [number, number][] = [];
+  const matchedLines = new Map<number, number>();
   const scenes: SceneComparison[] = after.map((scene, j) => {
     const i = byLater.get(j);
     if (i === undefined) {
@@ -253,6 +261,7 @@ export function compareScripts(earlier: ScriptVersion, later: ScriptVersion): Co
     const matched = new Set(same.map(([, line]) => line));
     changedLines.push(...scene.lines.filter((l) => !matched.has(l.line)).map((l) => l.line));
     anchors.push([old.range.line, scene.range.line], ...same);
+    for (const [a, b] of same) matchedLines.set(a, b);
     const linesAdded = scene.lines.length - same.length;
     const linesRemoved = old.lines.length - same.length;
     return {
@@ -280,5 +289,6 @@ export function compareScripts(earlier: ScriptVersion, later: ScriptVersion): Co
     changedLines: [...new Set(changedLines)].sort((x, y) => x - y),
     earlierLine: mapper(forward),
     laterLine: mapper(backward),
+    matchedLines,
   };
 }

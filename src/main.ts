@@ -19,11 +19,13 @@ import { buildReport, type ScriptReport } from "./fountain/report";
 import { reportMarkdown } from "./fountain/reportMarkdown";
 import { formatDuration, pagePositions, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
-import { Paginator } from "./pagination";
+import { type PaginatedScript, Paginator } from "./pagination";
+import type { ParsedScript } from "./fountain/parser";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
 import { renameCharacter } from "./renameCharacterModal";
 import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
 import { Passes } from "./passes";
+import { Rehearsal } from "./rehearsal";
 import { SideBySide } from "./sideBySide";
 import { FountainStageSettingTab } from "./settings";
 
@@ -43,6 +45,7 @@ export default class FountainStagePlugin extends Plugin {
   private sideBySide!: SideBySide;
   private passes!: Passes;
   private checks!: Checks;
+  private rehearsal!: Rehearsal;
   /** Brings the tint on changed lines up to date in every open script. */
   private retint: () => void = () => undefined;
 
@@ -53,6 +56,7 @@ export default class FountainStagePlugin extends Plugin {
     this.cuts = new CutsFiles(this.app, () => this.draftsFolder(), () => this.scriptViews());
     this.changes = new Changes(this.app, () => this.draftsFolder());
     this.sideBySide = new SideBySide(this.app, this.changes);
+    this.rehearsal = new Rehearsal(this.app, this.changes, this.library, this.paginator, () => this.draftsFolder());
     this.app.workspace.onLayoutReady(() => {
       this.registerEvent(this.app.workspace.on("layout-change", () => this.sideBySide.layoutChanged(this.scriptViews())));
     });
@@ -113,7 +117,7 @@ export default class FountainStagePlugin extends Plugin {
       (leaf) =>
         new FountainView(leaf, this.positions, {
           exportPdf: (view) => view.file && void this.exportPdf(view.file),
-          paginate: (script) => this.paginator.paginate(script),
+          paginate: (view, source, script) => this.paginate(view, source, script),
           showPageBreaks: () => this.settings.showPageBreaks,
           inDraftsFolder: (file) => this.cuts.inDraftsFolder(file),
           isFrozen: (file) => this.cuts.isFrozen(file),
@@ -128,6 +132,7 @@ export default class FountainStagePlugin extends Plugin {
           tintingChanges: () => this.settings.showChanges,
           toggleChangeTint: () => this.toggleChangeTint(),
           showChecks: (view) => void this.showChecks(view),
+          rehearsalActions: (view) => this.rehearsalActions(view),
         }),
     );
     this.tintChanges();
@@ -280,6 +285,21 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("show-changes", "Show changes since a draft", (view) => void this.showChanges(view));
     viewCommand("tint-changes", "Tint changes since a draft", () => this.toggleChangeTint());
     if (!Platform.isPhone) viewCommand("side-by-side", "Show side by side with a draft", (view) => void this.sideBySide.open(view));
+    const rehearsalCommand = (id: string, name: string, title: string) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const view = this.app.workspace.getActiveViewOfType(FountainView);
+          const action = view && this.rehearsalActions(view).find((a) => a.title === title);
+          if (!action) return false;
+          if (!checking) action.run();
+          return true;
+        },
+      });
+    rehearsalCommand("lock-rehearsal-script", "Lock rehearsal script", "Lock rehearsal script");
+    rehearsalCommand("unlock-rehearsal-script", "Unlock rehearsal script", "Unlock rehearsal script");
+    rehearsalCommand("issue-revised-pages", "Issue revised pages", "Issue revised pages");
     viewCommand("show-checks", "Show checks", (view) => void this.showChecks(view));
     viewCommand("mark-check-findings", "Mark check findings", () => this.setCheckMarks(!this.settings.showCheckMarks, true));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
@@ -471,6 +491,32 @@ export default class FountainStagePlugin extends Plugin {
     }
     if (leaf.view instanceof ChangesView) leaf.view.setScript(view);
     await workspace.revealLeaf(leaf);
+  }
+
+  /** A script's pages: as its locked rehearsal script has them, if its play has one, otherwise as its PDF would. */
+  private async paginate(view: FountainView, source: string, script: ParsedScript): Promise<PaginatedScript> {
+    try {
+      const locked = await this.rehearsal.paginate(view, source, script);
+      if (locked) return locked;
+    } catch (error) {
+      console.error("[fountain-stage] couldn't lay the script over its rehearsal pages", error);
+    }
+    return this.paginator.paginate(script);
+  }
+
+  /** Locking and unlocking the rehearsal script, and issuing revised pages, as they apply to a script. */
+  private rehearsalActions(view: FountainView): { title: string; icon: string; run: () => void }[] {
+    const file = view.file;
+    if (!file || this.cuts.isLineBank(file) || this.cuts.isCutsFile(file)) return [];
+    const done = () => {
+      this.changes.changed();
+      for (const v of this.scriptViews()) v.refreshPages();
+    };
+    const lock = { title: "Lock rehearsal script", icon: "lock", run: () => void this.rehearsal.lock(view, done) };
+    const unlock = { title: "Unlock rehearsal script", icon: "lock-open", run: () => void this.rehearsal.unlock(view, done) };
+    if (view.isDraft()) return (view.script().titleValues.locked ?? []).join("").trim() ? [unlock] : [lock];
+    if (!this.rehearsal.isLocked(view)) return [lock];
+    return [{ title: "Issue revised pages", icon: "file-stack", run: () => void this.rehearsal.issue(view, done) }, lock, unlock];
   }
 
   /** Shows the checks on a script in a tab beside it, opening one if there isn't one. */

@@ -57,6 +57,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Alternate lines: keep other versions of a speech in notes under it, and switch which is live. See [Alternate lines](#alternate-lines).
 - Pass checklists: name a rewrite pass and tick scenes off in the outline, or let the scenes you change tick themselves. See [Passes](#passes).
 - Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
+- Rehearsal pages: lock a draft's page numbers for rehearsal, then issue only the pages that change, numbered to fit around the others (23A, 23B) and marked in the margin. See [Rehearsal pages](#rehearsal-pages).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -167,6 +168,27 @@ The script outline shows the current pass at the top, with how many scenes are d
 
 **Mark check findings**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
 
+## Rehearsal pages
+
+Once a script goes into rehearsal, everyone's copy needs the same page numbers. Lock a draft, and later changes come out as revised pages to slot into those copies, rather than a new script.
+
+- **Lock rehearsal script**, from the command palette or a script's **More options** menu, makes the latest frozen draft the rehearsal script (freeze one first). Its title page gets `Locked:` and the date, and a `Style:` key if it had none, since its pages are fixed in that style. Neither prints. Locking another draft later moves the lock, and revisions start again at Rev. 1. Run it from a frozen draft's menu to lock that draft.
+- While a script is locked, its page breaks in the editor are the locked pages: the working script shows "Page 23A" where new text has run onto extra pages since.
+- **Issue revised pages** compares the working script with the rehearsal pages as they stand after any earlier revisions, and lists the pages that changed. Issuing them saves a PDF of just those pages beside the script (`Play - Rev. 1.pdf`), and freezes the script as a draft with `Revision: 1` on its title page, so the next revision compares with this one.
+- **Unlock rehearsal script** takes the lock off. Page breaks follow the text again. Revisions already issued stay in their frozen drafts.
+
+How revised pages are numbered:
+
+- A page with changes keeps its number, and is laid out again from its own first line to the next unchanged page's.
+- Text that no longer fits runs onto new pages after it: 23A, then 23B. A page added after 23A is 23AA, if 23B is taken.
+- A page that loses all its text is joined to the page before, numbered for both: 23–24.
+- Every other page keeps its number and its text, so nothing after a change moves.
+- Text moved from one part of the play to another counts as new where it lands.
+
+Each revised page has a header, "Rev. 1 · 22 November 2026", and an asterisk in the right margin beside every line of a changed speech or stage direction, and beside the line after a cut. The style's `revision` settings change the header, the mark and where they go (see [Styles of your own](#styles-of-your-own)).
+
+The title page and anything before the first page of the play aren't revised. Locked pages are worked out again from the locked draft each time, so changing the style or fonts it uses moves its page breaks: leave them alone while it's locked. Changes are matched scene by scene, so cutting or merging a scene heading can mark more pages than it might.
+
 ## Exporting to PDF
 
 Run **Export to PDF** from the command palette, a script's file menu, or the button at the top of an open script. A dialog asks for:
@@ -232,6 +254,7 @@ Every setting:
 | `notes` | `italic`, `color` (for notes, when an export includes them) |
 | `synopses` | `italic`, `color` (for synopses, when an export includes them) |
 | `watermark` | `face`, `color`, `opacity` (0 to 1), `angle` (degrees, -90 to 90), `maxSize` (longer text is set smaller to fit the page) |
+| `revision` | For revised pages: `format` of the header (`{n}` is the revision number, `{date}` its date; default `"Rev. {n} · {date}"`), `face`, `size`, `position` (`"top"`, `"bottom"`), `alignment`, `mark` (printed in the right margin beside each changed line, and after a cut; default `"*"`), `markGap` (how far into the margin the mark goes) |
 
 Alignments are `"left"`, `"center"` or `"right"`. The built-in styles in [src/pdf/styles](src/pdf/styles) show every setting in use.
 
@@ -300,6 +323,7 @@ Layout:
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |
+| `src/pdf/revisions.ts`, `src/rehearsal.ts` | Rehearsal pages: the locked pages and laying out revised pages, and locking, unlocking and issuing in Obsidian |
 | `src/export.ts` | Export to PDF in Obsidian: the export dialog and saving the PDF |
 | `src/pdf/style.ts` | The `PlayStyle` type: every setting a house style controls |
 | `src/pdf/styles/` | The built-in styles |

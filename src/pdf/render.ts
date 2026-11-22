@@ -85,9 +85,14 @@ export async function measuringFontSet(choice: FontChoice): Promise<FontSet> {
 }
 
 export async function buildPdf(script: ParsedScript, style: PlayStyle, choice: FontChoice, options: LayoutOptions = {}): Promise<BuiltPdf> {
+  return drawPdf(choice, (fontSet) => layoutScript(script, style, fontSet, options));
+}
+
+/** Draws pages laid out by `layout`, which measures with the fonts as they're embedded. */
+export async function drawPdf(choice: FontChoice, layoutWith: (fonts: FontSet) => LayoutDocument): Promise<BuiltPdf> {
   const pdf = await PDFDocument.create();
   const { fonts, fontSet } = await embedFonts(pdf, choice);
-  const layout = layoutScript(script, style, fontSet, options);
+  const layout = layoutWith(fontSet);
   pdf.setTitle(layout.title);
   if (layout.author) pdf.setAuthor(layout.author);
   pdf.setCreator("Fountain Stage");

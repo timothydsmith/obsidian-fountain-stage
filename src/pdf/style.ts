@@ -170,13 +170,28 @@ export interface PlayStyle {
     /** The largest size; shorter text is set at this size, longer text smaller to fit the page. */
     maxSize: number;
   };
+
+  /** Revised pages of a locked rehearsal script: a header on each, and a mark beside each changed line. */
+  revision: {
+    /** `{n}` is replaced by the revision number and `{date}` by its date. */
+    format: string;
+    face: Face;
+    size: number;
+    position: "top" | "bottom";
+    alignment: Alignment;
+    /** Printed in the right margin beside each changed line. */
+    mark: string;
+    /** How far into the right margin the mark goes, from the edge of the text. */
+    markGap: number;
+  };
 }
 
-/** Notes, synopses and watermark as the built-in styles have them. */
-export const EXTRAS_DEFAULTS: Pick<PlayStyle, "notes" | "synopses" | "watermark"> = {
+/** Notes, synopses, watermark and revised pages as the built-in styles have them. */
+export const EXTRAS_DEFAULTS: Pick<PlayStyle, "notes" | "synopses" | "watermark" | "revision"> = {
   notes: { italic: true, color: [0.45, 0.45, 0.45] },
   synopses: { italic: true, color: [0.45, 0.45, 0.45] },
   watermark: { face: "bold", color: [0.5, 0.5, 0.5], opacity: 0.2, angle: 45, maxSize: 120 },
+  revision: { format: "Rev. {n} · {date}", face: "regular", size: 10, position: "top", alignment: "left", mark: "*", markGap: 12 },
 };
 
 export const MM = 72 / 25.4;

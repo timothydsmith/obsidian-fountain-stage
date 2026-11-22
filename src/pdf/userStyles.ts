@@ -106,6 +106,7 @@ const SCHEMA: Group = {
   notes: { italic: bool, color },
   synopses: { italic: bool, color },
   watermark: { face, color, opacity: number(0, 1), angle: number(-90, 90), maxSize: size },
+  revision: { format: text, face, size, position: choice("top", "bottom"), alignment, mark: text, markGap: length },
 };
 
 const isKind = (node: Kind | Group): node is Kind => typeof (node as Kind).kind === "string";
