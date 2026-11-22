@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-22
+
 ### Added
 - **Show changes since a draft** opens a Changes tab beside the script: what's changed since the latest frozen draft, or a draft you choose, or between two frozen drafts. It shows the change in runtime and words spoken, every scene added, cut, moved or changed (matched by its text, so renumbering doesn't hide it), and each character's words then and now. Click a scene to go there.
 - **Tint changes since a draft** tints new and changed lines in Live Preview and reading view. It's off to start with.
@@ -95,7 +97,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.3...0.2.0
 [0.1.3]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.1.2...0.1.3
