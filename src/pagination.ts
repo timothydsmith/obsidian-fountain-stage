@@ -29,7 +29,7 @@ export class Paginator {
   ) {}
 
   /** The style a script's `Style:` key names, else the one in settings, else Modern. */
-  private async styleFor(script: ParsedScript): Promise<PlayStyle> {
+  async styleFor(script: ParsedScript): Promise<PlayStyle> {
     const { styles } = await this.library.loadStyles();
     const key = (script.titleValues.style ?? []).join(" ").trim();
     return (key && findStyle(styles, key)) || findStyle(styles, this.settings().pageBreakStyle) || findStyle(styles, "modern") || styles[0];
@@ -57,10 +57,15 @@ export class Paginator {
     return entry.fontSet;
   }
 
+  /** Fonts that measure as a style's PDF would, and why they aren't the style's own, if they aren't. */
+  async measuring(style: PlayStyle): Promise<{ fonts: FontSet; notice?: string }> {
+    const { choice, notice } = await this.library.fontsFor(style);
+    return { fonts: await this.fontSetFor(choice), notice };
+  }
+
   async paginate(script: ParsedScript): Promise<PaginatedScript> {
     const style = await this.styleFor(script);
-    const { choice, notice } = await this.library.fontsFor(style);
-    const fonts = await this.fontSetFor(choice);
+    const { fonts, notice } = await this.measuring(style);
     return { ...scriptPages(layoutScript(script, style, fonts), style.name, style.act.pattern), fontNotice: notice };
   }
 }

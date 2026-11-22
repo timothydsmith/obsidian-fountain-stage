@@ -37,10 +37,18 @@ export interface LinkItem {
   url: string;
 }
 
+/** Where a script line's text was drawn on a page: the baseline of each printed line. For marks in the margin, such as revision asterisks. */
+export interface DrawnLine {
+  /** The script line, counting from 0. */
+  line: number;
+  baselines: number[];
+}
+
 export interface LayoutPage {
   texts: TextItem[];
   rules: RuleItem[];
   links: LinkItem[];
+  drawn: DrawnLine[];
 }
 
 /** Where a block from a script line landed. */
@@ -71,5 +79,5 @@ export interface LayoutDocument {
 }
 
 export function emptyPage(): LayoutPage {
-  return { texts: [], rules: [], links: [] };
+  return { texts: [], rules: [], links: [], drawn: [] };
 }

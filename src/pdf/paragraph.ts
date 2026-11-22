@@ -265,6 +265,7 @@ export class Paragraph implements Block {
     if (this.bullet && lines.length > 0) {
       page.texts.push({ x, y: top - size, text: this.bullet, face: combineFace(face), size, color });
     }
+    if (this.source && lines.length > 0) page.drawn.push({ line: this.source.line, baselines: lines.map((_, i) => top - size - i * leading) });
 
     lines.forEach((line, i) => {
       const baseline = top - size - i * leading;

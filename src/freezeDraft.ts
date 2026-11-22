@@ -7,10 +7,10 @@
 import { type App, Modal, Notice, Setting, type TFile } from "obsidian";
 import type { FountainView } from "./editor/FountainView";
 import { freeScriptPath } from "./files";
-import { applyEdits, draftNumber, formatDraftDate, frozenDraftName, plainTitle, titleKeyEdits } from "./fountain/titlePage";
+import { applyEdits, draftNumber, formatDraftDate, frozenDraftName, plainTitle, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
 
 /** What the freeze dialog asks. */
-interface FreezeChoices {
+export interface FreezeChoices {
   /** What the draft is for, kept on the frozen copy's title page and never printed. */
   notes: string;
   exportPdf: boolean;
@@ -78,7 +78,11 @@ export function freezeDraft(app: App, view: FountainView, folder: string, export
   }).open();
 }
 
-async function freeze(app: App, view: FountainView, folder: string, choices: FreezeChoices): Promise<TFile | undefined> {
+/**
+ * Freezes the script as it is now: a copy in the drafts folder with its draft number, date and any
+ * other title-page keys given, and the script moved on to the next draft. Returns the copy.
+ */
+export async function freeze(app: App, view: FountainView, folder: string, choices: FreezeChoices, keys: TitleKeyChange[] = []): Promise<TFile | undefined> {
   const file = view.file;
   if (!file) return;
   const { vault } = app;
@@ -92,7 +96,7 @@ async function freeze(app: App, view: FountainView, folder: string, choices: Fre
 
   const frozen = applyEdits(
     source,
-    titleKeyEdits(source, script, [["Draft", String(draft)], ["Draft date", formatDraftDate(date)], ["Draft notes", notes || null]], file.basename),
+    titleKeyEdits(source, script, [["Draft", String(draft)], ["Draft date", formatDraftDate(date)], ["Draft notes", notes || null], ...keys], file.basename),
   );
   let copy: TFile;
   try {

@@ -10,7 +10,7 @@ import { isAlternateNote } from "../fountain/alternates";
 import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
-import { flow } from "./flow";
+import { flow, type Frame } from "./flow";
 import type { FontSet } from "./fonts";
 import type { LayoutDocument, LayoutPage, TextItem } from "./model";
 import { BLACK, Paragraph, paraStyle, type ParaStyle, type Span } from "./paragraph";
@@ -306,9 +306,11 @@ class StoryBuilder {
       }
     }
     const { nameColumnWidth, gutter } = this.style.character;
+    const firstPara = this.para(first, "dialogue");
+    firstPara.source = { line: lines[0].line };
     const row = new TableRow([
       { content: nameBlock, width: nameColumnWidth, paddingLeft: 0 },
-      { content: this.para(first, "dialogue"), width: this.available - nameColumnWidth, paddingLeft: gutter },
+      { content: firstPara, width: this.available - nameColumnWidth, paddingLeft: gutter },
     ]);
     row.source = { line: cueLine };
     const parts: Block[] = [row];
@@ -495,8 +497,11 @@ class StoryBuilder {
   }
 }
 
-/** Title-page keys that never print: `style` picks the export style, and `draft notes` says what a frozen draft was for. */
-const NEVER_PRINTED = ["style", "draft notes"];
+/**
+ * Title-page keys that never print: `style` picks the export style, `draft notes` says what a frozen draft was for,
+ * `locked` marks the rehearsal script, and `revision` the revision a frozen draft is.
+ */
+const NEVER_PRINTED = ["style", "draft notes", "locked", "revision"];
 
 /** The title-page values that print. */
 function titleValues(script: ParsedScript): Record<string, string[]> {
@@ -527,15 +532,44 @@ export function toRoman(n: number): string {
   return out;
 }
 
-export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: FontSet, options: LayoutOptions = {}): LayoutDocument {
-  const builder = new StoryBuilder(style, fonts, options);
+/** The blocks a script is laid out from, in order, before they're flowed onto pages. */
+export function storyFor(script: ParsedScript, style: PlayStyle, fonts: FontSet, options: LayoutOptions = {}): StoryItem[] {
+  return new StoryBuilder(style, fonts, options).build(script);
+}
+
+/** The page inside its margins. */
+export function textFrame(style: PlayStyle): Frame {
   const { width, height, margins } = style.page;
-  const result = flow(builder.build(script), {
-    left: margins.left,
-    bottom: margins.bottom,
-    width: width - margins.left - margins.right,
-    height: height - margins.top - margins.bottom,
-  });
+  return { left: margins.left, bottom: margins.bottom, width: width - margins.left - margins.right, height: height - margins.top - margins.bottom };
+}
+
+/** The play's title as the running header prints it. */
+export function strapTitle(script: ParsedScript): string {
+  return join(titleValues(script).title).toUpperCase();
+}
+
+/** A page's number, in the style's format, and its running header if the style has one. */
+export function furnishPage(page: LayoutPage, style: PlayStyle, fonts: FontSet, number: string | undefined, strap?: { title: string; scene: string }): void {
+  const { width, height, margins } = style.page;
+  const { pagination } = style;
+  if (number !== undefined) {
+    const text = fonts.clean(pagination.format.split("{n}").join(number));
+    const w = fonts.width(text, pagination.face, pagination.size);
+    const y = pagination.position === "top" ? height - margins.top / 2 : margins.bottom / 2;
+    const x = pagination.alignment === "left" ? margins.left : pagination.alignment === "right" ? width - margins.right - w : width / 2 - w / 2;
+    page.texts.push({ x, y, text, face: pagination.face, size: pagination.size, color: BLACK });
+  }
+  if (style.header.strap && strap?.title) {
+    drawCentered(page, fonts, width, height - margins.top + margins.top / 3, [
+      [strap.title, "bold"],
+      ...(strap.scene ? ([[" | ", "regular"], [strap.scene, "regular"]] as [string, Face][]) : []),
+    ], style.text.size);
+  }
+}
+
+export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: FontSet, options: LayoutOptions = {}): LayoutDocument {
+  const { width, height, margins } = style.page;
+  const result = flow(storyFor(script, style, fonts, options), textFrame(style));
 
   const values = titleValues(script);
   const hasTitlePage = Object.keys(values).length > 0;
@@ -565,20 +599,7 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
       number = String(n);
     }
     pageNumbers.push(number);
-    if (number !== undefined) {
-      const text = fonts.clean(pagination.format.split("{n}").join(number));
-      const w = fonts.width(text, pagination.face, pagination.size);
-      const y = pagination.position === "top" ? height - margins.top / 2 : margins.bottom / 2;
-      const x = pagination.alignment === "left" ? margins.left : pagination.alignment === "right" ? width - margins.right - w : width / 2 - w / 2;
-      page.texts.push({ x, y, text, face: pagination.face, size: pagination.size, color: BLACK });
-    }
-
-    if (style.header.strap && playTitle && bodyStart !== undefined && n >= bodyStart) {
-      drawCentered(page, fonts, width, height - margins.top + margins.top / 3, [
-        [playTitle, "bold"],
-        ...(scene ? ([[" | ", "regular"], [scene, "regular"]] as [string, Face][]) : []),
-      ], style.text.size);
-    }
+    furnishPage(page, style, fonts, number, bodyStart !== undefined && n >= bodyStart ? { title: playTitle, scene } : undefined);
   });
 
   // The draft and its date, in a bottom corner of the title page, the last line on the bottom margin.

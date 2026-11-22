@@ -63,8 +63,8 @@ export type ScriptChange = "text" | "position" | "scroll" | "pages";
 /** What a script's view needs from the plugin. */
 export interface FountainHost {
   exportPdf(view: FountainView): void;
-  /** Lays the script out as its PDF would be, to find its pages. */
-  paginate(script: ParsedScript): Promise<PaginatedScript>;
+  /** Lays the script out as its PDF would be, or as its locked rehearsal script has it, to find its pages. */
+  paginate(view: FountainView, source: string, script: ParsedScript): Promise<PaginatedScript>;
   showPageBreaks(): boolean;
   /** Whether a file is in the drafts folder: a frozen draft or a cuts file. */
   inDraftsFolder(file: TFile): boolean;
@@ -86,6 +86,8 @@ export interface FountainHost {
   showChecks(view: FountainView): void;
   /** Whether lines changed since a draft are tinted. */
   tintingChanges(): boolean;
+  /** The rehearsal script commands that apply to a script: locking, unlocking and issuing revised pages. */
+  rehearsalActions(view: FountainView): { title: string; icon: string; run: () => void }[];
   toggleChangeTint(): void;
 }
 
@@ -345,6 +347,9 @@ export class FountainView extends TextFileView {
           .onClick(() => this.host.restoreCut(this)),
       );
     }
+    for (const action of this.host.rehearsalActions(this)) {
+      menu.addItem((item) => item.setSection("action").setTitle(action.title).setIcon(action.icon).onClick(action.run));
+    }
     menu.addItem((item) =>
       item
         .setSection("action")
@@ -464,7 +469,7 @@ export class FountainView extends TextFileView {
     const { state } = this.editor;
     let pages: PaginatedScript | null = null;
     try {
-      pages = await this.host.paginate(scriptOf(state));
+      pages = await this.host.paginate(this, state.doc.toString(), scriptOf(state));
     } catch (error) {
       console.error("[fountain-stage] couldn't find the page breaks", error);
     }

@@ -133,30 +133,34 @@ export async function exportScript(
   }).open();
 }
 
+/** Saves a PDF beside a script, as `name`.pdf, replacing one there, and shows it. */
+export async function savePdf(app: App, script: TFile, name: string, bytes: Uint8Array): Promise<TFile> {
+  const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const folder = script.parent && !script.parent.isRoot() ? `${script.parent.path}/` : "";
+  const path = normalizePath(`${folder}${name}.pdf`);
+  const existing = app.vault.getAbstractFileByPath(path);
+  let pdf: TFile;
+  if (existing instanceof TFile) {
+    await app.vault.modifyBinary(existing, data);
+    pdf = existing;
+  } else if (existing) {
+    throw new Error(`${path} is a folder`);
+  } else {
+    pdf = await app.vault.createBinary(path, data);
+  }
+  // Show the PDF: where it's already open, or in a new tab.
+  const open = app.workspace.getLeavesOfType("pdf").find((leaf) => leaf.view instanceof FileView && leaf.view.file?.path === path);
+  if (open) await app.workspace.revealLeaf(open);
+  else await app.workspace.getLeaf("tab").openFile(pdf);
+  return pdf;
+}
+
 async function writePdf(app: App, library: Library, file: TFile, script: ParsedScript, style: PlayStyle, options: LayoutOptions): Promise<void> {
   try {
     const { choice, notice } = await library.fontsFor(style);
     if (notice) new Notice(notice);
     const { bytes, layout } = await buildPdf(script, style, choice, options);
-    const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-
-    const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";
-    const path = normalizePath(`${folder}${file.basename}.pdf`);
-    const existing = app.vault.getAbstractFileByPath(path);
-    let pdf: TFile;
-    if (existing instanceof TFile) {
-      await app.vault.modifyBinary(existing, data);
-      pdf = existing;
-    } else if (existing) {
-      throw new Error(`${path} is a folder`);
-    } else {
-      pdf = await app.vault.createBinary(path, data);
-    }
-
-    // Show the PDF: where it's already open, or in a new tab.
-    const open = app.workspace.getLeavesOfType("pdf").find((leaf) => leaf.view instanceof FileView && leaf.view.file?.path === path);
-    if (open) await app.workspace.revealLeaf(open);
-    else await app.workspace.getLeaf("tab").openFile(pdf);
+    const pdf = await savePdf(app, file, file.basename, bytes);
     new Notice(`Exported ${pdf.name} (${style.name}, ${layout.pages.length} pages)`);
   } catch (error) {
     console.error("[fountain-stage] PDF export failed", error);
