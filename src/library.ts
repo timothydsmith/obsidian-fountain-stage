@@ -30,6 +30,8 @@ export interface FountainStageSettings {
   renumberRestart: boolean;
   /** The outline has been opened in the sidebar for the vault's first script, so it isn't opened again if you close it. */
   outlineAdded: boolean;
+  /** Tint lines changed since a frozen draft, on screen. */
+  showChanges: boolean;
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -56,6 +58,7 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   draftsFolder: "Drafts",
   renumberRestart: true,
   outlineAdded: false,
+  showChanges: false,
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -83,6 +86,7 @@ export function readSettings(saved: unknown): FountainStageSettings {
     draftsFolder: string("draftsFolder", d.draftsFolder),
     renumberRestart: typeof s.renumberRestart === "boolean" ? s.renumberRestart : d.renumberRestart,
     outlineAdded: s.outlineAdded === true,
+    showChanges: s.showChanges === true,
     export: readExportChoices(s.export),
   };
 }

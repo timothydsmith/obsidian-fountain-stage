@@ -130,11 +130,20 @@ Decided:
 - Editor: a faint tint on changed lines in Live Preview, on screen only.
 - Matching: scenes by heading first, then by similar content; within a scene, speech by speech.
 
-To decide:
+Decided:
 
-- [ ] A section of the script report, or its own tab?
-- [ ] Tint in reading view too?
-- [ ] A diff library or our own code (bundle size, mobile)?
+- [x] Its own tab, **Changes**, beside the script like the report, with a choice of the draft to compare with (the latest frozen one to start with), or two frozen drafts.
+- [x] The tint is a toggle, off to start, and shows in reading view as well as Live Preview and source mode.
+- [x] Our own code, not a diff library: scenes are matched first, so lines are only compared within a scene, which keeps it quick on a phone.
+- [x] Scene headings only help match scenes when they're unique once scene numbers are taken out, so renumbering (every `SCENE 2` becoming `SCENE 3`) can't pair the wrong scenes. Title pages aren't compared, so freezing (which changes `Draft:`) isn't a change.
+
+For 0.4.0 too, from the drafting aids:
+
+- [x] Alternate lines go in a note under the live line, `[[alt: …]]`. Notes never print, so the file stays valid Fountain and PDFs show only the live version.
+- [x] An alternate is of a whole speech (or action paragraph), and its notes go after the speech's last line. A note on a line of its own reads as a blank line, so one between a speech's lines would end the speech; the parser must keep matching fountain2pdf, so that isn't changed. Final Draft's alternate dialogue is per speech too. The versions go round in order, so **Switch to next alternate** repeated visits every one.
+- [x] Pass checklists are kept in a Markdown note beside the script, `Play - Passes.md`, one checklist of scenes per pass. The last pass is the current one. Scenes are known by heading and which of the scenes with that heading they are, so duplicate headings keep their own ticks.
+- [x] A scene ticks itself when it comes to differ from the draft during the pass, watched as you write. Scenes that differed when the pass started, or that you untick, don't tick themselves, so ticks never fight you. This needs no copy of the script kept at the start of the pass.
+- [x] Side by side keeps the line at the top of each pane level, mapped through the matched lines. Moved and cut scenes have no counterpart, so scrolling jumps there. Not on phones.
 
 ### 4. Revised pages for rehearsal
 
@@ -242,7 +251,7 @@ An outline tool over the script itself, not a separate outline note. Structure l
 
 ### Open questions for drafting aids
 
-- [ ] A Fountain convention for alternate lines.
+- [x] A Fountain convention for alternate lines: a note under the live line, `[[alt: …]]` (decided for 0.4.0).
 - [ ] How to detect entrances and exits: phrases such as "enters" and "exits", a stricter convention, or both.
 
 ## After 1.0: project management, alongside reporting

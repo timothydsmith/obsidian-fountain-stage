@@ -55,6 +55,27 @@ export function frozenDraftName(title: string, draft: number, date: Date): strin
   return `${safeFileName(title)} - Draft ${String(draft).padStart(2, "0")} - ${isoDate(date)}`;
 }
 
+export interface FrozenDraftName {
+  /** The play's title, as made safe for the file name. */
+  title: string;
+  draft: number;
+  /** As in the name, "2026-11-21". */
+  date: string;
+  /** A second freeze of the same draft on the same day is "2026-11-21 2". */
+  copy: number;
+}
+
+/** Reads a frozen draft's file name (without extension), such as "Play - Draft 03 - 2026-11-21". */
+export function parseFrozenDraftName(basename: string): FrozenDraftName | undefined {
+  const m = /^(.*) - Draft (\d+) - (\d{4}-\d{2}-\d{2})(?: (\d+))?$/.exec(basename);
+  return m ? { title: m[1], draft: parseInt(m[2], 10), date: m[3], copy: m[4] ? parseInt(m[4], 10) : 1 } : undefined;
+}
+
+/** Orders frozen drafts oldest first: by draft number, then date, then copy. */
+export function compareFrozenDrafts(a: FrozenDraftName, b: FrozenDraftName): number {
+  return a.draft - b.draft || a.date.localeCompare(b.date) || a.copy - b.copy;
+}
+
 /** A title made safe to name a file with: characters some systems refuse taken out, and "Untitled" if nothing's left. */
 export function safeFileName(title: string): string {
   return title.replace(UNSAFE_FILE_NAME_RE, "").replace(/\s+/g, " ").trim().replace(/^\.+/, "") || "Untitled";

@@ -53,6 +53,9 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Frozen drafts. **Freeze draft**, from the command palette or a script's **More options** menu, saves a copy of the script as it is now in your drafts folder (`Drafts` unless you change it in Fountain Stage's settings), and moves the script on to the next draft. **Cut from this draft** moves text you take out into the draft's cuts file, and **Restore cut** puts it back. See [Drafts](#drafts) and [Cuts](#cuts).
 - Scene commands: move a scene up or down (or drag it in the outline), split a scene at the cursor, merge one with the scene before, renumber scenes, and go to the next or previous scene, or the next or previous speech by the character you're in. See [Scenes](#scenes).
 - A line bank beside each script, for lines you haven't found a place for yet. See [Line bank](#line-bank).
+- Comparing drafts: a Changes tab of what's changed since a frozen draft, a tint on changed lines, and a frozen draft side by side with the script, scrolling with it. See [Changes since a draft](#changes-since-a-draft).
+- Alternate lines: keep other versions of a speech in notes under it, and switch which is live. See [Alternate lines](#alternate-lines).
+- Pass checklists: name a rewrite pass and tick scenes off in the outline, or let the scenes you change tick themselves. See [Passes](#passes).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
   - **apt:** Australian Plays Transform submission format
@@ -110,6 +113,43 @@ The line bank keeps lines you want to use but haven't placed yet. It's a file be
 - **Put in a line from the line bank** lists the bank's entries. Type to narrow them, and pick one to put it in at the cursor. It's taken out of the bank, and undo in the script puts it back. It goes in the way a restored cut does: as it is partway along a line, or as a paragraph of its own on a blank line. Like restoring a cut, it needs the script in editing view, so you can see where the cursor is.
 
 The bank is an ordinary script, so you can also open it and edit it, or add lines on your phone. Entries are separated by blank lines.
+
+## Changes since a draft
+
+These compare a script with one of its frozen drafts: the latest, unless you choose another. A play's frozen drafts are the scripts in the drafts folder named for it, such as `Play - Draft 03 - 2026-11-21.fountain`. A frozen draft is compared with the drafts before it.
+
+- **Show changes since a draft**, also in a script's **More options** menu, opens the Changes tab beside the script. It follows the script you're in and updates as you write. Choose the draft to compare with at the top, or compare two frozen drafts with each other.
+  - **Totals:** the change in runtime and words spoken, and how many scenes were added, cut, moved and changed.
+  - **Scenes:** every scene, in the script's order, with any cut scene where it used to be: whether it's the same, changed, added, cut or moved, the lines added and taken out, and the change in its runtime and words. Click a scene to go there, in the script or, for a cut scene, in the draft.
+  - **Characters:** each one's words then and now, and the change in their speeches.
+- **Tint changes since a draft**, also in a script's **More options** menu, tints lines that are new or changed since the draft, in Live Preview and reading view. It's off to start with, and stays as you leave it.
+- **Show side by side with a draft**, also in a script's **More options** menu and at the top of the Changes tab, opens the draft in a pane to the left of the script. The two scroll together, keeping lines that match level. Open another frozen draft in that pane to compare with it instead. Closing either pane stops them scrolling together. Not on phones, which have no room for two panes.
+
+Scenes are matched by their text, not their headings, so a scene keeps its match when it's renumbered or retitled, and a scene that's moved shows as moved. Title pages, blank lines and alternate lines aren't compared.
+
+## Alternate lines
+
+Keep other versions of a speech or a stage direction without cutting either. Each version is a note straight under the live one, which is the version that prints:
+
+```
+ANNA
+Not before coffee. Never before coffee.
+[[alt: I never read the news before coffee.]]
+```
+
+Notes never print, so the file stays ordinary Fountain, and a PDF shows only the live version, even with notes included. With the cursor in a speech (its cue or any of its lines), an action paragraph, or one of its alternates:
+
+- **Keep as an alternate** saves a copy of the live version as an alternate, so you can rewrite the live one.
+- **Switch to next alternate** makes the next alternate live, and the live version becomes the last alternate, so switching again and again goes round every version.
+- **Choose an alternate** lists the alternates, to make one live.
+
+An alternate is of the whole speech, so its notes go after the speech's last line: a note between a speech's lines would end the speech there. A speech with a note inside it can't be kept as an alternate.
+
+## Passes
+
+A pass is a run through the play with one thing in mind, such as a dialogue pass. **Start a pass** asks for its name, and adds a checklist of every scene to a Markdown note beside the script, `Play - Passes.md`, made the first time. Each pass is a heading in the note, and the last one is the current pass.
+
+The script outline shows the current pass at the top, with how many scenes are done, and a tick box beside each scene. Tick scenes there or in the note. A scene you change during the pass, so that it differs from the latest frozen draft, ticks itself. Scenes that already differed when the pass started don't, and neither does a scene you've unticked. A scene written since the pass started is added to its list when it's ticked. **Open passes** opens the note.
 
 ## Exporting to PDF
 
@@ -236,6 +276,10 @@ Layout:
 | `src/fountain/lineBank.ts`, `src/lineBankCommands.ts` | The line bank: its format, and adding and putting in lines |
 | `src/fountain/insert.ts` | Putting text in at the cursor as a phrase or a paragraph, for restored cuts and the line bank |
 | `src/fountain/scenes.ts`, `src/sceneCommands.ts` | Scenes: moving, splitting, merging and renumbering them, the jump commands, and their dialogs |
+| `src/fountain/compare.ts`, `src/changes.ts`, `src/changesView.ts` | Changes since a draft: matching scenes and lines, finding and reading a play's drafts, and the Changes tab |
+| `src/editor/changeTint.ts`, `src/sideBySide.ts` | The tint on changed lines, and scrolling a draft side by side with the script |
+| `src/fountain/alternates.ts`, `src/alternateCommands.ts` | Alternate lines: finding a speech's alternates and switching them, and the commands |
+| `src/fountain/passes.ts`, `src/passes.ts` | Pass checklists: the passes note's format, and ticking scenes from the outline and as they change |
 | `src/fountain/pauses.ts`, `src/pauseWordsModal.ts` | Pause words: finding them in a script and timing them, and the settings page for them |
 | `src/fountain/parser.ts` | Fountain parser, ported from fountain2pdf, with source positions |
 | `src/fountain/inline.ts` | Inline emphasis and links |

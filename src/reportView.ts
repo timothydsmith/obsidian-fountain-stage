@@ -73,7 +73,7 @@ export class ReportView extends ItemView {
     this.unsubscribe = null;
     this.cancelRefresh();
     this.script = script;
-    if (script) this.unsubscribe = script.subscribe((change) => change !== "position" && this.refreshSoon());
+    if (script) this.unsubscribe = script.subscribe((change) => (change === "text" || change === "pages") && this.refreshSoon());
     this.refresh();
   }
 

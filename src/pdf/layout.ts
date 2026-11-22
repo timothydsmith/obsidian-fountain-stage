@@ -6,6 +6,7 @@
  */
 
 import { actMatcher, type IsAct } from "../fountain/acts";
+import { isAlternateNote } from "../fountain/alternates";
 import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
@@ -402,9 +403,10 @@ class StoryBuilder {
       story.push(block);
       fresh = false;
     };
-    // Notes on lines of their own and synopses, if included, go in where they were written.
+    // Notes on lines of their own and synopses, if included, go in where they were written. Alternate lines never print.
+    const notes = this.options.notes ? script.lineNotes.filter((n) => !isAlternateNote(n.text)) : [];
     const extras: (LineNote & { name: StyleName })[] = [
-      ...(this.options.notes ? script.lineNotes.map((n) => ({ line: n.line, text: `[${n.text}]`, name: "note" as const })) : []),
+      ...notes.map((n) => ({ line: n.line, text: `[${n.text}]`, name: "note" as const })),
       ...(this.options.synopses ? script.synopses.map((n) => ({ ...n, name: "synopsis" as const })) : []),
     ].sort((a, b) => a.line - b.line);
     let nextExtra = 0;

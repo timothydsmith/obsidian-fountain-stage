@@ -7,6 +7,13 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- **Show changes since a draft** opens a Changes tab beside the script: what's changed since the latest frozen draft, or a draft you choose, or between two frozen drafts. It shows the change in runtime and words spoken, every scene added, cut, moved or changed (matched by its text, so renumbering doesn't hide it), and each character's words then and now. Click a scene to go there.
+- **Tint changes since a draft** tints new and changed lines in Live Preview and reading view. It's off to start with.
+- **Show side by side with a draft** opens the draft to the left of the script, the two scrolling together line for line. Not on phones.
+- Alternate lines: **Keep as an alternate** keeps a copy of the speech or stage direction at the cursor in a note under it (`[[alt: …]]`) to rewrite from, and **Switch to next alternate** and **Choose an alternate** change which version is live. Alternates never print, even with notes included in the PDF.
+- Pass checklists: **Start a pass** adds a checklist of every scene to `Play - Passes.md` beside the script. The outline shows the current pass with a tick box for each scene, and scenes you change during the pass tick themselves. **Open passes** opens the note.
+
 ## [0.3.0] - 2026-11-22
 
 ### Added

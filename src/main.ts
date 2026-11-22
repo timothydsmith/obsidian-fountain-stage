@@ -4,7 +4,11 @@ import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
 import { FOUNTAIN_EXTENSION, untitledScriptPath } from "./files";
 import { freezeDraft } from "./freezeDraft";
+import { chooseAlternate, keepAsAlternate, nextAlternate } from "./alternateCommands";
+import { Changes } from "./changes";
+import { ChangesView, VIEW_TYPE_CHANGES } from "./changesView";
 import { CutsFiles } from "./cutsCommands";
+import type { ScriptVersion } from "./fountain/compare";
 import { addToLineBank, dropFromLineBank } from "./lineBankCommands";
 import { jumpToScene, jumpToSpeech, mergeWithPreviousScene, moveSceneBy, moveSceneToLine, renumber, splitSceneAtCursor } from "./sceneCommands";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
@@ -17,7 +21,12 @@ import { Paginator } from "./pagination";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
 import { renameCharacter } from "./renameCharacterModal";
 import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
+import { Passes } from "./passes";
+import { SideBySide } from "./sideBySide";
 import { FountainStageSettingTab } from "./settings";
+
+/** How long after you stop typing the tint on changed lines catches up. */
+const CHANGE_TINT_DELAY_MS = 500;
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
 const POSITIONS_KEY = "fountain-stage-positions";
@@ -28,12 +37,39 @@ export default class FountainStagePlugin extends Plugin {
   private library!: Library;
   private paginator!: Paginator;
   private cuts!: CutsFiles;
+  private changes!: Changes;
+  private sideBySide!: SideBySide;
+  private passes!: Passes;
+  /** Brings the tint on changed lines up to date in every open script. */
+  private retint: () => void = () => undefined;
 
   async onload(): Promise<void> {
     this.settings = readSettings(await this.loadData());
     this.library = new Library(this.app, () => this.settings);
     this.paginator = new Paginator(this.library, () => this.settings);
     this.cuts = new CutsFiles(this.app, () => this.draftsFolder(), () => this.scriptViews());
+    this.changes = new Changes(this.app, () => this.draftsFolder());
+    this.sideBySide = new SideBySide(this.app, this.changes);
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.workspace.on("layout-change", () => this.sideBySide.layoutChanged(this.scriptViews())));
+    });
+    this.register(() => this.sideBySide.stopAll());
+    this.passes = new Passes(this.app, this.changes);
+    this.app.workspace.onLayoutReady(() => {
+      this.passes.sync(this.scriptViews());
+      this.registerEvent(this.app.workspace.on("layout-change", () => this.passes.sync(this.scriptViews())));
+    });
+    this.registerEvent(this.app.vault.on("modify", (file) => this.passes.fileChanged(file.path)));
+    this.registerEvent(this.app.vault.on("delete", (file) => this.passes.fileChanged(file.path)));
+    this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) => {
+        this.passes.fileChanged(oldPath);
+        this.passes.fileChanged(file.path);
+      }),
+    );
+    // A new draft, or another chosen, is what changes are counted from now.
+    this.register(this.changes.onChange(() => this.passes.recheck()));
+    this.register(() => this.passes.stopAll());
     this.addSettingTab(new FountainStageSettingTab(this.app, this, this.settings, () => this.saveSettings(), this.library));
 
     this.positions = new PositionStore({
@@ -47,14 +83,16 @@ export default class FountainStagePlugin extends Plugin {
         for (const view of this.scriptViews()) if (view.file === file) view.refreshFrozen();
       }),
     );
-    // Freezing a draft freezes its cuts file too.
+    // Freezing a draft freezes its cuts file too, and gives scripts a new draft to compare with.
     const refreshFrozen = () => {
       for (const view of this.scriptViews()) view.refreshFrozen();
+      this.changes.changed();
     };
     // Not while the vault loads, when every file is announced as created.
     this.app.workspace.onLayoutReady(() => {
       this.registerEvent(this.app.vault.on("create", refreshFrozen));
       this.registerEvent(this.app.vault.on("delete", refreshFrozen));
+      this.registerEvent(this.app.vault.on("rename", () => this.changes.changed()));
     });
     this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
@@ -73,8 +111,13 @@ export default class FountainStagePlugin extends Plugin {
           changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
           cutFromDraft: (view) => void this.cuts.cut(view),
           restoreCut: (view) => this.cuts.restore(view),
+          showChanges: (view) => void this.showChanges(view),
+          showSideBySide: (view) => void this.sideBySide.open(view),
+          tintingChanges: () => this.settings.showChanges,
+          toggleChangeTint: () => this.toggleChangeTint(),
         }),
     );
+    this.tintChanges();
 
     this.showStatusBar();
 
@@ -85,12 +128,28 @@ export default class FountainStagePlugin extends Plugin {
           timelineOf: (view) => this.timelineOf(view),
           moveScene: moveSceneToLine,
           moveSceneBy: (view, line, direction) => moveSceneBy(view, direction, line),
+          passOf: (view, outline) => {
+            const pass = view.isDraft() ? undefined : this.passes.current(view);
+            return pass ? { pass, keys: this.passes.keysByLine(view, outline) } : undefined;
+          },
+          tick: (view, key, done) => void this.passes.tick(view, key, done),
+          onPassesChange: (listener) => this.passes.onChange(listener),
         }),
     );
     this.addOutlineOnce();
     this.registerView(
       VIEW_TYPE_REPORT,
       (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
+    );
+    this.registerView(
+      VIEW_TYPE_CHANGES,
+      (leaf) =>
+        new ChangesView(leaf, {
+          changes: this.changes,
+          reportOf: (view) => this.reportOf(view),
+          reportOfVersion: (version) => this.reportOfVersion(version),
+          showSideBySide: (view) => void this.sideBySide.open(view),
+        }),
     );
     this.addCommand({
       id: "show-outline",
@@ -196,6 +255,14 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("split-scene", "Split scene", (view) => splitSceneAtCursor(this.app, view));
     viewCommand("merge-scene", "Merge with previous scene", (view) => mergeWithPreviousScene(view));
     viewCommand("renumber-scenes", "Renumber scenes", (view) => this.renumberScenes(view));
+    scriptCommand("start-pass", "Start a pass", (view) => this.passes.start(view));
+    scriptCommand("open-passes", "Open passes", (view) => void this.passes.open(view));
+    viewCommand("keep-alternate", "Keep as an alternate", (view) => keepAsAlternate(view));
+    viewCommand("next-alternate", "Switch to next alternate", (view) => nextAlternate(view));
+    viewCommand("choose-alternate", "Choose an alternate", (view) => chooseAlternate(this.app, view));
+    viewCommand("show-changes", "Show changes since a draft", (view) => void this.showChanges(view));
+    viewCommand("tint-changes", "Tint changes since a draft", () => this.toggleChangeTint());
+    if (!Platform.isPhone) viewCommand("side-by-side", "Show side by side with a draft", (view) => void this.sideBySide.open(view));
     viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
@@ -319,7 +386,7 @@ export default class FountainStagePlugin extends Plugin {
       runtimeStale = false;
     };
     const updateSoon = (change?: ScriptChange) => {
-      if (change !== "position") runtimeStale = true;
+      if (change !== "position" && change !== "scroll") runtimeStale = true;
       frame ??= window.requestAnimationFrame(update);
     };
     const follow = () => {
@@ -360,6 +427,103 @@ export default class FountainStagePlugin extends Plugin {
     }
     if (leaf.view instanceof ReportView) leaf.view.setScript(view);
     await workspace.revealLeaf(leaf);
+  }
+
+  /** The report on a script that isn't open, such as a frozen draft, laying it out first for a runtime by pages. */
+  private async reportOfVersion(version: ScriptVersion): Promise<ScriptReport> {
+    const { runtimeMethod, wordsPerMinute, minutesPerPage, pauseWords } = this.settings;
+    const pages = runtimeMethod === "pages" ? await this.paginator.paginate(version.script).catch(() => undefined) : undefined;
+    return buildReport(version.script, version.outline, {
+      wordsPerMinute,
+      timeline: timeline(version.script, pages?.placements, { method: runtimeMethod, wordsPerMinute, minutesPerPage, pauses: pauseWords }),
+      positions: pages ? pagePositions(pages.placements) : undefined,
+      pageCount: pages?.pageCount,
+    });
+  }
+
+  /** Shows the changes in a script since a frozen draft, in a tab beside it, opening one if there isn't one. */
+  private async showChanges(view: FountainView): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHANGES)[0];
+    if (!leaf) {
+      leaf = workspace.getLeaf("split", "vertical");
+      await leaf.setViewState({ type: VIEW_TYPE_CHANGES, active: false });
+    }
+    if (leaf.view instanceof ChangesView) leaf.view.setScript(view);
+    await workspace.revealLeaf(leaf);
+  }
+
+  /** Turns the tint on changed lines on or off, in every script. */
+  private toggleChangeTint(): void {
+    this.settings.showChanges = !this.settings.showChanges;
+    // Nothing else depends on this; the tint is redrawn below.
+    void this.saveData(this.settings);
+    this.retint();
+    new Notice(this.settings.showChanges ? "Tinting lines changed since the draft each script is compared with." : "Stopped tinting changed lines.");
+  }
+
+  /**
+   * Keeps the tint on changed lines up to date in each open script while
+   * it's on: compared again a moment after you stop typing, and when the
+   * script is compared with another draft or a draft is frozen.
+   */
+  private tintChanges(): void {
+    const { workspace } = this.app;
+    const watched = new Map<FountainView, { unsubscribe: () => void; timer: number | null; run: number }>();
+    const tint = async (view: FountainView) => {
+      const entry = watched.get(view);
+      if (!entry) return;
+      const run = ++entry.run;
+      if (!this.settings.showChanges) {
+        view.showChangedLines(null);
+        return;
+      }
+      try {
+        const result = await this.changes.compare(view);
+        if (run === entry.run) view.showChangedLines(result?.comparison.changedLines ?? null);
+      } catch (error) {
+        console.error("[fountain-stage] couldn't compare with the draft", error);
+      }
+    };
+    const tintSoon = (view: FountainView, delay: number) => {
+      const entry = watched.get(view);
+      if (!entry) return;
+      if (entry.timer !== null) window.clearTimeout(entry.timer);
+      entry.timer = window.setTimeout(() => {
+        entry.timer = null;
+        void tint(view);
+      }, delay);
+    };
+    const forget = (view: FountainView) => {
+      const entry = watched.get(view);
+      if (!entry) return;
+      entry.unsubscribe();
+      if (entry.timer !== null) window.clearTimeout(entry.timer);
+      watched.delete(view);
+    };
+    // Follows scripts as they open and close.
+    const sync = () => {
+      const open = new Set(this.scriptViews());
+      for (const view of [...watched.keys()]) if (!open.has(view)) forget(view);
+      for (const view of open) {
+        if (watched.has(view)) continue;
+        const entry = { unsubscribe: () => undefined as unknown, timer: null, run: 0 };
+        watched.set(view, entry);
+        entry.unsubscribe = view.subscribe((change) => change === "text" && this.settings.showChanges && tintSoon(view, CHANGE_TINT_DELAY_MS));
+        if (this.settings.showChanges) tintSoon(view, 0);
+      }
+    };
+    this.retint = () => {
+      for (const view of watched.keys()) tintSoon(view, 0);
+    };
+    workspace.onLayoutReady(() => {
+      sync();
+      this.registerEvent(workspace.on("layout-change", sync));
+    });
+    this.register(this.changes.onChange((view) => (view ? tintSoon(view, 0) : this.retint())));
+    this.register(() => {
+      for (const view of [...watched.keys()]) forget(view);
+    });
   }
 
   /** Saves the report on a script as a Markdown note beside it, replacing an earlier one, and opens it. */

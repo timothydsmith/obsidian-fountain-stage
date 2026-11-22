@@ -109,39 +109,46 @@ function nameFinder(names: string[]): (text: string) => string[] {
   };
 }
 
-export function buildReport(script: ParsedScript, outline: OutlineItem[], options: ReportOptions): ScriptReport {
-  const all = flatten(outline);
-  const body = script.elements.filter((el) => !isPreface(el));
+/** A scene's place in the script, before anything is counted. */
+export type SceneRange = Pick<SceneReport, "number" | "title" | "sceneNumber" | "act" | "line" | "endLine">;
 
-  // The scenes: scene headings, and acts with none inside, each up to the next.
+/**
+ * The script's scenes, in order: scene headings, and acts with none
+ * inside, each up to the next. Text before the first scene is a scene of
+ * its own, as long as it isn't all inside an act.
+ */
+export function scriptScenes(script: ParsedScript, outline: OutlineItem[]): SceneRange[] {
+  const all = flatten(outline);
   const units = all.filter(({ item }) => item.kind === "scene" || (item.kind === "act" && !hasScenes(item)));
-  const scenes: SceneReport[] = units.map(({ item, act }, i) => ({
+  const scenes: SceneRange[] = units.map(({ item, act }, i) => ({
     number: 0,
     title: item.text,
     sceneNumber: item.sceneNumber,
     act,
     line: item.line,
     endLine: units[i + 1]?.item.line,
-    speeches: 0,
-    words: 0,
-    characters: [],
   }));
-  // Text before the first scene is a scene of its own, as long as it isn't all inside an act.
   const firstScene = units[0]?.item.line ?? Infinity;
   const firstAct = all.find(({ item }) => item.kind === "act")?.item.line ?? Infinity;
-  const opening = body.find((el) => el.line < Math.min(firstScene, firstAct) && el.type !== "page_break" && el.type !== "section");
+  const opening = script.elements.find(
+    (el) => !isPreface(el) && el.line < Math.min(firstScene, firstAct) && el.type !== "page_break" && el.type !== "section",
+  );
   if (opening) {
     scenes.unshift({
       number: 0,
       title: scenes.length === 0 ? "The whole script" : "Before the first scene",
       line: opening.line,
       endLine: units[0]?.item.line,
-      speeches: 0,
-      words: 0,
-      characters: [],
     });
   }
   scenes.forEach((scene, i) => (scene.number = i + 1));
+  return scenes;
+}
+
+export function buildReport(script: ParsedScript, outline: OutlineItem[], options: ReportOptions): ScriptReport {
+  const all = flatten(outline);
+  const body = script.elements.filter((el) => !isPreface(el));
+  const scenes: SceneReport[] = scriptScenes(script, outline).map((range) => ({ ...range, speeches: 0, words: 0, characters: [] }));
 
   /** The scene a line is in: the one it falls inside, else the next (text between an act's heading and its first scene), else the last. */
   const sceneAt = (line: number): number => {
