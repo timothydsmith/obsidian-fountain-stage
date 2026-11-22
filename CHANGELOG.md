@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-22
+
 ### Added
 - Rehearsal pages. **Lock rehearsal script** fixes the page numbers of the latest frozen draft, and the working script's page breaks follow them. **Issue revised pages** saves a PDF of just the pages that changed since, numbered to fit around the others (23A and 23B for text that runs on, 23–24 for a page that loses all its text), with a revision header and an asterisk beside each changed line or cut. It freezes a draft recording the revision, so the next one builds on it. **Unlock rehearsal script** takes the lock off.
 - A `revision` group in styles, for the revised pages' header and margin mark.
@@ -116,7 +118,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.2.0...0.3.0
