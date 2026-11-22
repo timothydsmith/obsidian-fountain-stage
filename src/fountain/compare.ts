@@ -12,6 +12,7 @@
  */
 
 import { isAlternateNote } from "./alternates";
+import { isTargetNote } from "./targets";
 import type { OutlineItem } from "./outline";
 import type { ParsedScript } from "./parser";
 import { type SceneRange, scriptScenes } from "./report";
@@ -78,10 +79,10 @@ function headingKey(title: string): string {
     .trim();
 }
 
-/** The lines taken up by alternates' notes, which aren't the play. */
+/** The lines taken up by alternates' notes and runtime targets, which aren't the play. */
 function alternateLines(source: string, script: ParsedScript): Set<number> {
   const lines = new Set<number>();
-  const notes = script.spans.filter((s) => s.kind === "note" && isAlternateNote(source.slice(s.from + 2, s.to - 2)));
+  const notes = script.spans.filter((s) => s.kind === "note" && (isAlternateNote(source.slice(s.from + 2, s.to - 2)) || isTargetNote(source.slice(s.from + 2, s.to - 2))));
   if (notes.length === 0) return lines;
   const starts = [0];
   for (let i = source.indexOf("\n"); i >= 0; i = source.indexOf("\n", i + 1)) starts.push(i + 1);

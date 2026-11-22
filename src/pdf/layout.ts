@@ -7,6 +7,7 @@
 
 import { actMatcher, type IsAct } from "../fountain/acts";
 import { isAlternateNote } from "../fountain/alternates";
+import { isTargetNote } from "../fountain/targets";
 import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
@@ -406,7 +407,7 @@ class StoryBuilder {
       fresh = false;
     };
     // Notes on lines of their own and synopses, if included, go in where they were written. Alternate lines never print.
-    const notes = this.options.notes ? script.lineNotes.filter((n) => !isAlternateNote(n.text)) : [];
+    const notes = this.options.notes ? script.lineNotes.filter((n) => !isAlternateNote(n.text) && !isTargetNote(n.text)) : [];
     const extras: (LineNote & { name: StyleName })[] = [
       ...notes.map((n) => ({ line: n.line, text: `[${n.text}]`, name: "note" as const })),
       ...(this.options.synopses ? script.synopses.map((n) => ({ ...n, name: "synopsis" as const })) : []),
@@ -501,7 +502,7 @@ class StoryBuilder {
  * Title-page keys that never print: `style` picks the export style, `draft notes` says what a frozen draft was for,
  * `locked` marks the rehearsal script, and `revision` the revision a frozen draft is.
  */
-const NEVER_PRINTED = ["style", "draft notes", "locked", "revision"];
+const NEVER_PRINTED = ["style", "draft notes", "locked", "revision", "target"];
 
 /** The title-page values that print. */
 function titleValues(script: ParsedScript): Record<string, string[]> {

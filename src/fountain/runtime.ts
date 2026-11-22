@@ -39,6 +39,13 @@ export function countWords(text: string): number {
   return text.match(WORD_RE)?.length ?? 0;
 }
 
+/** "+312 words", "−8 words" or "1 word". */
+export function wordChange(words: number): string {
+  const n = Math.abs(words);
+  const sign = words > 0 ? "+" : words < 0 ? "−" : "";
+  return `${sign}${n} ${n === 1 ? "word" : "words"}`;
+}
+
 /** Seconds one element takes on stage, going by words spoken. */
 function elementSeconds(el: ScriptElement, wordsPerMinute: number, pauses: readonly PauseWord[]): number {
   const perWord = 60 / wordsPerMinute;

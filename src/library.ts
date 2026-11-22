@@ -7,6 +7,7 @@ import { BUILT_IN_STYLES } from "./pdf/styles";
 import type { RuntimeMethod } from "./fountain/runtime";
 import { defaultPauseWords, type PauseWord, readPauseWords } from "./fountain/pauses";
 import { type LoadedStyles, loadStyles } from "./pdf/userStyles";
+import { DEFAULT_TABLE_READ, type TableReadChoices } from "./tableRead";
 import { chooseFamily, describeFont, FONT_EXTENSIONS, type FontInfo } from "./pdf/vaultFonts";
 
 export interface FountainStageSettings {
@@ -38,6 +39,12 @@ export interface FountainStageSettings {
   directionPhrases: string[];
   /** Findings you've dismissed, by key, most recent last. */
   dismissedFindings: string[];
+  /** Typewriter mode: the cursor's line stays in the middle, and the rest fades. */
+  typewriter: boolean;
+  /** How long the last sprint was, in minutes. */
+  sprintMinutes: number;
+  /** What the table read dialog was last given. */
+  tableRead: TableReadChoices;
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -68,6 +75,9 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   showCheckMarks: false,
   directionPhrases: [],
   dismissedFindings: [],
+  typewriter: false,
+  sprintMinutes: 25,
+  tableRead: DEFAULT_TABLE_READ,
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -99,6 +109,9 @@ export function readSettings(saved: unknown): FountainStageSettings {
     showCheckMarks: s.showCheckMarks === true,
     directionPhrases: strings(s.directionPhrases),
     dismissedFindings: strings(s.dismissedFindings),
+    typewriter: s.typewriter === true,
+    sprintMinutes: positive("sprintMinutes", d.sprintMinutes),
+    tableRead: readTableRead(s.tableRead),
     export: readExportChoices(s.export),
   };
 }
@@ -106,6 +119,25 @@ export function readSettings(saved: unknown): FountainStageSettings {
 /** A list of strings as saved, or none. */
 function strings(saved: unknown): string[] {
   return Array.isArray(saved) ? saved.filter((s): s is string => typeof s === "string") : [];
+}
+
+function readTableRead(saved: unknown): TableReadChoices {
+  const s = (typeof saved === "object" && saved !== null ? saved : {}) as Record<string, unknown>;
+  const d = DEFAULT_TABLE_READ;
+  const voices: TableReadChoices["voices"] = {};
+  if (typeof s.voices === "object" && s.voices !== null) {
+    for (const [name, choice] of Object.entries(s.voices as Record<string, unknown>)) {
+      const c = (typeof choice === "object" && choice !== null ? choice : {}) as Record<string, unknown>;
+      if (typeof c.voice === "string") voices[name] = { voice: c.voice, pitch: typeof c.pitch === "number" && c.pitch > 0 ? c.pitch : 1 };
+    }
+  }
+  return {
+    voices,
+    narrator: typeof s.narrator === "string" ? s.narrator : d.narrator,
+    directions: typeof s.directions === "boolean" ? s.directions : d.directions,
+    rate: typeof s.rate === "number" && s.rate > 0 ? s.rate : d.rate,
+    readers: strings(s.readers),
+  };
 }
 
 function readExportChoices(saved: unknown): ExportChoices {

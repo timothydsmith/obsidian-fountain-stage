@@ -25,8 +25,8 @@ Nine minor releases take the plugin from freezing drafts to a story outline, the
 | 0.4.0 | Comparing drafts | Changes since a draft, side by side, pass checklist, alternate lines | Frozen drafts from 0.2.0 |
 | 0.5.0 | Checking the draft | Name consistency, voice check, stage direction check, overused words and pauses, speech length map, overlap marks | Nothing |
 | 0.6.0 | Rehearsal pages | Margin marks, locked pages, revised pages for rehearsal | Matching from 0.4.0 |
-| 0.7.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check | Doubling data from the report |
-| 0.8.0 | Focus and readings | Table read, calibrate runtime from a reading, runtime targets, typewriter mode, sprint timer | Nothing |
+| 0.7.0 | Focus and readings | Table read, calibrate runtime from a reading, runtime targets, typewriter mode, sprint timer | Nothing |
+| 0.8.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check | Doubling data from the report |
 | 0.9.0 | Linked notes | Links to vault notes, rename following, append linked notes on export | Freeze from 0.2.0 |
 | 0.10.0 | Story outline | Story beats and action beats, planning in the outline, outline by act and by beat, beat notes, framework templates, beat map | Sections from 0.2.0, outline moves from 0.3.0, linked notes from 0.9.0 |
 | 1.0.0 | Review | No new features. A review of the whole codebase, and refactoring where it's needed | Everything above |
@@ -43,7 +43,7 @@ Five releases of reporting and project management, then a review at 2.0.0. Plain
 
 | Release | Theme | Features | Needs |
 | --- | --- | --- | --- |
-| 1.1.0 | Reports | Report export (CSV, PDF in house style), synopsis export, casting breakdown, interval finder, settings and transitions | Minimum cast from 0.7.0 |
+| 1.1.0 | Reports | Report export (CSV, PDF in house style), synopsis export, casting breakdown, interval finder, settings and transitions | Minimum cast from 0.8.0 |
 | 1.2.0 | Charts | Charts in the report view; draft history, pacing view, relationship map, character journey | Frozen drafts from 0.2.0 |
 | 1.3.0 | Writing habits | Writing goals and pace, writing time, notes tracker | Nothing |
 | 1.4.0 | Records of the play | Development history, readers log, submissions tracker, deadlines (read from submissions) | Notes tracker from 1.3.0 |
@@ -243,6 +243,25 @@ Built in 0.5.0:
 - **Calibrate runtime from a reading.** Tap through scenes during a read-through, and the words-per-minute and pause times adjust to match.
 - **Overlap marks.** Caryl Churchill's slash for overlapping dialogue, shown clearly in the editor, with a check that each slash is followed by a speech.
 
+Decided for 0.7.0 (table read, calibration, targets, typewriter mode, sprints):
+
+- [x] Table read can leave parts to you: choose the characters you'll read, and it highlights their lines and waits for you to go on.
+- [x] Calibrating from a reading scales words per minute and every pause time by one factor: how much faster or slower the reading ran than the estimate. Stable from a single reading. By pages, it scales minutes per page.
+- [x] Readings are kept in a note beside the script, `Play - Readings.md`: the date, the total, and each scene's time read against its estimate.
+- [x] Runtime targets live in the script, so they move with a scene and survive renames: a `Target:` title-page key for the play, and a `[[target: 10 min]]` note under an act, scene or section heading. Neither prints. They're set from the outline.
+- [x] The sprint timer, read-through timer and table read show in a strip at the top of the script, since phones have no status bar.
+- [x] A sprint counts net words added to the script it started in.
+- [x] Typewriter mode keeps the cursor's line in the middle of the screen as you type and move with the keys (not when you click), and fades everything but the paragraph you're in.
+
+Built for 0.7.0:
+
+- **Table read** uses the Web Speech API (`speechSynthesis`), which Obsidian's Electron and most phone web views have. Voices can take seconds to load the first time, so they're asked for when Obsidian starts and waited for (up to 5 s) on the first read. Long speeches are spoken a sentence or so at a time, since some engines stop partway through a long utterance. Voices are given out least-used first, in the device's language where it has them, keeping the narrator's voice to the narrator; parts that share a voice get different pitches. Choices are kept in settings by character name (one play per vault). Pausing cancels speech and starts the part again on resume, as `speechSynthesis.pause()` isn't reliable everywhere.
+- **Targets**: `Target:` joins the never-printed title-page keys; target notes are left out of print (as alternates are) and out of comparisons, so setting one isn't a change since a draft. "On target" is within 15 seconds or 5 %, whichever is more.
+- **Read-throughs** time scenes as `scriptScenes` has them (the report's and Changes' units), from the scene the cursor is in. Calibration is offered at the end of each reading and uses that reading only; the note keeps the record, with the rate it was estimated at.
+- **Strips** at the top of the script view carry the sprint, read-through and table read, and work on phones, which have no status bar.
+- **Typewriter mode** is a transaction extender that adds a centring scroll to any transaction with a user event other than a pointer selection, a view plugin fading lines outside the cursor's paragraph (visible ranges only), and 45vh of padding above and below the text.
+- **Sprints** count words in the whole file (net), so cutting text during a sprint counts against it.
+
 ### Linked notes
 
 - **Syntax, from the [Fountain plugin](https://github.com/bgrundmann/obsidian-fountain):** `[[>target]]` or `[[>target|display text]]`. The `>` tells a link from an ordinary note. Targets resolve like Obsidian links, by name or path, with or without `.md`. Scripts move between the two plugins without changes.
@@ -314,13 +333,13 @@ Ideas, not yet committed. Everything here lives in the prompt copy and builds on
 
 - **Cue numbers in the margin.** LX and SQ cues on the left, using the same machinery as revision asterisks on the right.
 - **Production breakdown.** Tags such as `[[prop: suitcase]]` in the prompt copy. Reports: props per scene, a costume plot with quick-change warnings, sound and lighting cue lists. Inspired by Celtx's breakdown tagging.
-- **French scenes.** A new unit whenever someone enters or exits, each listing who's on, for rehearsal calls. Uses entrance and exit detection from 0.7.0.
+- **French scenes.** A new unit whenever someone enters or exits, each listing who's on, for rehearsal calls. Uses entrance and exit detection from 0.8.0.
 
 ### WWWWW sheet
 
 A stage management sheet with one row per character per French scene: who, where, when, wearing, with.
 
-- **Who:** from cues, plus entrance and exit detection from 0.7.0.
+- **Who:** from cues, plus entrance and exit detection from 0.8.0.
 - **When:** the scene and French scene, and the page from the layout.
 - **Where:** the entrance and exit points (SL, SR, UC and so on), read from directions like "enters SL" or from a tag.
 - **Wearing:** costume tags such as `[[costume: red coat]]`, carried forward until the next change.
