@@ -8,6 +8,7 @@
 import { type App, normalizePath, type Plugin, PluginSettingTab, type Setting, type SettingDefinitionItem } from "obsidian";
 import type { Library, LoadedFonts, FountainStageSettings } from "./library";
 import { PauseWordsModal } from "./pauseWordsModal";
+import { setUpPlay } from "./setupCommand";
 import type { LoadedStyles } from "./pdf/userStyles";
 import { listFamilies } from "./pdf/vaultFonts";
 
@@ -34,6 +35,14 @@ export class FountainStageSettingTab extends PluginSettingTab {
   getSettingDefinitions(): SettingDefinitionItem[] {
     const byWords = () => this.settings.runtimeMethod === "words";
     return [
+      {
+        name: "Set up a play",
+        desc: "Make the folders below that aren't there yet, and a first script if the vault has none.",
+        aliases: ["Folders", "Getting started"],
+        render: (setting) => {
+          setting.addButton((button) => button.setButtonText("Set up").onClick(() => setUpPlay(this.app, this.settings, () => this.update())));
+        },
+      },
       {
         type: "group",
         heading: "Page breaks and runtime",

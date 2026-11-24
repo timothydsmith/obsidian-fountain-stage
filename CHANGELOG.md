@@ -7,6 +7,11 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-25
+
+### Added
+- **Set up a play**, from the command palette or the top of the settings, makes the folders in settings that aren't there yet (drafts, beat notes, frameworks, styles and fonts), and offers a first script, with a title page, in a vault with no scripts. The first time the plugin loads in a vault with no scripts, a notice offers it.
+
 ## [0.10.0] - 2026-11-24
 
 ### Added
@@ -170,7 +175,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.11.0...HEAD
+[0.11.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...0.10.0
 [0.9.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...0.9.1
 [0.9.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...0.9.0

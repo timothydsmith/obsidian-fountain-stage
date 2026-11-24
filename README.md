@@ -8,6 +8,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
 ## Features
 
+- **Set up a play** makes the folders Fountain Stage uses and, in a vault with no scripts, a first script. See [Setting up](#setting-up).
 - Formatting as you type, following the Fountain spec.
 - Line numbers for every line of the file, shown in the editor when Obsidian's **Show line number** setting is on.
 - Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
@@ -77,6 +78,14 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Your own fonts, from font files in your vault.
 - An export dialog to pick the style, add a watermark (such as DRAFT) across every page, include notes and synopses, and append linked notes. A `Style:` key on a script's title page picks its style to start with.
 - Works on desktop and mobile.
+
+## Setting up
+
+**Set up a play**, from the command palette or the top of Fountain Stage's settings, makes the folders it uses, as named in its settings: the drafts folder (`Drafts`), the beat notes folder (`Notes`), and the frameworks, styles and fonts folders under `Fountain Stage/`. It lists each folder first, with whether it's there already, and leaves the ones that are alone. Change a folder in settings before setting up to use another.
+
+In a vault with no scripts, it also offers a first script: type a title, and an author if you like, and the script opens with a title page. It goes where Obsidian puts new notes.
+
+The first time Fountain Stage loads in a vault with no scripts, a notice offers to set up a play. It only asks once.
 
 ## Drafts
 
@@ -411,6 +420,7 @@ Fountain Stage needs Obsidian 1.13 or later, on desktop or mobile.
 1. In Obsidian, open **Settings → Community plugins**, and turn on community plugins if asked.
 2. Choose **Browse**, search for **Fountain Stage**, and choose **Install**.
 3. Choose **Enable**.
+4. Choose **Set up a play** in the notice that appears, or run it later from the command palette. See [Setting up](#setting-up).
 
 Or open its page in the [community plugin directory](https://community.obsidian.md/plugins/fountain-stage). Obsidian offers updates in **Settings → Community plugins**.
 

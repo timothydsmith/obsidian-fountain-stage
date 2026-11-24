@@ -60,6 +60,8 @@ export interface FountainStageSettings {
   outlineBy: OutlineBy;
   /** The beat map shows every scene the same width, as cards, rather than by runtime. */
   beatMapEqual: boolean;
+  /** Set up a play has been offered, the first time the plugin loaded in this vault. */
+  setupOffered: boolean;
 }
 
 /** What the export dialog asks, remembered for next time. */
@@ -100,6 +102,7 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   frameworksFolder: "Fountain Stage/Frameworks",
   outlineBy: "act",
   beatMapEqual: false,
+  setupOffered: false,
 };
 
 /**
@@ -140,6 +143,7 @@ export function readSettings(saved: unknown): FountainStageSettings {
     frameworksFolder: string("frameworksFolder", d.frameworksFolder),
     outlineBy: s.outlineBy === "beat" ? "beat" : "act",
     beatMapEqual: s.beatMapEqual === true,
+    setupOffered: s.setupOffered === true,
   };
 }
 
