@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-24
+
 ### Added
 - Who's on stage at the cursor, in the status bar, worked out from entrances and exits in the stage directions ("ANNA enters", "Exit TOM", "She goes out", "Exeunt", "(entering)"). **Show who's on stage** says the same on a phone, with the next entrance or exit.
 - An **Entrances and exits** check: a character who speaks after leaving or before coming on, comes on or leaves twice, or stays on stage a long time without a word.
@@ -141,7 +143,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...0.5.0
