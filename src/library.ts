@@ -45,6 +45,8 @@ export interface FountainStageSettings {
   sprintMinutes: number;
   /** What the table read dialog was last given. */
   tableRead: TableReadChoices;
+  /** The cast size the report checks the play against, or 0 for none. */
+  castSize: number;
   /** What the export dialog was last given. */
   export: ExportChoices;
 }
@@ -78,6 +80,7 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   typewriter: false,
   sprintMinutes: 25,
   tableRead: DEFAULT_TABLE_READ,
+  castSize: 0,
   export: { style: "modern", watermark: "", notes: false, synopses: false },
 };
 
@@ -112,6 +115,7 @@ export function readSettings(saved: unknown): FountainStageSettings {
     typewriter: s.typewriter === true,
     sprintMinutes: positive("sprintMinutes", d.sprintMinutes),
     tableRead: readTableRead(s.tableRead),
+    castSize: typeof s.castSize === "number" && Number.isInteger(s.castSize) && s.castSize > 0 ? s.castSize : 0,
     export: readExportChoices(s.export),
   };
 }

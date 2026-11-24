@@ -78,7 +78,7 @@ describe("buildReport", () => {
     expect(characters[0].seconds).toBeCloseTo(6);
     expect(characters[2].firstLine).toBe(12);
     const { seconds, ...counts } = totals;
-    expect(counts).toEqual({ pages: undefined, words: 9, speeches: 4, acts: 2, scenes: 3, characters: 3 });
+    expect(counts).toEqual({ pages: undefined, words: 9, speeches: 4, silence: 0, acts: 2, scenes: 3, characters: 3 });
     expect(seconds).toBeGreaterThan(0);
   });
 

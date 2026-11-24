@@ -1,9 +1,20 @@
-/** The script report tab: totals, characters, scenes, who's in each scene and doubling, for the script you're in. */
+/** The script report tab: totals, characters, scenes, who's in each scene, doubling and the smallest cast, for the script you're in. */
 
 import { FileView, ItemView, type WorkspaceLeaf } from "obsidian";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import type { ScriptReport } from "./fountain/report";
-import { firstAndLast, formatCount, formatPages, formatRuntime, formatShare, sceneLabel, totalsRows } from "./fountain/reportMarkdown";
+import {
+  castSummary,
+  firstAndLast,
+  fitSummary,
+  formatCount,
+  formatPages,
+  formatRuntime,
+  formatShare,
+  formatSilence,
+  sceneLabel,
+  totalsRows,
+} from "./fountain/reportMarkdown";
 import { formatDuration } from "./fountain/runtime";
 
 export const VIEW_TYPE_REPORT = "fountain-stage-report";
@@ -14,6 +25,9 @@ const REFRESH_DELAY_MS = 1000;
 export interface ReportHost {
   reportOf(script: FountainView): ScriptReport;
   saveReport(script: FountainView): void;
+  /** The cast size to check the play against, or 0 for none. */
+  castSize(): number;
+  setCastSize(actors: number): void;
 }
 
 export class ReportView extends ItemView {
@@ -111,6 +125,7 @@ export class ReportView extends ItemView {
     this.renderScenes(contentEl, report);
     this.renderChart(contentEl, report);
     this.renderDoubling(contentEl, report);
+    this.renderCast(contentEl, report);
     contentEl.scrollTop = scrollTop;
   }
 
@@ -171,14 +186,14 @@ export class ReportView extends ItemView {
 
   private renderScenes(el: HTMLElement, { scenes }: ScriptReport): void {
     el.createEl("h4", { text: "Scenes" });
-    const numeric = [true, false, false, true, true, true, true, false];
-    const body = this.table(el, ["#", "Scene", "Act", "Pages", "Runtime", "Speeches", "Words", "Characters"], numeric);
+    const numeric = [true, false, false, true, true, true, true, true, false];
+    const body = this.table(el, ["#", "Scene", "Act", "Pages", "Runtime", "Silence", "Speeches", "Words", "Characters"], numeric);
     for (const s of scenes) {
       const row = body.createEl("tr");
       row.createEl("td", { text: String(s.number), cls: "is-number" });
       this.link(row.createEl("td"), s.title, s.line);
       row.createEl("td", { text: s.act ?? "" });
-      for (const text of [formatPages(s.pages), formatRuntime(s.seconds), formatCount(s.speeches), formatCount(s.words)]) {
+      for (const text of [formatPages(s.pages), formatRuntime(s.seconds), formatSilence(s.silence), formatCount(s.speeches), formatCount(s.words)]) {
         row.createEl("td", { text, cls: "is-number" });
       }
       row.createEl("td", { text: s.characters.join(", "), cls: "fountain-stage-report-cast" });
@@ -227,6 +242,43 @@ export class ReportView extends ItemView {
       const item = list.createEl("li");
       item.createEl("strong", { text: c.name });
       item.appendText(` with ${c.couldDouble.join(", ")}`);
+    }
+  }
+
+  /** The smallest cast, one way to share out the parts, and whether a cast of the size you give can play it. */
+  private renderCast(el: HTMLElement, { cast, scenes }: ScriptReport): void {
+    if (cast.size === 0) return;
+    el.createEl("h4", { text: "Smallest cast" });
+    el.createEl("p", { cls: "fountain-stage-report-note", text: castSummary(cast) });
+
+    const row = el.createDiv({ cls: "fountain-stage-report-cast-size" });
+    const label = row.createEl("label", { text: "Check a cast of " });
+    const input = label.createEl("input", { type: "number", cls: "fountain-stage-report-cast-input" });
+    input.min = "1";
+    input.step = "1";
+    input.placeholder = String(cast.size);
+    const size = this.host.castSize();
+    if (size > 0) input.value = String(size);
+    label.appendText(" actors");
+    const fit = el.createEl("p", { cls: "fountain-stage-report-note" });
+    const showFit = (actors: number) => {
+      fit.setText(actors > 0 ? fitSummary(cast, scenes, actors) : "");
+      fit.toggleClass("is-warning", actors > 0 && actors < cast.size);
+    };
+    showFit(size);
+    input.addEventListener("change", () => {
+      const actors = Math.max(0, Math.floor(Number(input.value) || 0));
+      this.host.setCastSize(actors);
+      showFit(actors);
+    });
+
+    if (!cast.actors.some((parts) => parts.length > 1)) return;
+    el.createEl("p", { cls: "fountain-stage-report-note", text: "One way to share out the parts, an actor to a line:" });
+    const list = el.createEl("ol", { cls: "fountain-stage-report-doubling" });
+    for (const parts of cast.actors) {
+      const item = list.createEl("li");
+      item.createEl("strong", { text: parts[0] });
+      if (parts.length > 1) item.appendText(`, ${parts.slice(1).join(", ")}`);
     }
   }
 }

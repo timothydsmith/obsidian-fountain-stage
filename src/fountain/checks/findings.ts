@@ -1,6 +1,6 @@
 /** What a check finds. */
 
-export type CheckKind = "names" | "directions" | "overlaps" | "phrases" | "pauses";
+export type CheckKind = "names" | "directions" | "overlaps" | "phrases" | "pauses" | "entrances";
 
 export interface Finding {
   check: CheckKind;

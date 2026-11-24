@@ -26,7 +26,9 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
   - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
 - **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
-- The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction.
+- **Merge characters** folds one character into another, as a rename to the other's name, and first lists the scenes they're both in, which need rewriting by hand. See [Cast](#cast).
+- **Write cast list and scene breakdown** writes the Characters list and Scene Breakdown from the script, keeping what's already written in them. See [Cast](#cast).
+- The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction. Beside it is who's on stage at the cursor, going by the entrances and exits. See [Cast](#cast).
 - A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts, sections and scenes, nested (scenes inside the section or act they follow, sections inside their act), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there, or drag a scene to move it. On a phone, or anywhere, right-click a scene or press and hold it for **Move scene up** and **Move scene down**. The part you're in is highlighted, and the outline updates as you type. It opens in the right sidebar the first time you open a script in the vault (on a phone, it's added to the right sidebar without opening it). If you close it, bring it back with **Show script outline**.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
 - A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Fountain Stage's settings:
@@ -44,11 +46,12 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 
   Set a runtime target for the play, an act or a scene, and the outline and status bar show how far over or under it runs. Time a read-through to bring the estimate into line with how the play really reads. See [Runtime targets and read-throughs](#runtime-targets-and-read-throughs).
 - A script report, opened with **Show script report** in a tab beside the script. It follows the script you're in and updates as you write. Click a character or scene to go there.
-  - **Totals:** pages, runtime, words spoken, speeches, acts, scenes and characters.
+  - **Totals:** pages, runtime, silence (the pauses the script asks for, added up), words spoken, speeches, acts, scenes, characters and the smallest cast.
   - **Characters:** each one's speeches, words, share of the dialogue, time speaking, number of scenes, and first and last scene.
-  - **Scenes:** each one's act, pages, runtime, speeches, words and characters. Scenes are scene headings, and acts with no scenes in them. Sections never make a scene. Text before the first scene is a scene of its own.
+  - **Scenes:** each one's act, pages, runtime, silence, speeches, words and characters. Scenes are scene headings, and acts with no scenes in them. Sections never make a scene. Text before the first scene is a scene of its own.
   - **Who's in each scene:** a chart of characters against scenes. A character is in a scene if they speak there or are named in a stage direction or parenthetical.
   - **Doubling:** characters who never share a scene, so one actor could play both.
+  - **Smallest cast:** the fewest actors who can play every part, and one way to share the parts out. Type a cast size to see whether it can play the script, and which scenes have too many characters for it.
 
   The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
@@ -58,7 +61,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Comparing drafts: a Changes tab of what's changed since a frozen draft, a tint on changed lines, and a frozen draft side by side with the script, scrolling with it. See [Changes since a draft](#changes-since-a-draft).
 - Alternate lines: keep other versions of a speech in notes under it, and switch which is live. See [Alternate lines](#alternate-lines).
 - Pass checklists: name a rewrite pass and tick scenes off in the outline, or let the scenes you change tick themselves. See [Passes](#passes).
-- Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
+- Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, entrances and exits that don't add up, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
 - Table read: the script read aloud, a voice for each character, leaving the parts you read to you. See [Table read](#table-read).
 - Typewriter mode, which keeps the line you're writing in the middle of the screen and fades the rest, and timed writing sprints with a word count. See [Focus](#focus).
 - Rehearsal pages: lock a draft's page numbers for rehearsal, then issue only the pages that change, numbered to fit around the others (23A, 23B) and marked in the margin. See [Rehearsal pages](#rehearsal-pages).
@@ -166,11 +169,44 @@ The script outline shows the current pass at the top, with how many scenes are d
 - **Overlaps:** a speech with an overlap slash (`/`, where the next speaker comes in) that no speech follows. Overlap slashes in dialogue always show in the accent colour.
 - **Repeated phrases:** phrases of three words or more that come three times or more, in dialogue and stage directions, with each place they come.
 - **Pauses:** scenes with at least four pauses, and twice the play's rate of them or more. Pauses are the pause words in settings.
+- **Entrances and exits:** a character who speaks after leaving, or before coming on; comes on when they're already on, or leaves when they've already gone; or stays on stage for five minutes or so without a word or being named. See [Cast](#cast) for how entrances and exits are found.
 - **Voices:** for each character with five speeches or more, how long they typically speak and their longest speech, words only they use, phrases they come back to, and the character whose words are most like theirs.
 - **Filler words:** how often the dialogue says just, really, actually, honestly, you know and the like, and who says each most.
 - **Speech lengths:** a bar for every speech, through the play from left to right by running time, with a dashed line at 150 words (about a minute). Monologues that reach it stand out. Hover a bar for whose speech it is, and click it to go there. A table lists the ten longest.
 
 **Mark check findings**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
+
+## Cast
+
+### Who's on stage
+
+Fountain Stage works out who's on stage from the stage directions, and shows it in the status bar for the cursor's line ("On stage: ANNA, TOM"). On a phone, which has no status bar, **Show who's on stage** says who's on at the cursor and who comes on or leaves next.
+
+- **Entrances** are phrases such as "ANNA enters", "Enter TOM", "MRS PIKE comes in", "He returns", "She appears in the doorway" and "(entering)" in a speech.
+- **Exits** are phrases such as "ANNA exits", "Exit TOM", "They both go out", "She leaves the room", "Exeunt" and "(going)" in a speech, which takes them off when the speech ends.
+- **"He", "she" and "they"** mean whoever was last the subject of a stage direction or last spoke. Fountain Stage learns which characters are "he" and which "she" from the stage directions ("ALEX picks up his bag"), where the script makes it clear. "They" is the characters last named together, or everyone on stage, as "Exeunt" is.
+- Whoever the scene's **opening stage direction** names is on from the start ("ANNA is at the table").
+- Someone who **speaks without coming on** is taken to have been on from the start of the scene, since most scripts don't write every entrance. Speaking off, with (O.S.), (V.O.), (OFF) or (offstage) after the name, doesn't put them on.
+- Each scene starts with the stage empty.
+
+It reads "ANNA leaves the letter", "TOM turns to leave" and "She doesn't go out" as no exit at all. Where it gets one wrong, the Entrances and exits check will usually point there, and you can dismiss the finding.
+
+### Merging characters
+
+**Merge characters**, from the command palette or a script's **More options** menu, folds one character into another: choose the one to merge (the one at the cursor, if there is one), then the one to merge it into. It's a rename to the other character's name, with the same choice of places to change, and it first tells you the scenes they're both in, since those need rewriting by hand. It's one step to undo.
+
+### The smallest cast
+
+The report's **Smallest cast** finds the fewest actors who can play every part, where no actor plays two characters who are ever in a scene together (as the report's Doubling has it). It's often more than the biggest scene's cast, when characters share scenes in a ring. It also gives one way to share the parts out, with the small parts doubled before the big ones. Type a cast size in the box to see whether that many actors can play it, and if not, which scenes have more characters than actors. Fountain Stage remembers the size, and a saved report includes it.
+
+### Cast list and scene breakdown
+
+**Write cast list and scene breakdown**, from the command palette or a script's **More options** menu, writes both from the script:
+
+- **Characters:** whoever speaks but isn't in the list is added at the end of it. Entries already there keep their descriptions, and notes in the list (such as who doubles whom) stay. Names in the list the script never uses are left in, and you're told which.
+- **Scene Breakdown:** every scene heading, numbered, under its act. An entry that starts with the scene's title keeps what follows it ("3. The Kitchen, the next morning"), and an entry that names no scene keeps your own words for the scene with its number. Notes in the section stay.
+
+Each goes where the script already has it, as a title-page key or a section such as `***Characters***`. A script with neither gets sections just before the play starts. Run it again whenever the script changes; it only changes what's out of date, and it's one step to undo.
 
 ## Table read
 
@@ -364,6 +400,9 @@ Layout:
 | `src/fountain/targets.ts`, `src/targetCommands.ts` | Runtime targets: reading and writing them, and setting them |
 | `src/fountain/readings.ts`, `src/readThrough.ts` | Read-throughs: the readings note and calibrating the estimate, and timing a reading |
 | `src/editor/typewriter.ts`, `src/sprint.ts` | Typewriter mode and sprints |
+| `src/fountain/stage.ts`, `src/onStage.ts`, `src/fountain/checks/entrances.ts` | Who's on stage: finding entrances and exits, the status bar and command, and the Entrances and exits check |
+| `src/fountain/cast.ts` | The smallest cast and sharing out the parts |
+| `src/fountain/breakdown.ts`, `src/breakdownCommand.ts` | Writing the cast list and scene breakdown, and the command |
 | `src/export.ts` | Export to PDF in Obsidian: the export dialog and saving the PDF |
 | `src/pdf/style.ts` | The `PlayStyle` type: every setting a house style controls |
 | `src/pdf/styles/` | The built-in styles |

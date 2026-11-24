@@ -1,7 +1,8 @@
 /**
  * The Checks tab: what the checks find in the script you're in (names
  * written two ways, stage directions an actor can't play, overlap slashes
- * with no one to come in, repeated phrases, scenes thick with pauses), each
+ * with no one to come in, repeated phrases, scenes thick with pauses,
+ * entrances and exits that don't add up), each
  * with a link to its line and a button to dismiss it; then each
  * character's voice, filler words, and a map of how long the speeches are.
  */
@@ -33,6 +34,11 @@ const SECTIONS: { check: CheckKind; heading: string; about: string }[] = [
   { check: "overlaps", heading: "Overlaps", about: "Speeches with an overlap slash where no one comes in after them." },
   { check: "phrases", heading: "Repeated phrases", about: "Phrases of three words or more that come three times or more." },
   { check: "pauses", heading: "Pauses", about: "Scenes with many more pauses, such as (beat), than the play as a whole." },
+  {
+    check: "entrances",
+    heading: "Entrances and exits",
+    about: "Characters who speak after leaving or before coming on, come on or leave twice, or stay on stage a long time without a word.",
+  },
 ];
 
 const MAP_WIDTH = 1000;
@@ -196,7 +202,7 @@ export class ChecksView extends ItemView {
       body.createDiv({ text: finding.message });
       const others = [...new Set(finding.lines ?? [])].filter((line) => line !== finding.line);
       if (others.length > 0) {
-        const also = body.createDiv({ cls: "fountain-stage-checks-also", text: "Also on lines " });
+        const also = body.createDiv({ cls: "fountain-stage-checks-also", text: others.length === 1 ? "Also on line " : "Also on lines " });
         others.forEach((line, i) => {
           if (i > 0) also.appendText(", ");
           this.link(also, String(line + 1), line);

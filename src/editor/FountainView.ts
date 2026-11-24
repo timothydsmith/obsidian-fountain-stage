@@ -13,7 +13,8 @@ import type { PositionStore, ScriptPosition } from "./positions";
 import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
 import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
-import { renameCharacter } from "../renameCharacterModal";
+import { generateBreakdown } from "../breakdownCommand";
+import { mergeCharacters, renameCharacter } from "../renameCharacterModal";
 import { changeTint, setChangedLines } from "./changeTint";
 import { type CheckMark, checkMarks, setCheckMarks } from "./checkMarks";
 import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
@@ -366,6 +367,20 @@ export class FountainView extends TextFileView {
         .setTitle("Rename character")
         .setIcon("users")
         .onClick(() => renameCharacter(this.app, this)),
+    );
+    menu.addItem((item) =>
+      item
+        .setSection("action")
+        .setTitle("Merge characters")
+        .setIcon("merge")
+        .onClick(() => mergeCharacters(this.app, this)),
+    );
+    menu.addItem((item) =>
+      item
+        .setSection("action")
+        .setTitle("Write cast list and scene breakdown")
+        .setIcon("list-plus")
+        .onClick(() => generateBreakdown(this)),
     );
     if (!this.isLineBank() && !(this.file && this.host.isCutsFile(this.file))) {
       menu.addItem((item) =>
