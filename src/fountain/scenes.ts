@@ -5,7 +5,9 @@
  *
  * A script is a run of units, each starting at a scene heading (an act
  * heading is a scene heading too) or a section, and running to the next.
- * Anything before the first is the front matter, which never moves.
+ * Sections at the action beat depth or deeper are part of the unit they're
+ * in, so a scene moves with its action beats. Anything before the first is
+ * the front matter, which never moves.
  */
 
 import { cueName } from "./characters";
@@ -16,6 +18,8 @@ import type { TextEdit } from "./titlePage";
 
 export interface Unit {
   kind: "act" | "scene" | "section";
+  /** A section's depth: the number of `#`s. */
+  depth?: number;
   /** Its first line, counting from 0, and the line after its last. */
   line: number;
   endLine: number;
@@ -31,12 +35,16 @@ function lineStarts(source: string): number[] {
   return starts;
 }
 
-/** The script's units, in order. */
-export function scriptUnits(source: string, script: ParsedScript, isAct: IsAct): Unit[] {
+/** The script's units, in order. Sections `actionDepth` deep or deeper (action beats) don't start one. */
+export function scriptUnits(source: string, script: ParsedScript, isAct: IsAct, actionDepth = Infinity): Unit[] {
   const starts = lineStarts(source);
   const heads = script.elements
-    .filter((el) => el.type === "scene_heading" || el.type === "section")
-    .map((el) => ({ line: el.line, kind: el.type === "section" ? ("section" as const) : isAct(el.text) ? ("act" as const) : ("scene" as const) }));
+    .filter((el) => el.type === "scene_heading" || (el.type === "section" && (el.depth ?? 1) < actionDepth))
+    .map((el) =>
+      el.type === "section"
+        ? { line: el.line, kind: "section" as const, depth: el.depth ?? 1 }
+        : { line: el.line, kind: isAct(el.text) ? ("act" as const) : ("scene" as const) },
+    );
   return heads.map((head, i) => {
     const endLine = i + 1 < heads.length ? heads[i + 1].line : starts.length;
     return { ...head, endLine, from: starts[head.line], to: endLine < starts.length ? starts[endLine] : source.length };
@@ -62,26 +70,62 @@ export interface ScriptEdit {
 
 /** Moves unit `i` to just before unit `j` (or to the end, for `j` past the last), as one change. */
 function moveUnit(source: string, units: Unit[], i: number, j: number): ScriptEdit | undefined {
-  if (j === i || j === i + 1) return undefined;
+  return moveUnits(source, units, i, i + 1, j);
+}
+
+/** Moves units `i` up to (not including) `k` to just before unit `j`, as one change. Undefined for a place inside them. */
+function moveUnits(source: string, units: Unit[], i: number, k: number, j: number): ScriptEdit | undefined {
+  if (j >= i && j <= k) return undefined;
   const first = Math.min(i, j);
-  const last = Math.max(i, j - 1);
+  const last = Math.max(k, j) - 1;
   const from = units[first].from;
   const to = units[last].to;
   const region = source.slice(from, to);
   let suffix = /\s*$/.exec(region)?.[0] ?? "";
   if (to < source.length && !/\n[ \t]*\n/.test(suffix)) suffix = "\n\n";
-  const order: number[] = [];
-  for (let k = first; k <= last; k++) if (k !== i) order.push(k);
-  order.splice(j > i ? order.length : 0, 0, i);
-  const texts = order.map((k) => source.slice(units[k].from, units[k].to).trimEnd());
+  const moved: number[] = [];
+  for (let n = i; n < k; n++) moved.push(n);
+  const others: number[] = [];
+  for (let n = first; n <= last; n++) if (n < i || n >= k) others.push(n);
+  const order = j < i ? [...moved, ...others] : [...others, ...moved];
+  const texts = order.map((n) => source.slice(units[n].from, units[n].to).trimEnd());
   const insert = texts.join("\n\n") + suffix;
   const cursor = from + texts.slice(0, order.indexOf(i)).reduce((sum, text) => sum + text.length + 2, 0);
   return { from, to, insert, cursor };
 }
 
+/** The index after the last unit a story beat holds: up to the next section as deep or shallower. */
+function beatEnd(units: Unit[], i: number): number {
+  const depth = units[i].depth ?? 1;
+  for (let n = i + 1; n < units.length; n++) if (units[n].kind === "section" && (units[n].depth ?? 1) <= depth) return n;
+  return units.length;
+}
+
+/**
+ * Moves the story beat whose heading is on `beatLine`, with everything it
+ * holds, to just before or after the beat or scene whose heading is on
+ * `targetLine` ("after" a beat is after all it holds).
+ */
+export function moveBeatTo(
+  source: string,
+  script: ParsedScript,
+  isAct: IsAct,
+  beatLine: number,
+  targetLine: number,
+  after: boolean,
+  actionDepth: number,
+): ScriptEdit | undefined {
+  const units = scriptUnits(source, script, isAct, actionDepth);
+  const i = units.findIndex((unit) => unit.line === beatLine);
+  const target = units.findIndex((unit) => unit.line === targetLine);
+  if (i < 0 || target < 0 || units[i].kind !== "section") return undefined;
+  const j = !after ? target : units[target].kind === "section" ? beatEnd(units, target) : target + 1;
+  return moveUnits(source, units, i, beatEnd(units, i), j);
+}
+
 /** Moves the scene a line is in up past the unit before it, or down past the one after. Undefined if it isn't in a scene or can't go further. */
-export function moveScene(source: string, script: ParsedScript, isAct: IsAct, line: number, direction: -1 | 1): ScriptEdit | undefined {
-  const units = scriptUnits(source, script, isAct);
+export function moveScene(source: string, script: ParsedScript, isAct: IsAct, line: number, direction: -1 | 1, actionDepth = Infinity): ScriptEdit | undefined {
+  const units = scriptUnits(source, script, isAct, actionDepth);
   const i = unitIndexAt(units, line);
   if (i < 0 || units[i].kind !== "scene") return undefined;
   if (direction < 0) return i === 0 ? undefined : moveUnit(source, units, i, i - 1);
@@ -89,8 +133,16 @@ export function moveScene(source: string, script: ParsedScript, isAct: IsAct, li
 }
 
 /** Moves the scene whose heading is on `sceneLine` to just before, or after, the unit whose heading is on `targetLine`. */
-export function moveSceneTo(source: string, script: ParsedScript, isAct: IsAct, sceneLine: number, targetLine: number, after: boolean): ScriptEdit | undefined {
-  const units = scriptUnits(source, script, isAct);
+export function moveSceneTo(
+  source: string,
+  script: ParsedScript,
+  isAct: IsAct,
+  sceneLine: number,
+  targetLine: number,
+  after: boolean,
+  actionDepth = Infinity,
+): ScriptEdit | undefined {
+  const units = scriptUnits(source, script, isAct, actionDepth);
   const i = units.findIndex((unit) => unit.line === sceneLine);
   const target = units.findIndex((unit) => unit.line === targetLine);
   if (i < 0 || target < 0 || units[i].kind !== "scene") return undefined;
@@ -127,8 +179,8 @@ export function nextSpeechLine(script: ParsedScript, line: number, direction: -1
 }
 
 /** The heading line of the scene a line is in, as written, or undefined outside a scene. */
-export function sceneHeadingAt(source: string, script: ParsedScript, isAct: IsAct, line: number): { line: number; text: string } | undefined {
-  const units = scriptUnits(source, script, isAct);
+export function sceneHeadingAt(source: string, script: ParsedScript, isAct: IsAct, line: number, actionDepth = Infinity): { line: number; text: string } | undefined {
+  const units = scriptUnits(source, script, isAct, actionDepth);
   const i = unitIndexAt(units, line);
   if (i < 0 || units[i].kind !== "scene") return undefined;
   return { line: units[i].line, text: source.split("\n")[units[i].line].trim() };
@@ -159,8 +211,8 @@ export function splitScene(source: string, script: ParsedScript, line: number, h
  * heading. A synopsis written under that heading moves up to join the
  * earlier scene's. Undefined unless both are scenes.
  */
-export function mergeWithPrevious(source: string, script: ParsedScript, isAct: IsAct, line: number): TextEdit[] | undefined {
-  const units = scriptUnits(source, script, isAct);
+export function mergeWithPrevious(source: string, script: ParsedScript, isAct: IsAct, line: number, actionDepth = Infinity): TextEdit[] | undefined {
+  const units = scriptUnits(source, script, isAct, actionDepth);
   const i = unitIndexAt(units, line);
   if (i < 1 || units[i].kind !== "scene" || units[i - 1].kind !== "scene") return undefined;
   const lines = source.split("\n");

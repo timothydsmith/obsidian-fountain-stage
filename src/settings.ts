@@ -13,6 +13,7 @@ import { listFamilies } from "./pdf/vaultFonts";
 
 const FOLDER_PLACEHOLDER = "Folder in your vault";
 const RUNTIME_METHODS = { words: "Words spoken", pages: "Pages" };
+const ACTION_DEPTHS = { "2": "## and deeper", "3": "### and deeper", "4": "#### and deeper" };
 
 /** A positive number, or the reason it isn't. */
 const positive = (n: number): string | undefined => (Number.isFinite(n) && n > 0 ? undefined : "Enter a number more than 0.");
@@ -88,6 +89,30 @@ export class FountainStageSettingTab extends PluginSettingTab {
       },
       {
         type: "group",
+        heading: "Story outline",
+        items: [
+          {
+            name: "Action beats",
+            desc: "Sections this deep or deeper are action beats, which belong to the scene they're in. Shallower sections are story beats, which hold the scenes after them.",
+            aliases: ["Beats", "Sections"],
+            control: { type: "dropdown", key: "actionDepth", options: ACTION_DEPTHS },
+          },
+          {
+            name: "Beat notes folder",
+            desc: "Create linked note puts a beat's or scene's note here.",
+            aliases: ["Linked notes"],
+            control: { type: "folder", key: "beatNotesFolder", placeholder: FOLDER_PLACEHOLDER },
+          },
+          {
+            name: "Frameworks folder",
+            desc: "Framework templates of your own, as notes: a ## heading for each beat, with a Position: line and a description.",
+            aliases: ["Import framework", "Beat sheet"],
+            control: { type: "folder", key: "frameworksFolder", placeholder: FOLDER_PLACEHOLDER },
+          },
+        ],
+      },
+      {
+        type: "group",
         heading: "Checks",
         items: [
           {
@@ -151,17 +176,21 @@ export class FountainStageSettingTab extends PluginSettingTab {
   }
 
   getControlValue(key: string): unknown {
+    if (key === "actionDepth") return String(this.settings.actionDepth);
     return (this.settings as unknown as Record<string, unknown>)[key];
   }
 
   async setControlValue(key: string, value: unknown): Promise<void> {
     const settings = this.settings as unknown as Record<string, unknown>;
     const folder = key === "stylesFolder" || key === "fontsFolder";
-    if (folder || key === "draftsFolder") {
+    if (folder || key === "draftsFolder" || key === "beatNotesFolder" || key === "frameworksFolder") {
       const path = typeof value === "string" ? value.trim() : "";
       settings[key] = path ? normalizePath(path) : "";
     } else if (key === "runtimeMethod") {
       settings[key] = value === "pages" ? "pages" : "words";
+    } else if (key === "actionDepth") {
+      const depth = Number(value);
+      settings[key] = [2, 3, 4].includes(depth) ? depth : 2;
     } else {
       settings[key] = value;
     }

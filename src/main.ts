@@ -12,7 +12,7 @@ import { ChecksView, VIEW_TYPE_CHECKS } from "./checksView";
 import { CutsFiles } from "./cutsCommands";
 import type { ScriptVersion } from "./fountain/compare";
 import { addToLineBank, dropFromLineBank } from "./lineBankCommands";
-import { jumpToScene, jumpToSpeech, mergeWithPreviousScene, moveSceneBy, moveSceneToLine, renumber, splitSceneAtCursor } from "./sceneCommands";
+import { jumpToScene, jumpToSpeech, mergeWithPreviousScene, moveBeatToLine, moveSceneBy, moveSceneToLine, renumber, splitSceneAtCursor } from "./sceneCommands";
 import { DEFAULT_SETTINGS, Library, type FountainStageSettings, readSettings } from "./library";
 import { buildOutline } from "./fountain/outline";
 import { buildReport, type ScriptReport } from "./fountain/report";
@@ -20,6 +20,8 @@ import { reportMarkdown } from "./fountain/reportMarkdown";
 import { formatDuration, pagePositions, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
 import { SearchView, VIEW_TYPE_SEARCH } from "./searchView";
+import { BeatMapView, VIEW_TYPE_BEAT_MAP } from "./beatMapView";
+import { addBeatAfter, addSceneTo, editSynopsis, importFramework, itemAtCursor, openLinkedNote } from "./planningCommands";
 import { type PaginatedScript, Paginator } from "./pagination";
 import type { ParsedScript } from "./fountain/parser";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
@@ -184,6 +186,7 @@ export default class FountainStagePlugin extends Plugin {
           rehearsalActions: (view) => this.rehearsalActions(view),
           typewriterMode: () => this.settings.typewriter,
           toggleTypewriter: () => this.toggleTypewriter(),
+          actionDepth: () => this.settings.actionDepth,
           links: (view) => this.linkHost(view),
           noteNames: (view) => {
             const from = view.file?.path ?? "";
@@ -203,9 +206,20 @@ export default class FountainStagePlugin extends Plugin {
           timelineOf: (view) => this.timelineOf(view),
           moveScene: moveSceneToLine,
           moveSceneBy: (view, line, direction) => moveSceneBy(view, direction, line),
+          moveBeat: moveBeatToLine,
+          outlineBy: () => this.settings.outlineBy,
+          setOutlineBy: (by) => {
+            this.settings.outlineBy = by;
+            void this.saveData(this.settings);
+            this.redrawStoryViews();
+          },
+          beatNotesFolder: () => this.settings.beatNotesFolder,
+          frameworksFolder: () => this.settings.frameworksFolder,
+          showBeatMap: (view) => void this.showBeatMap(view),
           passOf: (view, outline) => {
             const pass = view.isDraft() ? undefined : this.passes.current(view);
-            return pass ? { pass, keys: this.passes.keysByLine(view, outline) } : undefined;
+            // A pass lists scenes as the report does, whichever way the outline shows them.
+            return pass && outline ? { pass, keys: this.passes.keysByLine(view, buildOutline(view.getViewData(), view.isAct())) } : undefined;
           },
           tick: (view, key, done) => void this.passes.tick(view, key, done),
           onPassesChange: (listener) => this.passes.onChange(listener),
@@ -246,6 +260,22 @@ export default class FountainStagePlugin extends Plugin {
       callback: () => void this.showOutline(),
     });
     this.registerView(VIEW_TYPE_SEARCH, (leaf) => new SearchView(leaf, { draftsFolder: () => this.draftsFolder() }));
+    this.registerView(
+      VIEW_TYPE_BEAT_MAP,
+      (leaf) =>
+        new BeatMapView(leaf, {
+          timelineOf: (view) => this.timelineOf(view),
+          moveScene: moveSceneToLine,
+          moveBeat: moveBeatToLine,
+          equalWidths: () => this.settings.beatMapEqual,
+          setEqualWidths: (equal) => {
+            this.settings.beatMapEqual = equal;
+            void this.saveData(this.settings);
+            this.redrawStoryViews();
+          },
+          frameworksFolder: () => this.settings.frameworksFolder,
+        }),
+    );
     this.addCommand({
       id: "search-scripts",
       name: "Search scripts",
@@ -292,6 +322,21 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("merge-characters", "Merge characters", (view) => mergeCharacters(this.app, view));
     viewCommand("show-on-stage", "Show who's on stage", (view) => this.onStage.show(view));
     viewCommand("generate-breakdown", "Write cast list and scene breakdown", (view) => generateBreakdown(view));
+    // Story outline: planning beats and scenes, and the beat map.
+    viewCommand("show-beat-map", "Show beat map", (view) => void this.showBeatMap(view));
+    viewCommand("import-framework", "Import framework", (view) => void importFramework(this.app, view, this.settings.frameworksFolder));
+    viewCommand("add-beat", "Add beat", (view) => addBeatAfter(this.app, view, itemAtCursor(view)));
+    viewCommand("add-scene", "Add scene", (view) => addSceneTo(this.app, view, itemAtCursor(view)));
+    viewCommand("edit-synopsis", "Edit synopsis", (view) => {
+      const item = itemAtCursor(view);
+      if (item) editSynopsis(this.app, view, item);
+      else new Notice("Put the cursor in a beat, scene or act to write its synopsis.");
+    });
+    viewCommand("create-linked-note", "Create or open linked note", (view) => {
+      const item = itemAtCursor(view);
+      if (item) void openLinkedNote(this.app, view, item, this.settings.beatNotesFolder);
+      else new Notice("Put the cursor in a beat, scene or act to link a note to it.");
+    });
     this.addCommand({
       id: "freeze-draft",
       name: "Freeze draft",
@@ -541,6 +586,25 @@ export default class FountainStagePlugin extends Plugin {
       view.refreshFrozen();
     }
     this.checks.changed();
+    this.redrawStoryViews();
+  }
+
+  /** Draws the outline and beat map again, after their settings change. */
+  private redrawStoryViews(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OUTLINE)) if (leaf.view instanceof OutlineView) leaf.view.redraw();
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_BEAT_MAP)) if (leaf.view instanceof BeatMapView) leaf.view.redraw();
+  }
+
+  /** Shows the beat map of a script in a tab beside it, opening one if there isn't one. */
+  private async showBeatMap(view: FountainView): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_BEAT_MAP)[0];
+    if (!leaf) {
+      leaf = workspace.getLeaf("split", "horizontal");
+      await leaf.setViewState({ type: VIEW_TYPE_BEAT_MAP, active: false });
+    }
+    if (leaf.view instanceof BeatMapView) leaf.view.setScript(view);
+    await workspace.revealLeaf(leaf);
   }
 
   /** The script's runtime, line by line, by the method in settings. Undefined by pages until they're laid out. */

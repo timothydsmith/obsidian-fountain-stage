@@ -507,9 +507,10 @@ class StoryBuilder {
 
 /**
  * Title-page keys that never print: `style` picks the export style, `draft notes` says what a frozen draft was for,
- * `locked` marks the rehearsal script, and `revision` the revision a frozen draft is.
+ * `locked` marks the rehearsal script, `revision` the revision a frozen draft is, and `framework` the
+ * framework whose beats the beat map marks.
  */
-const NEVER_PRINTED = ["style", "draft notes", "locked", "revision", "target"];
+const NEVER_PRINTED = ["style", "draft notes", "locked", "revision", "target", "framework"];
 
 /** The title-page values that print. */
 function titleValues(script: ParsedScript): Record<string, string[]> {

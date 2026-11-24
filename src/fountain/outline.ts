@@ -12,7 +12,8 @@ import { parseInline } from "./inline";
 import { parseFountain } from "./parser";
 
 export interface OutlineItem {
-  kind: "act" | "section" | "scene";
+  /** An action beat is a section inside a scene, in the story outline (see ./storyOutline). */
+  kind: "act" | "section" | "scene" | "action";
   /** The heading as it reads, without forcing marks or emphasis marks. */
   text: string;
   /** 0 for an act, the number of `#`s for a section, and one more than the item it's in for a scene. */
@@ -21,13 +22,15 @@ export interface OutlineItem {
   sceneNumber?: string;
   /** The synopsis (`= …`) written straight after the heading, if any. */
   synopsis?: string;
+  /** The note a link straight under the heading (`[[>Beat - Catalyst]]`) goes to, in the story outline. */
+  link?: string;
   /** Source line, counting from 0. */
   line: number;
   children: OutlineItem[];
 }
 
 /** Text with its emphasis marks and link syntax taken out. */
-function plain(text: string): string {
+export function plain(text: string): string {
   let out = "";
   let pos = 0;
   for (const m of parseInline(text).markers) {
@@ -38,7 +41,7 @@ function plain(text: string): string {
 }
 
 /** A runtime target's note on a line of its own, which can sit between a heading and its synopsis. */
-const TARGET_NOTE_LINE_RE = /^\s*\[\[\s*target\s*:[^\]]*\]\]\s*$/i;
+export const TARGET_NOTE_LINE_RE = /^\s*\[\[\s*target\s*:[^\]]*\]\]\s*$/i;
 
 /** The outline of a script, as a tree of top-level items. */
 export function buildOutline(source: string, isAct: IsAct = actMatcher()): OutlineItem[] {

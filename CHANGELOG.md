@@ -7,6 +7,16 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- A story outline. `#` sections are story beats, which hold the scenes after them, and `##` sections inside a scene are action beats (the **Action beats** setting changes which depth is which). The outline shows the script **by act** or **by beat**.
+- Planning in the outline: add beats, scenes and action beats, write synopses, and create a linked note for a beat or scene (in the new **Beat notes folder**). Each goes straight into the script. Drag beats to move them with what they hold.
+- **Import framework** inserts the beats of three-act structure, Freytag's pyramid, Story Spine, Story Circle, Kishōtenketsu or Save the Cat, or a framework of your own from the **Frameworks folder**, as empty beats with descriptions.
+- **Show beat map** opens the play as a timeline: scenes sized by runtime (or all the same width, as cards) under bands for their beats, with action beats, acts and a framework's beats marked. Drag scenes and beats to move them.
+
+### Changed
+- Moving a scene, by dragging it or with **Move scene up** and **Move scene down**, takes its action beats with it.
+- The outline no longer mixes sections in with acts: by act it shows acts and scenes, and `#` sections show by beat. `##` and deeper sections are action beats, shown inside their scene; to keep using `##` sections to group scenes, set **Action beats** to `### and deeper`.
+
 ## [0.9.1] - 2026-11-24
 
 ### Added

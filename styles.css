@@ -356,7 +356,77 @@
 }
 
 .fountain-stage-outline-section {
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-outline-action {
   color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/* By beat, an act is a divider where it falls. */
+.fountain-stage-outline .fountain-stage-outline-act-marker {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  letter-spacing: 0.05em;
+  border-top: var(--border-width) dashed var(--background-modifier-border);
+  border-radius: 0;
+}
+
+.fountain-stage-outline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-outline-views {
+  display: inline-flex;
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-hover);
+  padding: 2px;
+}
+
+.fountain-stage-outline-views button.fountain-stage-outline-view {
+  padding: var(--size-2-1) var(--size-4-2);
+  height: auto;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.fountain-stage-outline-views button.fountain-stage-outline-view.is-active {
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  box-shadow: var(--input-shadow);
+}
+
+.fountain-stage-outline-actions {
+  display: inline-flex;
+  gap: var(--size-2-1);
+}
+
+.fountain-stage-outline-hint {
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-outline-note {
+  flex: none;
+  align-self: flex-start;
+  padding: var(--size-2-1);
+  color: var(--text-faint);
+}
+
+.fountain-stage-outline-note svg {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+}
+
+.fountain-stage-synopsis-input {
+  width: 100%;
 }
 
 .fountain-stage-outline-scene {
@@ -1042,4 +1112,217 @@
   background-color: rgba(var(--color-yellow-rgb), 0.35);
   color: var(--text-normal);
   border-radius: var(--radius-s);
+}
+
+/* Beat map */
+.fountain-stage-beat-map {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.fountain-stage-beat-map > .pane-empty {
+  padding: var(--size-4-4);
+}
+
+.fountain-stage-map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2) var(--size-4-6);
+  padding: var(--size-4-2) var(--size-4-3);
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-map-toggle,
+.fountain-stage-map-framework {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  cursor: pointer;
+}
+
+.fountain-stage-map-zoom {
+  display: inline-flex;
+  gap: var(--size-2-1);
+  margin-left: auto;
+}
+
+.fountain-stage-map-zoom .is-disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fountain-stage-map-scroller {
+  flex: 1;
+  overflow: auto;
+}
+
+.fountain-stage-map-canvas {
+  position: relative;
+  min-height: 100%;
+  padding: var(--size-4-3) 0;
+}
+
+.fountain-stage-map-row {
+  position: relative;
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-map-row > * {
+  position: absolute;
+  top: 0;
+  box-sizing: border-box;
+}
+
+.fountain-stage-map-targets {
+  height: 18px;
+}
+
+.fountain-stage-map-target-label {
+  padding: 0 var(--size-2-2);
+  border-left: 1px dashed var(--text-accent);
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
+  background-color: var(--background-primary);
+  border-radius: var(--radius-s);
+  z-index: 2;
+}
+
+.fountain-stage-map-target-line {
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--text-accent);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fountain-stage-map-acts {
+  height: 20px;
+}
+
+.fountain-stage-map-act {
+  padding-left: var(--size-2-2);
+  border-left: 2px solid var(--text-faint);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fountain-stage-map-beats {
+  height: 44px;
+}
+
+.fountain-stage-map-beat {
+  height: 40px;
+  padding: var(--size-2-2) var(--size-4-2);
+  overflow: hidden;
+  border-radius: var(--radius-s);
+  background-color: rgba(var(--color-purple-rgb), 0.18);
+  border: var(--border-width) solid rgba(var(--color-purple-rgb), 0.35);
+  cursor: pointer;
+}
+
+.fountain-stage-map-beat.is-empty {
+  background-color: transparent;
+  border-style: dashed;
+}
+
+.fountain-stage-map-beat-name,
+.fountain-stage-map-scene-head {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
+
+.fountain-stage-map-beat-meta,
+.fountain-stage-map-scene-runtime {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
+}
+
+.fountain-stage-map-scenes {
+  height: 132px;
+}
+
+.fountain-stage-map-scene {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  height: 128px;
+  padding: var(--size-4-2) var(--size-4-2) 26px;
+  overflow: hidden;
+  border-radius: var(--radius-m);
+  background-color: var(--background-secondary);
+  border: var(--border-width) solid var(--background-modifier-border);
+  cursor: pointer;
+}
+
+.fountain-stage-map-scene:hover,
+.fountain-stage-map-beat:hover {
+  border-color: var(--interactive-accent);
+}
+
+.fountain-stage-map-scene.is-empty {
+  border-style: dashed;
+}
+
+.fountain-stage-map-scene-number {
+  color: var(--text-muted);
+}
+
+.fountain-stage-map-scene-synopsis {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-style: italic;
+}
+
+.fountain-stage-map-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--size-2-2);
+  height: 18px;
+}
+
+.fountain-stage-map-action {
+  position: absolute;
+  top: 0;
+  height: 18px;
+  margin-left: 1px;
+  padding: 0 var(--size-2-2);
+  overflow: hidden;
+  border-radius: var(--radius-s);
+  background-color: rgba(var(--color-cyan-rgb), 0.22);
+  font-size: var(--font-ui-smaller);
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fountain-stage-map-action:hover {
+  background-color: rgba(var(--color-cyan-rgb), 0.4);
+}
+
+.fountain-stage-map-scene.is-drop-before,
+.fountain-stage-map-beat.is-drop-before {
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
+}
+
+.fountain-stage-map-scene.is-drop-after,
+.fountain-stage-map-beat.is-drop-after {
+  box-shadow: inset -3px 0 0 var(--interactive-accent);
 }
