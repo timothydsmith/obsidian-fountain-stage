@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-24
+
 ### Added
 - A story outline. `#` sections are story beats, which hold the scenes after them, and `##` sections inside a scene are action beats (the **Action beats** setting changes which depth is which). The outline shows the script **by act** or **by beat**.
 - Planning in the outline: add beats, scenes and action beats, write synopses, and create a linked note for a beat or scene (in the new **Beat notes folder**). Each goes straight into the script. Drag beats to move them with what they hold.
@@ -168,7 +170,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.10.0...HEAD
+[0.10.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...0.10.0
 [0.9.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...0.9.1
 [0.9.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...0.8.0
