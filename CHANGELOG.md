@@ -7,6 +7,8 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-24
+
 ### Added
 - Links to notes in the vault, as the Fountain plugin writes them: `[[>Note]]` or `[[>Note|display text]]`. Note names complete after `[[>`; a click in reading view (or Ctrl/Cmd-click while editing) opens the note; hovering shows its preview; and a link to a missing note looks broken. Reading view shows a link's display text.
 - Links follow a renamed note, keeping the way each was written, asking first unless Obsidian's **Automatically update internal links** setting is on. Frozen drafts are left as they were.
@@ -150,7 +152,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...HEAD
+[0.9.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...0.6.0
