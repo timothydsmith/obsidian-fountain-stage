@@ -7,6 +7,19 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-24
+
+### Added
+- Who's on stage at the cursor, in the status bar, worked out from entrances and exits in the stage directions ("ANNA enters", "Exit TOM", "She goes out", "Exeunt", "(entering)"). **Show who's on stage** says the same on a phone, with the next entrance or exit.
+- An **Entrances and exits** check: a character who speaks after leaving or before coming on, comes on or leaves twice, or stays on stage a long time without a word.
+- The report's **Smallest cast**: the fewest actors who can play every part, one way to share the parts out, and a box to check a cast size against, which says which scenes have too many characters for it.
+- Silence in the report: the pauses and silences the script asks for, added up, in the totals and for each scene.
+- **Merge characters** folds one character into another, saying first which scenes they're both in.
+- **Write cast list and scene breakdown** writes the Characters list and Scene Breakdown from the script, adding new speakers and keeping descriptions and notes already written.
+
+### Fixed
+- A Characters section with only names on its lines (`ANNA` over `TOM`) is no longer taken for a speech that starts the play.
+
 ## [0.7.0] - 2026-11-22
 
 ### Added
@@ -130,7 +143,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.4.0...0.5.0

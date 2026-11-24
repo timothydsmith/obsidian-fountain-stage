@@ -618,6 +618,20 @@
   padding-left: var(--size-4-4);
 }
 
+/* The cast size to check the play against */
+.fountain-stage-report-cast-size {
+  margin: var(--size-4-2) 0;
+}
+
+.fountain-stage-report-cast-input {
+  width: 5em;
+  margin: 0 var(--size-4-1);
+}
+
+.fountain-stage-report-note.is-warning {
+  color: var(--text-error);
+}
+
 /* Export dialog */
 .fountain-stage-export-note {
   margin-top: var(--size-4-1);

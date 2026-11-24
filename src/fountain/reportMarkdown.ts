@@ -1,5 +1,6 @@
 /** A script's report as a Markdown note: a snapshot with tables, to keep, share or print. */
 
+import { type CastPlan, castFits } from "./cast";
 import type { CharacterReport, SceneReport, ScriptReport } from "./report";
 import { formatDuration } from "./runtime";
 
@@ -35,17 +36,48 @@ export function firstAndLast(c: CharacterReport, scenes: SceneReport[]): [SceneR
   return [scenes[c.scenes[0]], scenes[c.scenes[c.scenes.length - 1]]];
 }
 
+/** Seconds of silence, "–" for none. */
+export function formatSilence(seconds: number): string {
+  return seconds > 0 ? formatDuration(seconds) : "–";
+}
+
 /** The totals, as label and value. */
-export function totalsRows({ totals }: ScriptReport): [string, string][] {
+export function totalsRows({ totals, cast }: ScriptReport): [string, string][] {
   return [
     ["Pages", totals.pages === undefined ? "–" : formatCount(totals.pages)],
     ["Runtime", formatRuntime(totals.seconds)],
+    ["Silence", formatSilence(totals.silence)],
     ["Words spoken", formatCount(totals.words)],
     ["Speeches", formatCount(totals.speeches)],
     ["Acts", formatCount(totals.acts)],
     ["Scenes", formatCount(totals.scenes)],
     ["Characters", formatCount(totals.characters)],
+    ["Smallest cast", cast.size > 0 ? formatCount(cast.size) : "–"],
   ];
+}
+
+/** What the smallest cast is, and why. */
+export function castSummary(plan: CastPlan): string {
+  const actors = (n: number) => `${n} ${n === 1 ? "actor" : "actors"}`;
+  if (!plan.exact) {
+    return `The smallest cast found is ${actors(plan.size)}. There may be a smaller one: there are too many ways to share out the parts to try them all.`;
+  }
+  if (plan.size === plan.largestScene) {
+    return `The play needs at least ${actors(plan.size)}, as many as there are characters in its biggest scene.`;
+  }
+  return `The play needs at least ${actors(plan.size)}. No scene has more than ${plan.largestScene} characters, but the way they share scenes needs ${plan.size}.`;
+}
+
+/** Whether a cast of a given size can play every part, and if not, why not. */
+export function fitSummary(plan: CastPlan, scenes: SceneReport[], actors: number): string {
+  const { fits, crowded } = castFits(plan, scenes, actors);
+  if (fits) return `A cast of ${actors} can play every part.`;
+  if (crowded.length > 0) {
+    const list = crowded.map((s) => `${s.number}. ${s.title} (${s.characters.length})`).join(", ");
+    return `A cast of ${actors} can't play every part. ${crowded.length === 1 ? "One scene has" : `${crowded.length} scenes have`} more than ${actors} characters: ${list}.`;
+  }
+  if (!plan.exact) return `No way was found for a cast of ${actors} to play every part, though no scene has more than ${actors} characters.`;
+  return `A cast of ${actors} can't play every part. No scene has more than ${actors} characters, but the way they share scenes needs ${plan.size}.`;
 }
 
 const cell = (text: string) => text.replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
@@ -62,6 +94,8 @@ export interface ReportNoteOptions {
   date: string;
   /** How the runtime is estimated, as it should read: "the words spoken". */
   method: string;
+  /** The cast size to check the play against, if any. */
+  castSize?: number;
 }
 
 export function reportMarkdown(report: ScriptReport, options: ReportNoteOptions): string {
@@ -98,18 +132,19 @@ export function reportMarkdown(report: ScriptReport, options: ReportNoteOptions)
   out.push("## Scenes", "");
   out.push(
     table(
-      ["#", "Scene", "Act", "Pages", "Runtime", "Speeches", "Words", "Characters"],
+      ["#", "Scene", "Act", "Pages", "Runtime", "Silence", "Speeches", "Words", "Characters"],
       scenes.map((s) => [
         String(s.number),
         s.title,
         s.act ?? "",
         formatPages(s.pages),
         formatRuntime(s.seconds),
+        formatSilence(s.silence),
         formatCount(s.speeches),
         formatCount(s.words),
         s.characters.join(", "),
       ]),
-      ["right", "left", "left", "right", "right", "right", "right", "left"],
+      ["right", "left", "left", "right", "right", "right", "right", "right", "left"],
     ),
     "",
   );
@@ -135,6 +170,16 @@ export function reportMarkdown(report: ScriptReport, options: ReportNoteOptions)
     out.push("Characters who never share a scene, so one actor could play both:", "");
     for (const c of doubles) out.push(`- **${c.name}** with ${c.couldDouble.join(", ")}`);
     out.push("");
+  }
+
+  if (report.cast.size > 0) {
+    out.push("## Smallest cast", "", castSummary(report.cast), "");
+    if (options.castSize) out.push(fitSummary(report.cast, scenes, options.castSize), "");
+    if (report.cast.actors.some((parts) => parts.length > 1)) {
+      out.push("One way to share out the parts, an actor to a line:", "");
+      report.cast.actors.forEach((parts, i) => out.push(`${i + 1}. ${parts.join(", ")}`));
+      out.push("");
+    }
   }
   return out.join("\n");
 }

@@ -9,11 +9,13 @@ Made 18 November 2026. Runtimes are estimated from the words spoken.
 
 - Pages: –
 - Runtime: 13 s
+- Silence: –
 - Words spoken: 9
 - Speeches: 4
 - Acts: 2
 - Scenes: 3
 - Characters: 3
+- Smallest cast: 2
 
 ## Characters
 
@@ -26,11 +28,11 @@ Made 18 November 2026. Runtimes are estimated from the words spoken.
 
 ## Scenes
 
-| # | Scene | Act | Pages | Runtime | Speeches | Words | Characters |
-| ---: | --- | --- | ---: | ---: | ---: | ---: | --- |
-| 1 | SCENE ONE | ACT ONE | – | 10 s | 2 | 6 | MARGARET, DAVID |
-| 2 | SCENE TWO | ACT ONE | – | 2 s | 1 | 2 | ANNIE |
-| 3 | INT. KITCHEN | ACT TWO | – | 1 s | 1 | 1 | MARGARET |
+| # | Scene | Act | Pages | Runtime | Silence | Speeches | Words | Characters |
+| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | SCENE ONE | ACT ONE | – | 10 s | – | 2 | 6 | MARGARET, DAVID |
+| 2 | SCENE TWO | ACT ONE | – | 2 s | – | 1 | 2 | ANNIE |
+| 3 | INT. KITCHEN | ACT TWO | – | 1 s | – | 1 | 1 | MARGARET |
 
 ## Who's in each scene
 
@@ -49,5 +51,14 @@ Characters who never share a scene, so one actor could play both:
 - **MARGARET** with ANNIE
 - **ANNIE** with MARGARET, DAVID
 - **DAVID** with ANNIE
+
+## Smallest cast
+
+The play needs at least 2 actors, as many as there are characters in its biggest scene.
+
+One way to share out the parts, an actor to a line:
+
+1. MARGARET, ANNIE
+2. DAVID
 "
 `;

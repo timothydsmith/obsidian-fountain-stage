@@ -26,7 +26,7 @@ Nine minor releases take the plugin from freezing drafts to a story outline, the
 | 0.5.0 | Checking the draft | Name consistency, voice check, stage direction check, overused words and pauses, speech length map, overlap marks | Nothing |
 | 0.6.0 | Rehearsal pages | Margin marks, locked pages, revised pages for rehearsal | Matching from 0.4.0 |
 | 0.7.0 | Focus and readings | Table read, calibrate runtime from a reading, runtime targets, typewriter mode, sprint timer | Nothing |
-| 0.8.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check | Doubling data from the report |
+| 0.8.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check, cast list and scene breakdown, silence in the report | Doubling data from the report |
 | 0.9.0 | Linked notes | Links to vault notes, rename following, append linked notes on export | Freeze from 0.2.0 |
 | 0.10.0 | Story outline | Story beats and action beats, planning in the outline, outline by act and by beat, beat notes, framework templates, beat map | Sections from 0.2.0, outline moves from 0.3.0, linked notes from 0.9.0 |
 | 1.0.0 | Review | No new features. A review of the whole codebase, and refactoring where it's needed | Everything above |
@@ -225,6 +225,24 @@ Built in 0.5.0:
 - **Entrance and exit detection.** Works out from stage directions who enters and leaves. Built once, it serves who's on stage, the entrances and exits check, and French scenes after 2.0.
 - **Who's on stage** at the cursor, in the sidebar or status bar. Catches characters left silent for pages.
 - **Entrances and exits check.** Flags characters who speak before entering, enter twice, or never leave.
+- **Cast list and scene breakdown,** written from the script. Moved here from "Not yet placed".
+- **Total silence in the report.** Moved here from "Not yet placed".
+
+Decided for 0.8.0 (cast):
+
+- [x] Entrances and exits are found from stage-direction phrases ("ANNA enters", "Enter TOM", "She goes out", "Exit.", "Exeunt", "They all leave"), plus whoever the scene's opening direction names. No stricter convention or marker.
+- [x] Doubling and the smallest cast keep the report's rule: two characters who share a scene can't be played by one actor. Entrances and exits don't refine it.
+- [x] The cast cap is a number box in the report, remembered in settings (one play per vault), not a title-page key.
+- [x] Generating the cast list and scene breakdown, and silence in the report, come into 0.8.0.
+
+Built for 0.8.0:
+
+- **Entrance and exit detection** (`src/fountain/stage.ts`) splits each stage direction into sentences and clauses, finds move phrases (enter and exit verbs, motion verbs with in, on, out or off, "leaves" and "returns" only where nothing is being left or returned), and finds who moved: the names starting the verb's clause, or an earlier clause's ("ANNA picks up her bag and leaves"), or the name just before a bare verb ("ANNA watches TOM leave"). "Not", "never", "to" and the like before a verb cancel it. Pronouns resolve to the latest subject or speaker who fits; whether a character is "he" or "she" is learnt from the directions. Parenthetical exits ("(going)") are soft: an exit written straight after, or more speech, isn't flagged.
+- **Who's on stage** starts each scene empty; whoever speaks or goes before coming on, or is named in the opening direction, is on from the scene's start. Speaking off (O.S., V.O., OFF, offstage) doesn't count. The status bar works it out again once typing stops; **Show who's on stage** serves phones.
+- **The check** flags speaking after an exit or before an entrance, coming on or going twice, and being on for 750 words of others' dialogue (about five minutes) without speaking or being named.
+- **The smallest cast** colours the scene-sharing graph: DSatur, then a search for one colour fewer at a time, with a step limit (the result says if it couldn't finish). Small parts are then moved to the actors with the smallest leading parts, so leads double least.
+- **Silence** sums `pauseSeconds` over each scene's stage directions and parentheticals, as the runtime counts them.
+- **The cast list and scene breakdown** update in place: new speakers go after the list's last entry; breakdown entries keep text after a scene's title, or the whole entry where it names no scene. New lists are body sections before the play. The parser no longer ends the preface at a cue-like line inside a breakdown section's first block, so a list of names alone isn't read as a speech.
 
 ### Structure and navigation
 
@@ -297,7 +315,14 @@ An outline tool over the script itself, not a separate outline note. Structure l
 ### Open questions for drafting aids
 
 - [x] A Fountain convention for alternate lines: a note under the live line, `[[alt: …]]` (decided for 0.4.0).
-- [ ] How to detect entrances and exits: phrases such as "enters" and "exits", a stricter convention, or both.
+- [x] How to detect entrances and exits: phrases (decided for 0.8.0).
+
+## Not yet placed
+
+Ideas added on 22 November 2026, not yet in a release. Each notes where it might fit.
+
+- **Set up a play.** A command that makes the default folder structure for a new vault: the drafts folder, the styles and fonts folders under `Fountain Stage/`, and perhaps a first script. It uses the folders in settings, so it stays in step with them, and leaves alone any folder that's already there. Small enough for any release; it suits the 1.0 review, or earlier for new users.
+- **Rationalise commands.** Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections. Done once all the features before 1.0 are in, as part of the 1.0 review.
 
 ## After 1.0: project management, alongside reporting
 

@@ -4,7 +4,9 @@ import type { OutlineItem } from "../outline";
 import type { ParsedScript } from "../parser";
 import type { PauseWord } from "../pauses";
 import { type SceneRange, scriptScenes } from "../report";
+import { type StagePlot, stagePlot } from "../stage";
 import { checkDirections } from "./directions";
+import { checkEntrances } from "./entrances";
 import type { Finding } from "./findings";
 import { checkNames } from "./names";
 import { checkOverlaps } from "./overlaps";
@@ -26,10 +28,13 @@ export interface CheckResults {
   voices: Voice[];
   fillers: Filler[];
   speeches: SpeechMap;
+  /** Who's on stage when, from the entrances and exits. */
+  stage: StagePlot;
 }
 
 export function runChecks(source: string, script: ParsedScript, outline: OutlineItem[], options: CheckOptions): CheckResults {
   const scenes = scriptScenes(script, outline);
+  const stage = stagePlot(script, scenes);
   return {
     findings: [
       ...checkNames(source, script),
@@ -37,10 +42,12 @@ export function runChecks(source: string, script: ParsedScript, outline: Outline
       ...checkOverlaps(source, script),
       ...checkPhrases(script),
       ...checkPauses(script, scenes, options.pauseWords),
+      ...checkEntrances(source, stage),
     ],
     scenes,
     voices: voices(script),
     fillers: fillers(script),
     speeches: speechMap(script, scenes, options.pauseWords),
+    stage,
   };
 }

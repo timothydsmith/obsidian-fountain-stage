@@ -1,8 +1,14 @@
-/** Renaming a character in a script: choosing the character, the new name, and where to change it. */
+/**
+ * Renaming a character in a script: choosing the character, the new name,
+ * and where to change it. Renaming to a name already in the script merges
+ * the two characters.
+ */
 
 import { type App, ButtonComponent, Modal, Notice, Setting, SuggestModal, TextComponent } from "obsidian";
 import type { FountainView } from "./editor/FountainView";
 import { characterNames } from "./fountain/characters";
+import { buildOutline } from "./fountain/outline";
+import { buildReport } from "./fountain/report";
 import { findRenames, nameAt, RENAME_PLACES, type RenameEdit, type RenamePlace } from "./fountain/rename";
 
 const PLACE_NAMES: Record<RenamePlace, string> = {
@@ -20,9 +26,10 @@ class CharacterPicker extends SuggestModal<string> {
     app: App,
     private readonly names: string[],
     private readonly onChoose: (name: string) => void,
+    placeholder = "Choose a character to rename",
   ) {
     super(app);
-    this.setPlaceholder("Choose a character to rename");
+    this.setPlaceholder(placeholder);
   }
 
   getSuggestions(query: string): string[] {
@@ -49,18 +56,23 @@ class RenameModal extends Modal {
   private summaryEl!: HTMLElement;
   private renameButton!: ButtonComponent;
 
+  /** Whether it was opened to merge one character into another. */
+  private readonly merging: boolean;
+
   constructor(
     app: App,
     private readonly view: FountainView,
     private readonly oldName: string,
+    newName = oldName,
   ) {
     super(app);
-    this.newName = oldName;
+    this.newName = newName;
+    this.merging = newName !== oldName;
   }
 
   onOpen(): void {
     const { contentEl } = this;
-    this.setTitle(`Rename ${this.oldName}`);
+    this.setTitle(this.merging ? `Merge ${this.oldName} into ${this.newName}` : `Rename ${this.oldName}`);
     contentEl.addClass("fountain-stage-rename");
 
     let input!: TextComponent;
@@ -69,7 +81,7 @@ class RenameModal extends Modal {
       .setDesc("Written in capitals in cues, and in the case the old name was written in elsewhere.")
       .addText((text) => {
         input = text;
-        text.setValue(this.oldName).onChange((value) => {
+        text.setValue(this.newName).onChange((value) => {
           this.newName = value;
           this.update();
         });
@@ -85,7 +97,7 @@ class RenameModal extends Modal {
     const buttons = contentEl.createDiv({ cls: "modal-button-container" });
     new ButtonComponent(buttons).setButtonText("Cancel").onClick(() => this.close());
     this.renameButton = new ButtonComponent(buttons)
-      .setButtonText("Rename")
+      .setButtonText(this.merging ? "Merge" : "Rename")
       .setCta()
       .onClick(() => this.rename());
 
@@ -114,7 +126,7 @@ class RenameModal extends Modal {
     if (name && name.toUpperCase() !== this.oldName && characterNames(script).includes(name.toUpperCase())) {
       el.createEl("p", {
         cls: "fountain-stage-rename-warning",
-        text: `There's already a character called ${name.toUpperCase()}. Renaming makes them one character.`,
+        text: `There's already a character called ${name.toUpperCase()}. Renaming makes them one character.${this.sharedScenes(name.toUpperCase())}`,
       });
     }
 
@@ -137,6 +149,18 @@ class RenameModal extends Modal {
       this.preview(el, place, edits, lines);
     }
     this.updateButton();
+  }
+
+  /** The scenes both characters are in, which merging them puts one character in twice. */
+  private sharedScenes(other: string): string {
+    const { characters, scenes } = buildReport(this.view.script(), buildOutline(this.view.getViewData(), this.view.isAct()), { wordsPerMinute: 150 });
+    const scenesOf = (name: string) => characters.find((c) => c.name === name)?.scenes ?? [];
+    const theirs = scenesOf(other);
+    const shared = scenesOf(this.oldName).filter((s) => theirs.includes(s));
+    if (shared.length === 0) return " They're never in a scene together.";
+    const list = shared.map((s) => `${scenes[s].number}. ${scenes[s].title}`);
+    const named = list.length <= 3 ? list.join("; ") : `${list.slice(0, 3).join("; ")} and ${list.length - 3} more`;
+    return ` They're both in ${shared.length === 1 ? "a scene" : `${shared.length} scenes`} (${named}), so check those read right with one character.`;
   }
 
   /** Each line a place's changes are on, with the name marked, folded away until opened. */
@@ -184,7 +208,9 @@ class RenameModal extends Modal {
     this.view.applyChanges(edits);
     this.close();
     const places = edits.length === 1 ? "1 place" : `${edits.length} places`;
-    new Notice(`Renamed ${this.oldName} to ${this.newName.trim().toUpperCase()} in ${places}. Undo puts it back.`);
+    const verb = this.merging ? "Merged" : "Renamed";
+    const into = this.merging ? "into" : "to";
+    new Notice(`${verb} ${this.oldName} ${into} ${this.newName.trim().toUpperCase()} in ${places}. Undo puts it back.`);
   }
 }
 
@@ -203,4 +229,23 @@ export function renameCharacter(app: App, view: FountainView): void {
   const atCursor = nameAt(text, ch, names);
   if (atCursor) new RenameModal(app, view, atCursor).open();
   else new CharacterPicker(app, names, (name) => new RenameModal(app, view, name).open()).open();
+}
+
+/**
+ * Merges two characters into one: the first you choose is renamed to the
+ * second everywhere, as a rename would.
+ */
+export function mergeCharacters(app: App, view: FountainView): void {
+  if (view.refuseIfFrozen()) return;
+  const names = characterNames(view.script());
+  if (names.length < 2) {
+    new Notice("This script needs two characters to merge.");
+    return;
+  }
+  const { text, ch } = view.cursorLine();
+  const chooseInto = (from: string) =>
+    new CharacterPicker(app, names.filter((n) => n !== from), (into) => new RenameModal(app, view, from, into).open(), `Merge ${from} into…`).open();
+  const atCursor = nameAt(text, ch, names);
+  if (atCursor) chooseInto(atCursor);
+  else new CharacterPicker(app, names, chooseInto, "Choose a character to merge into another").open();
 }

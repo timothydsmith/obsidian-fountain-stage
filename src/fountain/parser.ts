@@ -227,13 +227,24 @@ function startsSpeech(body: string[], i: number): boolean {
  * with neither would be all preface; a speech shows the play has begun.
  */
 function frontMatterEnd(body: string[], start: number): number {
+  /** Whether the line is in a breakdown section's first block of lines, such as a list of names under `***Characters***`. */
+  let listing = false;
   for (let i = start; i < body.length; i++) {
     const s = body[i];
-    if (!s) continue;
+    if (!s) {
+      listing = false;
+      continue;
+    }
     if (s.startsWith("#")) return i;
     if (s.startsWith(".") && !s.startsWith("..")) return i;
     if (SCENE_HEADING_RE.test(s)) return i;
-    if (startsSpeech(body, i)) return i;
+    if (matchBreakdownHeading(s)) {
+      listing = true;
+      continue;
+    }
+    if (PAGE_BREAK_RE.test(s)) listing = false;
+    // "ANNA" over "TOM" in a cast list isn't a speech.
+    if (!listing && startsSpeech(body, i)) return i;
   }
   return body.length;
 }

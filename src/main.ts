@@ -22,7 +22,7 @@ import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
 import { type PaginatedScript, Paginator } from "./pagination";
 import type { ParsedScript } from "./fountain/parser";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
-import { renameCharacter } from "./renameCharacterModal";
+import { mergeCharacters, renameCharacter } from "./renameCharacterModal";
 import { ReportView, VIEW_TYPE_REPORT } from "./reportView";
 import { Passes } from "./passes";
 import { Rehearsal } from "./rehearsal";
@@ -34,6 +34,8 @@ import { calibrate } from "./fountain/readings";
 import { playTarget, targetDelta } from "./fountain/targets";
 import { setPlayTarget, setTargetHere } from "./targetCommands";
 import { FountainStageSettingTab } from "./settings";
+import { OnStage } from "./onStage";
+import { generateBreakdown } from "./breakdownCommand";
 
 /** How long after you stop typing the tint on changed lines catches up. */
 const CHANGE_TINT_DELAY_MS = 500;
@@ -53,6 +55,7 @@ export default class FountainStagePlugin extends Plugin {
   private checks!: Checks;
   private rehearsal!: Rehearsal;
   private sprints!: Sprints;
+  private readonly onStage = new OnStage();
   private readThroughs!: ReadThroughs;
   private tableReads!: TableReads;
   /** Brings the tint on changed lines up to date in every open script. */
@@ -199,7 +202,17 @@ export default class FountainStagePlugin extends Plugin {
     this.addOutlineOnce();
     this.registerView(
       VIEW_TYPE_REPORT,
-      (leaf) => new ReportView(leaf, { reportOf: (view) => this.reportOf(view), saveReport: (view) => void this.saveReport(view) }),
+      (leaf) =>
+        new ReportView(leaf, {
+          reportOf: (view) => this.reportOf(view),
+          saveReport: (view) => void this.saveReport(view),
+          castSize: () => this.settings.castSize,
+          setCastSize: (actors) => {
+            this.settings.castSize = actors;
+            // Nothing else depends on it, so nothing needs laying out again.
+            void this.saveData(this.settings);
+          },
+        }),
     );
     this.registerView(
       VIEW_TYPE_CHANGES,
@@ -256,6 +269,9 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
     viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
     viewCommand("rename-character", "Rename character", (view) => renameCharacter(this.app, view));
+    viewCommand("merge-characters", "Merge characters", (view) => mergeCharacters(this.app, view));
+    viewCommand("show-on-stage", "Show who's on stage", (view) => this.onStage.show(view));
+    viewCommand("generate-breakdown", "Write cast list and scene breakdown", (view) => generateBreakdown(view));
     this.addCommand({
       id: "freeze-draft",
       name: "Freeze draft",
@@ -465,11 +481,13 @@ export default class FountainStagePlugin extends Plugin {
 
   /**
    * Shows, while you're in a script, what the cursor's line is (Character,
-   * Dialogue, Stage direction…), the page you're on, and the runtime.
+   * Dialogue, Stage direction…), who's on stage, the page you're on, and the runtime.
    */
   private showStatusBar(): void {
     const lineTypeEl = this.addStatusBarItem();
     lineTypeEl.addClass("fountain-stage-line-type");
+    const stageEl = this.addStatusBarItem();
+    stageEl.addClass("fountain-stage-on-stage");
     const pageEl = this.addStatusBarItem();
     pageEl.addClass("fountain-stage-page");
     const runtimeEl = this.addStatusBarItem();
@@ -479,6 +497,20 @@ export default class FountainStagePlugin extends Plugin {
     let frame: number | null = null;
     // The runtime changes only with the text or layout, not as you move about.
     let runtimeStale = true;
+    // Who's on stage is worked out again once you stop typing, not at every keystroke.
+    let stageFresh = true;
+    let stageTimer: number | null = null;
+
+    const showStage = (view: FountainView) => {
+      const names = this.onStage.namesAt(view, view.currentLine(), stageFresh);
+      stageFresh = false;
+      stageEl.toggle(names !== undefined);
+      if (names === undefined) return;
+      const { text, label } = this.onStage.statusText(names);
+      stageEl.setText(text);
+      stageEl.setAttribute("aria-label", label);
+      stageEl.setAttribute("data-tooltip-position", "top");
+    };
 
     const showPage = (view: FountainView) => {
       const pages = view.scriptPages();
@@ -504,15 +536,24 @@ export default class FountainStagePlugin extends Plugin {
     };
     const update = () => {
       frame = null;
-      for (const el of [lineTypeEl, pageEl, runtimeEl]) el.toggle(script !== null);
+      for (const el of [lineTypeEl, stageEl, pageEl, runtimeEl]) el.toggle(script !== null);
       if (!script) return;
       lineTypeEl.setText(script.cursorLineType());
+      showStage(script);
       showPage(script);
       if (runtimeStale) showRuntime(script);
       runtimeStale = false;
     };
     const updateSoon = (change?: ScriptChange) => {
       if (change !== "position" && change !== "scroll") runtimeStale = true;
+      if (change === "text") {
+        if (stageTimer !== null) window.clearTimeout(stageTimer);
+        stageTimer = window.setTimeout(() => {
+          stageTimer = null;
+          stageFresh = true;
+          updateSoon("position");
+        }, 800);
+      }
       frame ??= window.requestAnimationFrame(update);
     };
     const follow = () => {
@@ -521,6 +562,7 @@ export default class FountainStagePlugin extends Plugin {
       unsubscribe?.();
       script = active;
       unsubscribe = active?.subscribe(updateSoon) ?? null;
+      stageFresh = true;
       updateSoon();
     };
 
@@ -529,6 +571,7 @@ export default class FountainStagePlugin extends Plugin {
     this.register(() => {
       unsubscribe?.();
       if (frame !== null) window.cancelAnimationFrame(frame);
+      if (stageTimer !== null) window.clearTimeout(stageTimer);
     });
   }
 
@@ -540,6 +583,7 @@ export default class FountainStagePlugin extends Plugin {
       timeline: this.timelineOf(view),
       positions: pages ? pagePositions(pages.placements) : undefined,
       pageCount: pages?.pageCount,
+      pauses: this.settings.pauseWords,
     });
   }
 
@@ -564,6 +608,7 @@ export default class FountainStagePlugin extends Plugin {
       timeline: timeline(version.script, pages?.placements, { method: runtimeMethod, wordsPerMinute, minutesPerPage, pauses: pauseWords }),
       positions: pages ? pagePositions(pages.placements) : undefined,
       pageCount: pages?.pageCount,
+      pauses: pauseWords,
     });
   }
 
@@ -728,7 +773,7 @@ export default class FountainStagePlugin extends Plugin {
     if (!file) return;
     const date = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
     const method = this.settings.runtimeMethod === "words" ? "the words spoken" : "the number of pages";
-    const text = reportMarkdown(this.reportOf(view), { title: file.basename, date, method });
+    const text = reportMarkdown(this.reportOf(view), { title: file.basename, date, method, castSize: this.settings.castSize || undefined });
     const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";
     const path = normalizePath(`${folder}${file.basename} - Report.md`);
     try {

@@ -9,9 +9,11 @@
  * "(to David)").
  */
 
+import { type CastPlan, castPlan } from "./cast";
 import { characterNames, cueName } from "./characters";
 import type { OutlineItem } from "./outline";
 import type { ParsedScript } from "./parser";
+import { DEFAULT_PAUSE_WORDS, type PauseWord, pauseSeconds } from "./pauses";
 import { countWords, isPreface, type PagePositions, type Timeline } from "./runtime";
 import { escapeRe, wholeWordRe, wholeWords } from "./wholeWords";
 
@@ -32,6 +34,8 @@ export interface SceneReport {
   seconds?: number;
   speeches: number;
   words: number;
+  /** Seconds of the pauses and silences its directions ask for. */
+  silence: number;
   /** Characters in it, in the order they first appear. */
   characters: string[];
 }
@@ -59,6 +63,8 @@ export interface ScriptReport {
     seconds?: number;
     words: number;
     speeches: number;
+    /** Seconds of the pauses and silences the directions ask for. */
+    silence: number;
     acts: number;
     scenes: number;
     characters: number;
@@ -66,6 +72,8 @@ export interface ScriptReport {
   /** Most words first. Characters only in the Characters list come last, with nothing. */
   characters: CharacterReport[];
   scenes: SceneReport[];
+  /** The smallest cast that can play it, with who doubles what. */
+  cast: CastPlan;
 }
 
 export interface ReportOptions {
@@ -73,6 +81,8 @@ export interface ReportOptions {
   timeline?: Timeline;
   positions?: PagePositions;
   pageCount?: number;
+  /** The pause words and their times, for the silence. */
+  pauses?: readonly PauseWord[];
 }
 
 /** Every outline item, in order, with the act each is in. */
@@ -85,28 +95,42 @@ function flatten(items: OutlineItem[], act?: string): { item: OutlineItem; act?:
 
 const hasScenes = (item: OutlineItem): boolean => item.children.some((child) => child.kind === "scene" || hasScenes(child));
 
-/** Finds names in text: whole words, capitalised, longest first so MRS SMITH isn't also SMITH. */
-function nameFinder(names: string[]): (text: string) => string[] {
+export interface NameMatch {
+  name: string;
+  /** Where it's written in the text. */
+  from: number;
+  to: number;
+}
+
+/**
+ * Finds names in text, with where each is written: whole words,
+ * capitalised, longest first so MRS SMITH isn't also SMITH. In text order.
+ */
+export function nameMatcher(names: string[]): (text: string) => NameMatch[] {
   const patterns = [...names]
     .sort((a, b) => b.length - a.length)
     .map((name) => {
       return { name, re: wholeWordRe(name.split(/\s+/).map(escapeRe).join("\\s+")) };
     });
   return (text) => {
-    const found: string[] = [];
+    const found: NameMatch[] = [];
     let rest = text;
     for (const { name, re } of patterns) {
-      let seen = false;
       // Blanking keeps every length, so the matches' places stay true.
       for (const m of wholeWords(rest, re)) {
         if (!/\p{Lu}/u.test(m.text[0])) continue;
-        seen = true;
+        found.push({ name, from: m.index, to: m.index + m.text.length });
         rest = rest.slice(0, m.index) + " ".repeat(m.text.length) + rest.slice(m.index + m.text.length);
       }
-      if (seen) found.push(name);
     }
-    return found;
+    return found.sort((a, b) => a.from - b.from);
   };
+}
+
+/** Finds the names in text, each once, longest first. */
+function nameFinder(names: string[]): (text: string) => string[] {
+  const match = nameMatcher(names);
+  return (text) => [...new Set(match(text).map((m) => m.name))];
 }
 
 /** A scene's place in the script, before anything is counted. */
@@ -148,7 +172,7 @@ export function scriptScenes(script: ParsedScript, outline: OutlineItem[]): Scen
 export function buildReport(script: ParsedScript, outline: OutlineItem[], options: ReportOptions): ScriptReport {
   const all = flatten(outline);
   const body = script.elements.filter((el) => !isPreface(el));
-  const scenes: SceneReport[] = scriptScenes(script, outline).map((range) => ({ ...range, speeches: 0, words: 0, characters: [] }));
+  const scenes: SceneReport[] = scriptScenes(script, outline).map((range) => ({ ...range, speeches: 0, words: 0, silence: 0, characters: [] }));
 
   /** The scene a line is in: the one it falls inside, else the next (text between an act's heading and its first scene), else the last. */
   const sceneAt = (line: number): number => {
@@ -202,6 +226,8 @@ export function buildReport(script: ParsedScript, outline: OutlineItem[], option
     }
     if (el.type === "action" || el.type === "parenthetical") {
       for (const name of findNames(el.text)) appear(name, sceneIndex, el.line);
+      // Sung lines aren't directions, so aren't asking for a pause.
+      if (scene && !el.italic) scene.silence += pauseSeconds(el.text, el.type === "parenthetical", options.pauses ?? DEFAULT_PAUSE_WORDS);
     }
     if (el.type !== "parenthetical") speaker = undefined;
   }
@@ -231,11 +257,13 @@ export function buildReport(script: ParsedScript, outline: OutlineItem[], option
       seconds: timeline?.total,
       words: totalWords,
       speeches: list.reduce((n, c) => n + c.speeches, 0),
+      silence: scenes.reduce((n, s) => n + s.silence, 0),
       acts: all.filter(({ item }) => item.kind === "act").length,
       scenes: scenes.length,
       characters: present.length,
     },
     characters: list,
     scenes,
+    cast: castPlan(list, scenes),
   };
 }
