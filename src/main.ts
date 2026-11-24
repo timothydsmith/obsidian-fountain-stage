@@ -19,6 +19,7 @@ import { buildReport, type ScriptReport } from "./fountain/report";
 import { reportMarkdown } from "./fountain/reportMarkdown";
 import { formatDuration, pagePositions, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
+import { SearchView, VIEW_TYPE_SEARCH } from "./searchView";
 import { type PaginatedScript, Paginator } from "./pagination";
 import type { ParsedScript } from "./fountain/parser";
 import { pageAtLine, pageLabel } from "./pdf/pageBreaks";
@@ -244,6 +245,12 @@ export default class FountainStagePlugin extends Plugin {
       name: "Show script outline",
       callback: () => void this.showOutline(),
     });
+    this.registerView(VIEW_TYPE_SEARCH, (leaf) => new SearchView(leaf, { draftsFolder: () => this.draftsFolder() }));
+    this.addCommand({
+      id: "search-scripts",
+      name: "Search scripts",
+      callback: () => void this.showSearch(),
+    });
 
     try {
       this.registerExtensions([FOUNTAIN_EXTENSION], VIEW_TYPE_FOUNTAIN);
@@ -276,6 +283,8 @@ export default class FountainStagePlugin extends Plugin {
       });
     viewCommand("toggle-reading-view", "Toggle reading view", (view) => view.toggleReading());
     viewCommand("toggle-source-mode", "Toggle source mode", (view) => view.toggleSource());
+    // Obsidian's hotkeys for searching in a file open the search bar too (see FountainView).
+    viewCommand("find-in-script", "Find in script", (view) => view.find());
     // For touch keyboards, which have no Tab key: these can go on the mobile toolbar.
     viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
     viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
@@ -855,6 +864,19 @@ export default class FountainStagePlugin extends Plugin {
       console.error("[fountain-stage] couldn't save the report", error);
       new Notice(`Couldn't save the report: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  /** Shows the Search scripts panel, opening it in the left sidebar if it isn't open yet, with the cursor in its search box. Text selected on one line of a script becomes the search. */
+  private async showSearch(): Promise<void> {
+    const { workspace } = this.app;
+    const selected = workspace.getActiveViewOfType(FountainView)?.selectedText() ?? "";
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_SEARCH)[0];
+    if (!leaf) {
+      leaf = workspace.getLeftLeaf(false) ?? workspace.getLeaf("split");
+      await leaf.setViewState({ type: VIEW_TYPE_SEARCH, active: true });
+    }
+    await workspace.revealLeaf(leaf);
+    if (leaf.view instanceof SearchView) leaf.view.focusSearch(selected && !selected.includes("\n") ? selected : undefined);
   }
 
   /** Shows the script outline, opening it in the right sidebar if it isn't open yet. Without `reveal`, it's opened but not brought into view. */

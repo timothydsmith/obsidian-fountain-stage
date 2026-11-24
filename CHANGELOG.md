@@ -7,6 +7,10 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- Find and replace in a script: Obsidian's hotkeys for searching in a file (Ctrl/Cmd+F, and Ctrl/Cmd+H to replace) now open a search bar at the top of a script, as does **Find in script**. Reading view and frozen drafts only find.
+- **Search scripts**, a panel in the left sidebar that finds text in every script in the vault, which Obsidian's own search doesn't look inside. Click a line to go there.
+
 ## [0.9.0] - 2026-11-24
 
 ### Added

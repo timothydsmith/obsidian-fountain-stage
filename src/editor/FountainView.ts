@@ -4,6 +4,7 @@ import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/command
 import { type HoverPopover, type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { characterCompletion } from "./completion";
+import { findInScript, openFind } from "./find";
 import { type LinkHost, linksChanged, vaultLinks } from "./links";
 import { cycleLineType, lineTypeCycling } from "./cycling";
 import { describeLine } from "../fountain/lineTypes";
@@ -104,6 +105,8 @@ export interface FountainHost {
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
 const TOGGLE_READING_COMMAND = "markdown:toggle-preview";
+/** Obsidian's commands for searching and replacing in a file, whose hotkeys open a script's search bar. */
+const SEARCH_COMMANDS = ["editor:open-search", "editor:open-search-replace"];
 const TOGGLE_SOURCE_COMMAND = "editor:toggle-source";
 
 /**
@@ -170,6 +173,15 @@ export class FountainView extends TextFileView {
         this.toggleSource();
         return false;
       });
+    }
+    // And its hotkeys for searching and replacing in a file (Ctrl/Cmd+F and Ctrl/Cmd+H) open the search bar.
+    for (const command of SEARCH_COMMANDS) {
+      for (const { modifiers, key } of hotkeysOf(this.app, command)) {
+        this.scope.register(modifiers, key, () => {
+          this.find();
+          return false;
+        });
+      }
     }
 
     this.registerEvent(
@@ -775,6 +787,27 @@ export class FountainView extends TextFileView {
     if (!this.reading) this.editor.focus();
   }
 
+  /** The text selected in the script, if any. */
+  selectedText(): string {
+    const { from, to } = this.editor.state.selection.main;
+    return this.editor.state.sliceDoc(from, to);
+  }
+
+  /** Opens the search bar at the top of the script, to find (and, while editing, replace) text in it. */
+  find(): void {
+    openFind(this.editor);
+  }
+
+  /** Selects `length` characters from `ch` on a line (both counting from 0), such as a search match, and brings them into view. */
+  selectInLine(line: number, ch: number, length: number): void {
+    const doc = this.editor.state.doc;
+    const at = doc.line(Math.min(Math.max(line + 1, 1), doc.lines));
+    const from = Math.min(at.from + ch, at.to);
+    const to = Math.min(from + length, at.to);
+    this.editor.dispatch({ selection: EditorSelection.range(from, to), effects: EditorView.scrollIntoView(from, { y: "center" }) });
+    if (!this.reading) this.editor.focus();
+  }
+
   /** Moves to a line, counting from 0: scrolled to the top, with the cursor at its start. */
   revealLine(line: number): void {
     const doc = this.editor.state.doc;
@@ -861,6 +894,7 @@ export class FountainView extends TextFileView {
         changeTint(),
         checkMarks(),
         readMark(),
+        findInScript(),
         drawSelection(),
         highlightActiveLine(),
         EditorView.lineWrapping,
