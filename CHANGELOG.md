@@ -7,6 +7,12 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-24
+
+### Added
+- Find and replace in a script: Obsidian's hotkeys for searching in a file (Ctrl/Cmd+F, and Ctrl/Cmd+H to replace) now open a search bar at the top of a script, as does **Find in script**. Reading view and frozen drafts only find.
+- **Search scripts**, a panel in the left sidebar that finds text in every script in the vault, which Obsidian's own search doesn't look inside. Click a line to go there.
+
 ## [0.9.0] - 2026-11-24
 
 ### Added
@@ -152,7 +158,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...HEAD
+[0.9.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...0.9.1
 [0.9.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.6.0...0.7.0

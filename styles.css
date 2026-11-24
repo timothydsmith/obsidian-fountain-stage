@@ -855,3 +855,191 @@
 .fountain-stage-checks .is-monologue td:nth-child(2) {
   color: var(--text-accent);
 }
+
+/* Find and replace in a script: CodeMirror's search bar, in Obsidian's colours */
+.fountain-stage-view .cm-panels {
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+.fountain-stage-view .cm-panels-top {
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+}
+
+.fountain-stage-view .cm-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-1) var(--size-4-2);
+  padding: var(--size-4-2) var(--size-4-8) var(--size-4-2) var(--size-4-2);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-view .cm-search input.cm-textfield {
+  margin: 0;
+  padding: var(--size-2-2) var(--size-4-2);
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
+  border-radius: var(--input-radius, var(--radius-s));
+  background-color: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-view .cm-search input.cm-textfield:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.fountain-stage-view .cm-search input.cm-textfield::placeholder {
+  color: var(--text-faint);
+}
+
+.fountain-stage-view .cm-search button.cm-button {
+  margin: 0;
+  padding: var(--size-2-2) var(--size-4-2);
+  border: none;
+  border-radius: var(--button-radius, var(--radius-s));
+  background-image: none;
+  background-color: var(--interactive-normal);
+  box-shadow: var(--input-shadow);
+  color: var(--text-normal);
+  font-size: var(--font-ui-smaller);
+  text-transform: none;
+}
+
+.fountain-stage-view .cm-search button.cm-button:hover {
+  background-color: var(--interactive-hover);
+}
+
+.fountain-stage-view .cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  margin: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.fountain-stage-view .cm-search button[name="close"] {
+  position: absolute;
+  top: var(--size-4-2);
+  right: var(--size-4-2);
+  padding: 0 var(--size-4-1);
+  color: var(--text-muted);
+  font-size: var(--font-ui-medium);
+  cursor: var(--cursor);
+}
+
+.fountain-stage-view .cm-searchMatch {
+  background-color: rgba(var(--color-yellow-rgb), 0.35);
+  border-radius: var(--radius-s);
+  outline: none;
+}
+
+.fountain-stage-view .cm-searchMatch-selected,
+.fountain-stage-view .cm-searchMatch-selected * {
+  background-color: var(--text-selection);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+/* Search scripts panel */
+.fountain-stage-search-box {
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-search-box input {
+  width: 100%;
+}
+
+.fountain-stage-search-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1) var(--size-4-4);
+  margin-bottom: var(--size-4-2);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-4-1);
+  cursor: pointer;
+}
+
+.fountain-stage-search-summary {
+  margin-bottom: var(--size-4-2);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-search-file {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-1);
+  padding: var(--size-2-2) 0;
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.fountain-stage-search-fold {
+  display: inline-flex;
+  color: var(--text-faint);
+}
+
+.fountain-stage-search-fold svg {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+}
+
+.fountain-stage-search-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fountain-stage-search-count {
+  color: var(--text-faint);
+  font-weight: var(--font-normal);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+}
+
+.fountain-stage-search-lines {
+  margin-bottom: var(--size-4-2);
+}
+
+.fountain-stage-search-line {
+  display: flex;
+  gap: var(--size-4-2);
+  padding: var(--size-2-2) var(--size-4-1) var(--size-2-2) var(--size-4-4);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+}
+
+.fountain-stage-search-line:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.fountain-stage-search-number {
+  flex: none;
+  min-width: 2.5em;
+  color: var(--text-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fountain-stage-search-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fountain-stage-search-match {
+  background-color: rgba(var(--color-yellow-rgb), 0.35);
+  color: var(--text-normal);
+  border-radius: var(--radius-s);
+}

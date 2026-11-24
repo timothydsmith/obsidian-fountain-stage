@@ -249,6 +249,7 @@ Built for 0.8.0:
 - **Renumber scenes** (built for 0.3.0) after moving or splitting them: scene headings and any scene numbers.
 - **Runtime targets** for the play, an act or a scene, shown over or under in the outline.
 - **Jump commands** (built for 0.3.0): next or previous scene, and the next speech by the character at the cursor.
+- **Find and search** (built after 0.9.0, as a fix: scripts couldn't be searched at all). Find and replace in the open script uses CodeMirror's search bar on Obsidian's own hotkeys for searching in a file, so there's nothing new to learn; reading view only finds. **Search scripts** is a sidebar panel of our own, because Obsidian's search only reads notes and offers plugins no way in. It searches plain text, line by line, frozen drafts only when asked, and stops at 1,000 matches.
 
 ### Ideas and history
 
