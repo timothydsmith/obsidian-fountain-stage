@@ -283,21 +283,29 @@ Built for 0.7.0:
 ### Linked notes
 
 - **Syntax, from the [Fountain plugin](https://github.com/bgrundmann/obsidian-fountain):** `[[>target]]` or `[[>target|display text]]`. The `>` tells a link from an ordinary note. Targets resolve like Obsidian links, by name or path, with or without `.md`. Scripts move between the two plugins without changes.
-- **Where:** in stage directions and on lines of their own, not in dialogue, scene headings or cues.
+- **Where:** anywhere, dialogue included (decided below).
 - **In the editor:** note names complete after `[[>`, a click opens the note (Ctrl/Cmd-click in a new tab), hovering shows Obsidian's page preview, and a link to a missing note looks broken.
 - **Renames:** Obsidian doesn't track links inside `.fountain` files, so the plugin updates them when a linked note is renamed, keeping the form you wrote.
 - **On export:** an **Append linked notes** option adds each linked note after the script, on its own page under its title, in order of first link and once each. Frontmatter is dropped.
 - **On freeze:** a single Markdown note of every linked note sits beside the frozen script, as `Play - Draft 03 - 2026-11-21 - Linked notes.md`, each note under its own heading. Exporting a frozen draft appends from that note, not the live ones, so the PDF can be rebuilt as it was.
-- **The hard part** is a Markdown renderer for the PDF: headings, paragraphs, emphasis, lists and probably images. The layout engine only lays out Fountain today.
+- **The hard part** is a Markdown renderer for the PDF: headings, paragraphs, emphasis, lists and probably images.
 - New style fields for the appendix (heading size, a page per note), with defaults that leave existing styles unchanged.
 
-To decide:
+Decided for 0.9.0:
 
-- [ ] Links in dialogue from scripts written in the other plugin: treat them as links anyway, or as plain notes?
-- [ ] In the printed script, with Include notes on: print the display text, or leave links out?
-- [ ] Which Markdown the appendix supports: images? tables? embeds?
-- [ ] Links inside linked notes: followed, or one level only?
-- [ ] Reading view: show links, or hide them with other notes?
+- [x] Links work anywhere, dialogue included, so scripts from the other plugin keep working.
+- [x] With Include notes on, a link prints as its display text (or the note's name), in the note style, without brackets or added spaces, since it's part of its sentence. Without notes it doesn't print.
+- [x] The appendix supports headings, paragraphs, emphasis, lists, block quotes and callouts, rules, tables, code, PNG and JPEG pictures, and embedded notes.
+- [x] Links and embeds inside linked notes go one level only: an embed in an embedded note becomes a link, and links print as their text.
+- [x] Reading view shows links, clickable, as their display text or the note's name.
+
+Built for 0.9.0:
+
+- **Links** (`src/fountain/links.ts`) are found from the parser's note spans, so they stay notes everywhere else (outline, checks, comparisons). A link can't run across lines.
+- **The editor** marks each link's label (display text, or the name within the target), with Obsidian's unresolved style when `getFirstLinkpathDest` finds nothing; marks refresh as files are created, deleted or renamed. Reading view hides the rest of the link. A click opens the note in reading view, Ctrl/Cmd-click while editing (Obsidian's own `isModEvent` picks the pane). Two page-preview sources, reading (no modifier) and editing (Ctrl/Cmd by default), as Obsidian has for notes. Completion after `[[>` uses `fileToLinktext` for each Markdown note.
+- **Renames** rewrite a target that named the old path (whole, or its end, with or without `.md`, ignoring case) and no longer finds a note: a target with a folder gets the new path, a name gets the shortest unambiguous link text. Open scripts change through `applyChanges` (one undo); others through `vault.process`, read first so untouched scripts aren't written. Frozen drafts and their cuts files are skipped. With Obsidian's `alwaysUpdateLinks` off, a dialog asks first, giving the number of links and scripts; edits are worked out again after the answer, in case a script changed meanwhile.
+- **The appendix** (`src/pdf/markdown.ts`, `appendix.ts`) reads Markdown into blocks and lays them out with the script's paragraphs, so it uses the style's font and paginates like the script. Pictures are a new optional `images` list on layout pages, drawn by render.ts; their sizes come from the PNG or JPEG header (`images.ts`). The script's own pages are unchanged by an appendix, and existing layout snapshots are untouched. Style fields: `appendix.titleSize`, `titleBold`, `titleAlignment`, `pagePerNote`. List markers needed a `bulletIndent` on paragraph styles (default 0).
+- **On freeze**, the linked notes are written to `<draft> - Linked notes.md` with embeds filled in, frontmatter dropped and headings moved down a level under each note's `#` title; export splits it back at the `#` headings. A frozen draft without one appends the live notes.
 
 ### Story outline and beats
 

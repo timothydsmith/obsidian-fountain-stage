@@ -1,9 +1,10 @@
 import { Annotation, Compartment, EditorSelection, EditorState, type Extension, type StateEffect, type TransactionSpec } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
-import { type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
+import { type HoverPopover, type Menu, Notice, Platform, Scope, setIcon, TextFileView, type TFile, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { defaultViewMode, hotkeysOf, livePreview, onConfigChanged, readableLineLength, showLineNumbers } from "../obsidianConfig";
 import { characterCompletion } from "./completion";
+import { type LinkHost, linksChanged, vaultLinks } from "./links";
 import { cycleLineType, lineTypeCycling } from "./cycling";
 import { describeLine } from "../fountain/lineTypes";
 import { actPatternField, fountainFormatting, scriptOf, setActPattern } from "./formatting";
@@ -95,6 +96,10 @@ export interface FountainHost {
   /** Whether typewriter mode is on. */
   typewriterMode(): boolean;
   toggleTypewriter(): void;
+  /** Links to vault notes in a script. */
+  links(view: FountainView): LinkHost;
+  /** The names to complete a link's target with, as links from the script would write them. */
+  noteNames(view: FountainView): string[];
 }
 
 /** Obsidian's commands for switching modes, whose hotkeys switch a script's mode too. */
@@ -560,10 +565,26 @@ export class FountainView extends TextFileView {
     return this.actTest.isAct;
   }
 
+  /** Obsidian's page preview, shown over a link. */
+  hoverPopover: HoverPopover | null = null;
+  private readonly linkHost: LinkHost = this.host.links(this);
+
   private currentModeExtensions(): Extension {
-    if (this.reading) return [fountainFormatting(), readingView({ showSections: this.file ? this.host.isCutsFile(this.file) : false })];
-    const editing = [EditorView.contentAttributes.of({ spellcheck: "true" }), characterCompletion(), lineTypeCycling()];
+    if (this.reading) {
+      return [fountainFormatting(), readingView({ showSections: this.file ? this.host.isCutsFile(this.file) : false }), vaultLinks(this.linkHost, true)];
+    }
+    const editing = [
+      EditorView.contentAttributes.of({ spellcheck: "true" }),
+      characterCompletion(() => this.host.noteNames(this)),
+      lineTypeCycling(),
+      vaultLinks(this.linkHost, false),
+    ];
     return this.sourceMode ? editing : [fountainFormatting(), editing];
+  }
+
+  /** Catches up with the vault's notes, which links may now find or not. */
+  refreshLinks(): void {
+    this.editor.dispatch({ effects: linksChanged.of(null) });
   }
 
   getViewData(): string {

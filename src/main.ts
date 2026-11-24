@@ -1,4 +1,4 @@
-import { normalizePath, Notice, Platform, Plugin, TFile } from "obsidian";
+import { Keymap, normalizePath, Notice, Platform, Plugin, TFile } from "obsidian";
 import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { PositionStore } from "./editor/positions";
 import { exportScript } from "./export";
@@ -36,12 +36,17 @@ import { setPlayTarget, setTargetHere } from "./targetCommands";
 import { FountainStageSettingTab } from "./settings";
 import { OnStage } from "./onStage";
 import { generateBreakdown } from "./breakdownCommand";
+import type { LinkHost } from "./editor/links";
+import { followRename, resolveTarget } from "./linkedNotes";
 
 /** How long after you stop typing the tint on changed lines catches up. */
 const CHANGE_TINT_DELAY_MS = 500;
 
 /** Local-storage key (scoped to this vault by Obsidian) for where you were in each script. */
 const POSITIONS_KEY = "fountain-stage-positions";
+/** Page preview sources: links hovered in reading view, and while editing (with Ctrl or Cmd, unless changed). */
+const HOVER_READING = "fountain-stage-reading";
+const HOVER_EDITING = "fountain-stage-editing";
 
 export default class FountainStagePlugin extends Plugin {
   private positions!: PositionStore;
@@ -178,8 +183,14 @@ export default class FountainStagePlugin extends Plugin {
           rehearsalActions: (view) => this.rehearsalActions(view),
           typewriterMode: () => this.settings.typewriter,
           toggleTypewriter: () => this.toggleTypewriter(),
+          links: (view) => this.linkHost(view),
+          noteNames: (view) => {
+            const from = view.file?.path ?? "";
+            return this.app.vault.getMarkdownFiles().map((file) => this.app.metadataCache.fileToLinktext(file, from, true));
+          },
         }),
     );
+    this.watchLinkedNotes();
     this.tintChanges();
 
     this.showStatusBar();
@@ -457,6 +468,56 @@ export default class FountainStagePlugin extends Plugin {
   }
 
   /** The open scripts. */
+  /** Opening and previewing the notes a script's links name. */
+  private linkHost(view: FountainView): LinkHost {
+    const from = () => view.file?.path ?? "";
+    return {
+      resolves: (target) => resolveTarget(this.app, target, from()) !== null,
+      open: (target, event) => void this.app.workspace.openLinkText(target, from(), Keymap.isModEvent(event)),
+      hover: (event, targetEl, target, reading) => {
+        this.app.workspace.trigger("hover-link", {
+          event,
+          source: reading ? HOVER_READING : HOVER_EDITING,
+          hoverParent: view,
+          targetEl,
+          linktext: target,
+          sourcePath: from(),
+        });
+      },
+    };
+  }
+
+  /** Follows renamed notes in the scripts that link to them, and restyles links as notes come and go. */
+  private watchLinkedNotes(): void {
+    this.registerHoverLinkSource(HOVER_READING, { display: "Fountain Stage scripts in reading view", defaultMod: false });
+    this.registerHoverLinkSource(HOVER_EDITING, { display: "Fountain Stage scripts while editing", defaultMod: true });
+    const refresh = () => {
+      for (const view of this.scriptViews()) view.refreshLinks();
+    };
+    // Not while the vault loads, when every file is announced as created.
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on("create", refresh));
+      this.registerEvent(this.app.vault.on("delete", refresh));
+      this.registerEvent(
+        this.app.vault.on("rename", (file, oldPath) => {
+          if (!(file instanceof TFile) || file.extension !== "md") return refresh();
+          void followRename(
+            this.app,
+            file,
+            oldPath,
+            (script) => this.cuts.isFrozen(script),
+            (script) => {
+              const view = this.scriptViews().find((v) => v.file === script);
+              return view && { text: view.getViewData(), apply: (edits) => view.applyChanges(edits) };
+            },
+          )
+            .catch((error: unknown) => console.error("[fountain-stage] couldn't follow a renamed note", error))
+            .finally(refresh);
+        }),
+      );
+    });
+  }
+
   private scriptViews(): FountainView[] {
     return this.app.workspace
       .getLeavesOfType(VIEW_TYPE_FOUNTAIN)

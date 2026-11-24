@@ -240,6 +240,31 @@
   color: inherit;
 }
 
+/* Links to vault notes: Ctrl/Cmd-click opens one while editing, a click in reading view. A link's mark can be inside its note's or outside it. */
+.fountain-stage-view .pw-note .pw-vault-link,
+.fountain-stage-view .pw-vault-link,
+.fountain-stage-view .pw-vault-link .pw-note {
+  color: var(--link-color);
+  text-decoration: var(--link-decoration);
+}
+
+.fountain-stage-view .pw-note .pw-vault-link.is-unresolved,
+.fountain-stage-view .pw-vault-link.is-unresolved,
+.fountain-stage-view .pw-vault-link.is-unresolved .pw-note {
+  color: var(--link-unresolved-color);
+  opacity: var(--link-unresolved-opacity);
+  text-decoration: var(--link-unresolved-decoration-style) underline;
+  text-decoration-color: var(--link-unresolved-decoration-color);
+}
+
+.fountain-stage-view.is-reading .pw-note {
+  background-color: transparent;
+}
+
+.fountain-stage-view.is-reading .pw-vault-link {
+  cursor: var(--cursor-link);
+}
+
 /* Reading view: not editable, so no cursor, and a page break is a rule. */
 .fountain-stage-view.is-reading .cm-content {
   caret-color: transparent;

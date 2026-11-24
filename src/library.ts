@@ -59,6 +59,8 @@ export interface ExportChoices {
   watermark: string;
   notes: boolean;
   synopses: boolean;
+  /** Add the notes the script links to after it. */
+  appendix: boolean;
 }
 
 export const DEFAULT_SETTINGS: FountainStageSettings = {
@@ -81,7 +83,7 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   sprintMinutes: 25,
   tableRead: DEFAULT_TABLE_READ,
   castSize: 0,
-  export: { style: "modern", watermark: "", notes: false, synopses: false },
+  export: { style: "modern", watermark: "", notes: false, synopses: false, appendix: false },
 };
 
 /**
@@ -152,6 +154,7 @@ function readExportChoices(saved: unknown): ExportChoices {
     watermark: typeof s.watermark === "string" ? s.watermark : d.watermark,
     notes: typeof s.notes === "boolean" ? s.notes : d.notes,
     synopses: typeof s.synopses === "boolean" ? s.synopses : d.synopses,
+    appendix: typeof s.appendix === "boolean" ? s.appendix : d.appendix,
   };
 }
 

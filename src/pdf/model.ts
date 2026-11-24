@@ -37,6 +37,25 @@ export interface LinkItem {
   url: string;
 }
 
+/** A picture, from an appended note: `src` names one of the document's images. */
+export interface ImageItem {
+  /** Bottom left corner. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  src: string;
+}
+
+/** A picture's file, for drawing. */
+export interface ImageData {
+  bytes: Uint8Array;
+  format: "png" | "jpg";
+  /** Size in pixels. */
+  width: number;
+  height: number;
+}
+
 /** Where a script line's text was drawn on a page: the baseline of each printed line. For marks in the margin, such as revision asterisks. */
 export interface DrawnLine {
   /** The script line, counting from 0. */
@@ -49,6 +68,8 @@ export interface LayoutPage {
   rules: RuleItem[];
   links: LinkItem[];
   drawn: DrawnLine[];
+  /** Pictures, only on pages of appended notes. */
+  images?: ImageItem[];
 }
 
 /** Where a block from a script line landed. */
@@ -76,6 +97,8 @@ export interface LayoutDocument {
   placements: Placement[];
   /** Each page's printed number, or undefined where none is printed (the title page). */
   pageNumbers: (string | undefined)[];
+  /** The pictures pages draw, by `src`. */
+  images?: Record<string, ImageData>;
 }
 
 export function emptyPage(): LayoutPage {

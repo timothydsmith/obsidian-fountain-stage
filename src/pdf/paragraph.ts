@@ -31,12 +31,14 @@ export interface ParaStyle {
   spaceBefore: number;
   spaceAfter: number;
   color: Rgb;
+  /** Where a list marker starts, from the left edge. */
+  bulletIndent: number;
 }
 
 export const BLACK: Rgb = [0, 0, 0];
 
 export function paraStyle(style: Pick<ParaStyle, "face" | "size" | "leading"> & Partial<ParaStyle>): ParaStyle {
-  return { alignment: "left", leftIndent: 0, rightIndent: 0, spaceBefore: 0, spaceAfter: 0, color: BLACK, ...style };
+  return { alignment: "left", leftIndent: 0, rightIndent: 0, spaceBefore: 0, spaceAfter: 0, color: BLACK, bulletIndent: 0, ...style };
 }
 
 /** reportlab's spaceShrinkage: how far a line may overrun, as a fraction of its spaces' width. */
@@ -215,8 +217,8 @@ export class Paragraph implements Block {
   /** How far a bullet overruns the left indent, which pushes the first line right. */
   private bulletOverrun(): number {
     if (!this.bullet) return 0;
-    const { face, size, leftIndent } = this.style;
-    const end = this.fonts.width(this.bullet, combineFace(face), size) + 0.6 * size;
+    const { face, size, leftIndent, bulletIndent } = this.style;
+    const end = bulletIndent + this.fonts.width(this.bullet, combineFace(face), size) + 0.6 * size;
     return Math.max(0, end - leftIndent);
   }
 
@@ -263,7 +265,7 @@ export class Paragraph implements Block {
     const overrun = this.bulletOverrun();
 
     if (this.bullet && lines.length > 0) {
-      page.texts.push({ x, y: top - size, text: this.bullet, face: combineFace(face), size, color });
+      page.texts.push({ x: x + this.style.bulletIndent, y: top - size, text: this.bullet, face: combineFace(face), size, color });
     }
     if (this.source && lines.length > 0) page.drawn.push({ line: this.source.line, baselines: lines.map((_, i) => top - size - i * leading) });
 

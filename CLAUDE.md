@@ -17,7 +17,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - **CodeMirror is provided by Obsidian.** `@codemirror/*` and `@lezer/*` are external in esbuild and must never be bundled.
 - Published as a community plugin, so every release must still meet the rules: follow Obsidian's plugin guidelines (no `innerHTML` with user content, use `registerEvent`/`register*` for cleanup, sentence case in UI text, no "Obsidian" in the plugin name).
 - Out of scope (don't build): rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), boneyard features.
-- **Links to vault notes** use the Fountain plugin's syntax, `[[>target]]` or `[[>target|display text]]`, so scripts move between the two plugins unchanged. They go in stage directions and on lines of their own, not in dialogue, scene headings or cues.
+- **Links to vault notes** use the Fountain plugin's syntax, `[[>target]]` or `[[>target|display text]]`, so scripts move between the two plugins unchanged. Being notes to the parser, they can go anywhere, dialogue included, and print only with notes (as their display text). `src/fountain/links.ts` finds them.
 - **Sections never print**, as the Fountain spec says. `#` sections are structure only (outline, runtime, report); printed act and scene titles come from scene headings, centred text and `===`.
 - `ROADMAP.md` holds the release plan and the decisions behind each feature.
 

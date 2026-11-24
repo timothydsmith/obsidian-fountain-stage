@@ -13,7 +13,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
   - **Live Preview** formats the script as you type, with the markup shown faintly.
   - **Source mode** is the plain text, unformatted.
-  - **Reading view** shows the formatted script without its markup, sections, notes, synopses or boneyard, and can't be edited.
+  - **Reading view** shows the formatted script without its markup, sections, notes, synopses or boneyard, and can't be edited. Links to notes show as links.
 - Acts, scenes and sections follow the Fountain spec:
   - **Acts** are scene headings such as `.ACT ONE`. Which headings count as acts is set by the style (`act.pattern`; by default, those starting with "Act"), and so is whether each act starts a new page.
   - **Scenes** are scene headings: `INT.` and `EXT.` headings, or any line forced with a full stop, such as `.SCENE TWO` or `.A STUDENT SUPPORT OFFICE`.
@@ -64,6 +64,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, entrances and exits that don't add up, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
 - Table read: the script read aloud, a voice for each character, leaving the parts you read to you. See [Table read](#table-read).
 - Typewriter mode, which keeps the line you're writing in the middle of the screen and fades the rest, and timed writing sprints with a word count. See [Focus](#focus).
+- Links to notes in your vault, `[[>Note]]`, which open the note, show its preview, follow it when it's renamed, and can add it to the end of the PDF. See [Linked notes](#linked-notes).
 - Rehearsal pages: lock a draft's page numbers for rehearsal, then issue only the pages that change, numbered to fit around the others (23A, 23B) and marked in the margin. See [Rehearsal pages](#rehearsal-pages).
 - PDF export in stage-play house styles, ported from fountain2pdf:
   - **modern:** Dramatists Guild Modern Play Format
@@ -71,7 +72,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **samuel_french:** Samuel French / SFI submission format
 - Your own styles, as JSON files in your vault that extend another style and change only what differs.
 - Your own fonts, from font files in your vault.
-- An export dialog to pick the style, add a watermark (such as DRAFT) across every page, and include notes and synopses. A `Style:` key on a script's title page picks its style to start with.
+- An export dialog to pick the style, add a watermark (such as DRAFT) across every page, include notes and synopses, and append linked notes. A `Style:` key on a script's title page picks its style to start with.
 - Works on desktop and mobile.
 
 ## Drafts
@@ -82,6 +83,7 @@ A script's draft number is its title page's `Draft:` key. A script with no `Draf
 
 - A copy of the script goes in the drafts folder as `Play - Draft 03 - 2026-11-21.fountain`. Its title page says `Draft: 3` and `Draft date: 21 November 2026`, and what the draft is for goes in a `Draft notes:` key, which never prints.
 - The script itself becomes `Draft: 4 (working)`, without a draft date. Undo puts it back.
+- If the script links to notes, a copy of them goes beside the frozen draft as `Play - Draft 03 - 2026-11-21 - Linked notes.md`, so the draft's PDF can append them as they were. See [Linked notes](#linked-notes).
 
 A script with no title page gets one, with its file name as the title. Scripts in the drafts folder open read-only, in reading view. To change one, choose **Unfreeze** from its **More options** menu, or run **Unfreeze draft**. It stays editable until you close its tab.
 
@@ -261,14 +263,41 @@ Each revised page has a header, "Rev. 1 · 22 November 2026", and an asterisk in
 
 The title page and anything before the first page of the play aren't revised. Locked pages are worked out again from the locked draft each time, so changing the style or fonts it uses moves its page breaks: leave them alone while it's locked. Changes are matched scene by scene, so cutting or merging a scene heading can mark more pages than it might.
 
+## Linked notes
+
+Link a script to notes in your vault, such as research, a props list or a character study, with `[[>Note]]`, or `[[>Note|display text]]` to show other words. It's the syntax of the [Fountain plugin](https://github.com/bgrundmann/obsidian-fountain), so scripts move between the two unchanged. The note is found as Obsidian finds a link's: by name or by path (`[[>Research/Ibsen]]`), with or without `.md`. Links can go anywhere: in a stage direction, on a line of their own, or in dialogue.
+
+- **Writing a link:** after `[[>`, Fountain Stage offers the vault's note names. Enter or Tab picks one and closes the link.
+- **Opening a note:** in reading view, click a link; while editing, Ctrl-click (Cmd-click on a Mac). Ctrl/Cmd-click opens it in a new tab.
+- **Previewing a note:** hover over a link for Obsidian's page preview: in reading view straight away, and while editing with Ctrl or Cmd held. Change this under **Page preview** in Obsidian's core plugin settings.
+- **Missing notes:** a link to a note that isn't there looks like Obsidian's own unresolved links.
+- **Renaming a note:** Fountain Stage changes every link to it in your scripts, keeping the way each was written: a link by name gets the new name, and a link by path the new path. A script that's open changes as one step to undo. Frozen drafts are left as they were. As for notes, Obsidian's **Automatically update internal links** setting (under **Files and links**) decides: on, links are updated straight away; off, Fountain Stage first asks whether to update the links in your scripts. Obsidian may ask too, about links in your notes.
+- **Reading view** shows a link's display text, or the note's name.
+- **In the PDF**, links are notes: they print only with **Include notes** on, as their display text or the note's name.
+
+### Appending linked notes to the PDF
+
+With **Append linked notes** on in the export dialog, each note the script links to is added after the script, under its title, on a page of its own. Each note comes once, in the order the script first links to it. Notes are laid out in the script's font:
+
+- headings, paragraphs (each line a line, as in Obsidian), bold and italic, and web links;
+- lists, nested, numbered and checklists;
+- block quotes and callouts, rules, tables and code blocks;
+- PNG and JPEG pictures (`![[plan.png]]`, `![[plan.png|300]]` for 300 pixels wide, or `![alt](plan.png)`), no wider than the page; other pictures print as their name;
+- notes embedded on a line of their own (`![[Other note]]`, or `![[Other note#Heading]]` for one section), written in where they're embedded. Notes embedded in an embedded note aren't followed, and print as their name.
+
+Frontmatter and `%%comments%%` are left out, and links to other notes print as their text. A style's `appendix` settings change the titles and whether each note starts a page.
+
+A frozen draft appends the notes as they were when it was frozen, from the `- Linked notes.md` note beside it, so its PDF can be made again as it was. Each note is under a heading of its own there. A draft frozen before Fountain Stage kept these appends the notes as they are now.
+
 ## Exporting to PDF
 
 Run **Export to PDF** from the command palette, a script's file menu, or the button at the top of an open script. A dialog asks for:
 
 - **Style:** the house style. Page size and margins are part of the style: Modern Play Format and Samuel French are US Letter, APT is A4. For another size, make a style of your own (below) with `"page": { "size": "A4" }`.
 - **Watermark:** text printed faintly and diagonally across every page, such as DRAFT or a theatre's name. Leave it blank for none.
-- **Include notes:** prints `[[notes]]` in grey italics in square brackets, where they're written. A note on a line of its own prints as a line of its own.
+- **Include notes:** prints `[[notes]]` in grey italics in square brackets, where they're written. A note on a line of its own prints as a line of its own. A link to a note prints as its display text (or the note's name), without brackets.
 - **Include synopses:** prints `= synopsis` lines in grey italics, where they're written.
+- **Append linked notes:** adds the notes the script links to after it. Shown only for a script with links. See [Linked notes](#linked-notes).
 
 The dialog remembers your choices for next time. The PDF is saved next to the script with the same name, replacing any earlier export, and opens in a new tab.
 
@@ -327,6 +356,7 @@ Every setting:
 | `synopses` | `italic`, `color` (for synopses, when an export includes them) |
 | `watermark` | `face`, `color`, `opacity` (0 to 1), `angle` (degrees, -90 to 90), `maxSize` (longer text is set smaller to fit the page) |
 | `revision` | For revised pages: `format` of the header (`{n}` is the revision number, `{date}` its date; default `"Rev. {n} · {date}"`), `face`, `size`, `position` (`"top"`, `"bottom"`), `alignment`, `mark` (printed in the right margin beside each changed line, and after a cut; default `"*"`), `markGap` (how far into the margin the mark goes) |
+| `appendix` | For linked notes appended after the script: `titleSize` (each note's title; its own headings run from the body size plus 4 down to the body size; default 16), `titleBold`, `titleAlignment`, `pagePerNote` (start each note on a new page; default `true`) |
 
 Alignments are `"left"`, `"center"` or `"right"`. The built-in styles in [src/pdf/styles](src/pdf/styles) show every setting in use.
 
@@ -414,6 +444,9 @@ Layout:
 | `src/pdf/vaultFonts.ts` | Reading font files and choosing a family's faces |
 | `src/pdf/fonts.ts`, `render.ts` | Font metrics, and drawing the pages with pdf-lib |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
+| `src/fountain/links.ts`, `src/editor/links.ts` | Links to notes: finding them, rename edits, and opening and previewing them in the editor |
+| `src/linkedNotes.ts` | Linked notes in the vault: following renames, the frozen draft's copy, and reading them for the PDF |
+| `src/pdf/markdown.ts`, `src/pdf/appendix.ts`, `src/pdf/images.ts` | The appendix of linked notes: reading Markdown, laying it out, and reading pictures' sizes |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |
 | `tests/` | vitest tests |
 

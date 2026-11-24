@@ -7,6 +7,13 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- Links to notes in the vault, as the Fountain plugin writes them: `[[>Note]]` or `[[>Note|display text]]`. Note names complete after `[[>`; a click in reading view (or Ctrl/Cmd-click while editing) opens the note; hovering shows its preview; and a link to a missing note looks broken. Reading view shows a link's display text.
+- Links follow a renamed note, keeping the way each was written, asking first unless Obsidian's **Automatically update internal links** setting is on. Frozen drafts are left as they were.
+- **Append linked notes** in the export dialog adds the notes a script links to after it, each under its title on a page of its own, with their headings, lists, quotes, tables, pictures and embedded notes. A style's new `appendix` settings set the titles and whether each note starts a page.
+- Freezing a draft keeps a copy of the notes it links to beside it (`… - Linked notes.md`), which its PDF appends.
+- With **Include notes** on, a link prints as its display text.
+
 ## [0.8.0] - 2026-11-24
 
 ### Added

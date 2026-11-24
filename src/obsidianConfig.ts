@@ -1,7 +1,7 @@
 import type { App, EventRef, Hotkey } from "obsidian";
 
 /**
- * Obsidian's own editor settings (Settings → Editor), which live in the
+ * Obsidian's own editor settings (Settings → Editor) and link updating, which live in the
  * vault config, and the hotkeys of Obsidian's own commands. `getConfig`,
  * the `config-changed` event and the hotkey manager aren't in Obsidian's
  * public typings, so all access goes through this file. Obsidian's
@@ -50,4 +50,9 @@ export function onConfigChanged(app: App, callback: (key: string) => void): Even
 export function hotkeysOf(app: App, commandId: string): Hotkey[] {
   const manager = (app as unknown as { hotkeyManager?: HotkeyManager }).hotkeyManager;
   return manager?.getHotkeys?.(commandId) ?? manager?.getDefaultHotkeys?.(commandId) ?? [];
+}
+
+/** Obsidian's "Automatically update internal links" setting (Settings → Files and links). Off, Obsidian asks first. */
+export function alwaysUpdateLinks(app: App): boolean {
+  return vaultConfig(app).getConfig("alwaysUpdateLinks") === true;
 }

@@ -1,7 +1,7 @@
 /** Builds the PDF: embeds the fonts, lays out the script with them, and draws the pages with pdf-lib. */
 
 import fontkit from "@pdf-lib/fontkit";
-import { degrees, PDFDocument, type PDFFont, PDFString, rgb } from "pdf-lib";
+import { degrees, PDFDocument, type PDFFont, type PDFImage, PDFString, rgb } from "pdf-lib";
 import type { ParsedScript } from "../fountain/parser";
 import { type FontSet, standardFontSet } from "./fonts";
 import { type LayoutOptions, layoutScript } from "./layout";
@@ -97,8 +97,24 @@ export async function drawPdf(choice: FontChoice, layoutWith: (fonts: FontSet) =
   if (layout.author) pdf.setAuthor(layout.author);
   pdf.setCreator("Fountain Stage");
 
+  const images = new Map<string, PDFImage>();
+  const imageFor = async (src: string): Promise<PDFImage | undefined> => {
+    const data = layout.images?.[src];
+    if (!data) return undefined;
+    let image = images.get(src);
+    if (!image) {
+      image = data.format === "png" ? await pdf.embedPng(data.bytes) : await pdf.embedJpg(data.bytes);
+      images.set(src, image);
+    }
+    return image;
+  };
+
   for (const layoutPage of layout.pages) {
     const page = pdf.addPage([layout.width, layout.height]);
+    for (const item of layoutPage.images ?? []) {
+      const image = await imageFor(item.src);
+      if (image) page.drawImage(image, { x: item.x, y: item.y, width: item.width, height: item.height });
+    }
     for (const t of layoutPage.texts) {
       page.drawText(t.text, {
         x: t.x,
