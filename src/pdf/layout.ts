@@ -7,11 +7,13 @@
 
 import { actMatcher, type IsAct } from "../fountain/acts";
 import { isAlternateNote } from "../fountain/alternates";
+import { linkNoteLabel } from "../fountain/links";
 import { isTargetNote } from "../fountain/targets";
 import type { LineNote, ParsedScript, ScriptElement } from "../fountain/parser";
 import { parseInline } from "../fountain/inline";
+import { type Appendix, appendixStory } from "./appendix";
 import { PAGE_BREAK, Spacer, Speech, TableRow, type Block, type SpeechContext, type StoryItem } from "./blocks";
-import { flow, type Frame } from "./flow";
+import { flow, FRAME_PADDING, type Frame } from "./flow";
 import type { FontSet } from "./fonts";
 import type { LayoutDocument, LayoutPage, TextItem } from "./model";
 import { BLACK, Paragraph, paraStyle, type ParaStyle, type Span } from "./paragraph";
@@ -155,6 +157,8 @@ export interface LayoutOptions {
   notes?: boolean;
   /** Print synopses (`= …`). */
   synopses?: boolean;
+  /** Linked notes to add after the script. */
+  appendix?: Appendix;
 }
 
 const join = (values: string[] | undefined) => (values ?? []).join(" ");
@@ -220,6 +224,9 @@ class StoryBuilder {
     const { italic, color } = this.style.notes;
     return el.notes.map(({ at, text: note }) => {
       const p = Math.min(at + shift, text.length);
+      // A link to a note prints as its display text, as part of the sentence it's in.
+      const label = linkNoteLabel(note);
+      if (label !== undefined) return { at: p, spans: [{ text: label, italic: italic || undefined, color }] };
       const before = p > 0 && !/\s/.test(text[p - 1]) ? " " : "";
       const after = p < text.length && !/\s/.test(text[p]) ? " " : "";
       return { at: p, spans: [{ text: `${before}[${note}]${after}`, italic: italic || undefined, color }] };
@@ -409,7 +416,7 @@ class StoryBuilder {
     // Notes on lines of their own and synopses, if included, go in where they were written. Alternate lines never print.
     const notes = this.options.notes ? script.lineNotes.filter((n) => !isAlternateNote(n.text) && !isTargetNote(n.text)) : [];
     const extras: (LineNote & { name: StyleName })[] = [
-      ...notes.map((n) => ({ line: n.line, text: `[${n.text}]`, name: "note" as const })),
+      ...notes.map((n) => ({ line: n.line, text: linkNoteLabel(n.text) ?? `[${n.text}]`, name: "note" as const })),
       ...(this.options.synopses ? script.synopses.map((n) => ({ ...n, name: "synopsis" as const })) : []),
     ].sort((a, b) => a.line - b.line);
     let nextExtra = 0;
@@ -570,7 +577,15 @@ export function furnishPage(page: LayoutPage, style: PlayStyle, fonts: FontSet, 
 
 export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: FontSet, options: LayoutOptions = {}): LayoutDocument {
   const { width, height, margins } = style.page;
-  const result = flow(storyFor(script, style, fonts, options), textFrame(style));
+  const frame = textFrame(style);
+  const story = storyFor(script, style, fonts, options);
+  const appendix = options.appendix;
+  if (appendix && appendix.notes.length > 0) {
+    if (story.length > 0 && story[story.length - 1] !== PAGE_BREAK) story.push(PAGE_BREAK);
+    const inner = (n: number) => n - 2 * FRAME_PADDING;
+    story.push(...appendixStory(appendix, style, fonts, inner(frame.width), inner(frame.height) * 0.9));
+  }
+  const result = flow(story, frame);
 
   const values = titleValues(script);
   const hasTitlePage = Object.keys(values).length > 0;
@@ -630,6 +645,7 @@ export function layoutScript(script: ParsedScript, style: PlayStyle, fonts: Font
     pages: result.pages,
     placements: result.placements,
     pageNumbers,
+    ...(appendix && Object.keys(appendix.images).length > 0 ? { images: appendix.images } : {}),
   };
 }
 

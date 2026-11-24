@@ -1,12 +1,14 @@
 /**
  * Freezing a draft: a copy of the script, as it is, goes to the drafts
- * folder with its draft number and date on its title page, and the script
- * itself moves on to the next draft.
+ * folder with its draft number and date on its title page, with a copy of
+ * the notes it links to beside it, and the script itself moves on to the
+ * next draft.
  */
 
 import { type App, Modal, Notice, Setting, type TFile } from "obsidian";
 import type { FountainView } from "./editor/FountainView";
 import { freeScriptPath } from "./files";
+import { keepLinkedNotes } from "./linkedNotes";
 import { applyEdits, draftNumber, formatDraftDate, frozenDraftName, plainTitle, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
 
 /** What the freeze dialog asks. */
@@ -107,6 +109,13 @@ export async function freeze(app: App, view: FountainView, folder: string, choic
     console.error("[fountain-stage] couldn't freeze the draft", error);
     new Notice(`Couldn't freeze the draft: ${error instanceof Error ? error.message : String(error)}`);
     return;
+  }
+  // The notes it links to, as they are now, for its PDF.
+  try {
+    await keepLinkedNotes(app, copy, source, file.path);
+  } catch (error) {
+    console.error("[fountain-stage] couldn't keep the linked notes", error);
+    new Notice(`Froze the draft, but couldn't keep a copy of its linked notes: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   // The script moves on to the next draft, as one step to undo.

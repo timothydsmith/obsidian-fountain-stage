@@ -184,14 +184,25 @@ export interface PlayStyle {
     /** How far into the right margin the mark goes, from the edge of the text. */
     markGap: number;
   };
+
+  /** Linked notes appended after the script, when an export includes them. */
+  appendix: {
+    /** Size of each note's title. Its own headings run from the body size plus 4 down to the body size. */
+    titleSize: number;
+    titleBold: boolean;
+    titleAlignment: Alignment;
+    /** Start each note on a new page. Otherwise notes follow one another. */
+    pagePerNote: boolean;
+  };
 }
 
 /** Notes, synopses, watermark and revised pages as the built-in styles have them. */
-export const EXTRAS_DEFAULTS: Pick<PlayStyle, "notes" | "synopses" | "watermark" | "revision"> = {
+export const EXTRAS_DEFAULTS: Pick<PlayStyle, "notes" | "synopses" | "watermark" | "revision" | "appendix"> = {
   notes: { italic: true, color: [0.45, 0.45, 0.45] },
   synopses: { italic: true, color: [0.45, 0.45, 0.45] },
   watermark: { face: "bold", color: [0.5, 0.5, 0.5], opacity: 0.2, angle: 45, maxSize: 120 },
   revision: { format: "Rev. {n} · {date}", face: "regular", size: 10, position: "top", alignment: "left", mark: "*", markGap: 12 },
+  appendix: { titleSize: 16, titleBold: true, titleAlignment: "left", pagePerNote: true },
 };
 
 export const MM = 72 / 25.4;

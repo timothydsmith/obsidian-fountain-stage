@@ -1,11 +1,13 @@
 /**
  * Exporting a script to PDF from Obsidian: the export dialog (style,
- * watermark, notes and synopses), laying out, and saving the PDF beside the script.
+ * watermark, notes, synopses and linked notes), laying out, and saving the
+ * PDF beside the script.
  */
 
 import { type App, FileView, Modal, normalizePath, Notice, Setting, TFile } from "obsidian";
 import { type ParsedScript, parseFountain } from "./fountain/parser";
 import type { ExportChoices, Library } from "./library";
+import { appendableNotes, buildAppendix, notesToAppend } from "./linkedNotes";
 import type { LayoutOptions } from "./pdf/layout";
 import { buildPdf } from "./pdf/render";
 import type { PlayStyle } from "./pdf/style";
@@ -23,6 +25,8 @@ class ExportModal extends Modal {
     remembered: ExportChoices,
     /** Explains where the style comes from, or why the script's own isn't used. */
     private readonly styleNote: string | undefined,
+    /** The linked notes the PDF could append: "kept" for a frozen draft's own copy, or how many the script links to. */
+    private readonly appendable: number | "kept",
     private readonly onExport: (style: PlayStyle, choices: ExportChoices) => void,
   ) {
     super(app);
@@ -71,6 +75,19 @@ class ExportModal extends Modal {
       .setName("Include synopses")
       .setDesc("Print = synopsis lines in grey, where they're written.")
       .addToggle((toggle) => toggle.setValue(this.choices.synopses).onChange((value) => (this.choices.synopses = value)));
+
+    if (this.appendable !== 0) {
+      const which =
+        this.appendable === "kept"
+          ? "the notes this draft links to (as they were when it was frozen)"
+          : this.appendable === 1
+            ? "the note the script links to"
+            : `the ${this.appendable} notes the script links to`;
+      new Setting(contentEl)
+        .setName("Append linked notes")
+        .setDesc(`Add ${which} after the script, each under its title.`)
+        .addToggle((toggle) => toggle.setValue(this.choices.appendix).onChange((value) => (this.choices.appendix = value)));
+    }
 
     new Setting(contentEl)
       .addButton((button) => button.setButtonText("Cancel").onClick(() => this.close()))
@@ -127,9 +144,17 @@ export async function exportScript(
       ? `This script's Style key names "${key}", but there's no style called that.`
       : undefined;
 
-  new ExportModal(app, file.basename, styles, initial, remembered, note, (style, choices) => {
+  const appendable = appendableNotes(app, file, source);
+  new ExportModal(app, file.basename, styles, initial, remembered, note, appendable, (style, choices) => {
     remember(choices);
-    void writePdf(app, library, file, script, style, { watermark: choices.watermark, notes: choices.notes, synopses: choices.synopses });
+    const options = { watermark: choices.watermark, notes: choices.notes, synopses: choices.synopses };
+    void (async () => {
+      const appendix = choices.appendix && appendable !== 0 ? await buildAppendix(app, await notesToAppend(app, file, source)) : undefined;
+      await writePdf(app, library, file, script, style, { ...options, appendix });
+    })().catch((error: unknown) => {
+      console.error("[fountain-stage] couldn't read the linked notes", error);
+      new Notice(`Couldn't read the linked notes: ${error instanceof Error ? error.message : String(error)}`);
+    });
   }).open();
 }
 

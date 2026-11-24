@@ -1,11 +1,13 @@
 /**
  * What reading view hides: the markup (forcing marks, emphasis marks, link
  * syntax), and the parts of a script that don't print (sections, notes,
- * boneyard and synopses). Lines left with nothing to show are
+ * boneyard and synopses). Links to notes show their display text, or the
+ * name of the note. Lines left with nothing to show are
  * removed altogether, without leaving a doubled blank line behind.
  */
 
 import { parseInline } from "./inline";
+import { findLinks } from "./links";
 import { parseFountain } from "./parser";
 
 export interface HiddenRange {
@@ -34,6 +36,8 @@ export function readingHiddenRanges(source: string, { showSections = false } = {
       blanked = blanked.slice(0, span.from) + source.slice(span.from, span.to).replace(/[^\n]/g, "\0") + blanked.slice(span.to);
     }
   }
+  // A link shows its label, which the editor makes clickable.
+  for (const link of findLinks(source, script)) hidden.fill(0, link.labelFrom, link.labelTo);
 
   // Line starts, and which lines have inline emphasis or are hidden whole.
   const starts = [0];
