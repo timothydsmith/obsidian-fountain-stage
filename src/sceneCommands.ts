@@ -8,6 +8,7 @@ import type { FountainView } from "./editor/FountainView";
 import {
   canSplitAt,
   mergeWithPrevious,
+  moveBeatTo,
   moveScene,
   moveSceneTo,
   nextHeading,
@@ -41,16 +42,23 @@ export function moveSceneBy(view: FountainView, direction: -1 | 1, line = view.c
   if (view.refuseIfFrozen()) return;
   const source = view.getViewData();
   const script = view.script();
-  const edit = moveScene(source, script, view.isAct(), line, direction);
+  const edit = moveScene(source, script, view.isAct(), line, direction, view.actionDepth());
   if (edit) view.applyEdit([edit], edit.cursor);
-  else if (!sceneHeadingAt(source, script, view.isAct(), line)) new Notice("Put the cursor in a scene to move it.");
+  else if (!sceneHeadingAt(source, script, view.isAct(), line, view.actionDepth())) new Notice("Put the cursor in a scene to move it.");
   else new Notice(direction > 0 ? "This scene is already the last." : "This scene is already the first.");
 }
 
 /** Moves the scene whose heading is on `sceneLine` to just before or after the heading on `targetLine`, as dragging in the outline does. */
 export function moveSceneToLine(view: FountainView, sceneLine: number, targetLine: number, after: boolean): void {
   if (view.refuseIfFrozen()) return;
-  const edit = moveSceneTo(view.getViewData(), view.script(), view.isAct(), sceneLine, targetLine, after);
+  const edit = moveSceneTo(view.getViewData(), view.script(), view.isAct(), sceneLine, targetLine, after, view.actionDepth());
+  if (edit) view.applyEdit([edit], edit.cursor);
+}
+
+/** Moves the story beat whose heading is on `beatLine`, with all it holds, to just before or after the heading on `targetLine`. */
+export function moveBeatToLine(view: FountainView, beatLine: number, targetLine: number, after: boolean): void {
+  if (view.refuseIfFrozen()) return;
+  const edit = moveBeatTo(view.getViewData(), view.script(), view.isAct(), beatLine, targetLine, after, view.actionDepth());
   if (edit) view.applyEdit([edit], edit.cursor);
 }
 
@@ -120,7 +128,7 @@ export function splitSceneAtCursor(app: App, view: FountainView): void {
 
 export function mergeWithPreviousScene(view: FountainView): void {
   if (view.refuseIfFrozen()) return;
-  const edits = mergeWithPrevious(view.getViewData(), view.script(), view.isAct(), view.currentLine());
+  const edits = mergeWithPrevious(view.getViewData(), view.script(), view.isAct(), view.currentLine(), view.actionDepth());
   if (!edits) {
     new Notice("Merge works on a scene that follows another scene, not an act heading or section.");
     return;

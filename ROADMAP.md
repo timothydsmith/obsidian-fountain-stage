@@ -308,7 +308,7 @@ Built for 0.9.0:
 - **The appendix** (`src/pdf/markdown.ts`, `appendix.ts`) reads Markdown into blocks and lays them out with the script's paragraphs, so it uses the style's font and paginates like the script. Pictures are a new optional `images` list on layout pages, drawn by render.ts; their sizes come from the PNG or JPEG header (`images.ts`). The script's own pages are unchanged by an appendix, and existing layout snapshots are untouched. Style fields: `appendix.titleSize`, `titleBold`, `titleAlignment`, `pagePerNote`. List markers needed a `bulletIndent` on paragraph styles (default 0).
 - **On freeze**, the linked notes are written to `<draft> - Linked notes.md` with embeds filled in, frontmatter dropped and headings moved down a level under each note's `#` title; export splits it back at the `#` headings. A frozen draft without one appends the live notes.
 
-### Story outline and beats
+### Story outline and beats (built for 0.10.0)
 
 An outline tool over the script itself, not a separate outline note. Structure lives in the Fountain file, so it can't drift from the script.
 
@@ -319,6 +319,7 @@ An outline tool over the script itself, not a separate outline note. Structure l
 - **Notes on beats and scenes.** Short notes as `=` synopses. Longer ones in a linked note (`[[>Beat - Catalyst]]`), with a command that creates the note and links it.
 - **Your own beats by default.** An **Import framework** command inserts a framework's beats as empty sections, each with a short description as its synopsis.
 - **Framework templates** are files, like styles: beats with a description and a target position as a share of runtime. Built in: Freytag's pyramid, three-act structure, Story Spine, Story Circle, Kishōtenketsu and Save the Cat, described in our own words. Your own templates go in a folder.
+- **Decided for 0.10.0:** both stages of the beat map ship together; framework templates are Markdown notes, not JSON; the by-act view shows acts and scenes only; beat notes go in a folder set in settings (`Notes` by default). Action beats are a single depth setting: sections that deep or deeper are action beats, and shallower ones are story beats. A `Framework:` title-page key, never printed, names the framework the beat map marks.
 - **Beat map.** Built in two stages. First, the outline's by-beat view: drag to reorder and remap, with runtime and synopses inline. Then a board: a timeline left to right, with scenes sized by runtime under bands for each beat and markers for framework targets. A toggle switches to equal widths, so it works as a card board for shuffling, and empty planned scenes get a minimum width. Within a scene, action beats show the same way. No Obsidian Canvas, since a separate file would drift from the script.
 
 ### Open questions for drafting aids

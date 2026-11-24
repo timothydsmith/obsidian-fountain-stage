@@ -97,6 +97,8 @@ export interface FountainHost {
   /** Whether typewriter mode is on. */
   typewriterMode(): boolean;
   toggleTypewriter(): void;
+  /** Sections this deep or deeper are action beats, which belong to the scene they're in. */
+  actionDepth(): number;
   /** Links to vault notes in a script. */
   links(view: FountainView): LinkHost;
   /** The names to complete a link's target with, as links from the script would write them. */
@@ -569,6 +571,11 @@ export class FountainView extends TextFileView {
   }
 
   private actTest: { pattern: string; isAct: IsAct } | null = null;
+
+  /** Sections this deep or deeper are action beats, part of the scene they're in; shallower ones are story beats. */
+  actionDepth(): number {
+    return this.host.actionDepth();
+  }
 
   /** Which scene headings are acts, by the script's style, so the outline and status bar agree with the PDF. */
   isAct(): IsAct {

@@ -29,7 +29,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - **Merge characters** folds one character into another, as a rename to the other's name, and first lists the scenes they're both in, which need rewriting by hand. See [Cast](#cast).
 - **Write cast list and scene breakdown** writes the Characters list and Scene Breakdown from the script, keeping what's already written in them. See [Cast](#cast).
 - The status bar shows what the line you're on is: Character, Dialogue, Stage direction, Scene heading and so on, as Fountain Stage reads it. A cue with no dialogue under it yet reads as a stage direction. Beside it is who's on stage at the cursor, going by the entrances and exits. See [Cast](#cast).
-- A script outline in the sidebar, since Obsidian's own outline only reads notes. It lists the script's acts, sections and scenes, nested (scenes inside the section or act they follow, sections inside their act), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there, or drag a scene to move it. On a phone, or anywhere, right-click a scene or press and hold it for **Move scene up** and **Move scene down**. The part you're in is highlighted, and the outline updates as you type. It opens in the right sidebar the first time you open a script in the vault (on a phone, it's added to the right sidebar without opening it). If you close it, bring it back with **Show script outline**.
+- A script outline in the sidebar, since Obsidian's own outline only reads notes. It shows the script **by act** (acts, then scenes, then action beats) or **by beat** (story beats, then scenes, then action beats), with any synopsis (`= …`) under its heading and how long each runs. Click one to go there, or drag a scene or beat to move it. On a phone, or anywhere, right-click a scene or press and hold it for **Move scene up** and **Move scene down**. The part you're in is highlighted, and the outline updates as you type. It opens in the right sidebar the first time you open a script in the vault (on a phone, it's added to the right sidebar without opening it). If you close it, bring it back with **Show script outline**. See [Story outline](#story-outline) for planning a play in it.
 - Page breaks: a rule across the script where each page of its PDF starts, labelled with the page's number, in Live Preview and reading view. Pages break as they would in the style the script's `Style:` key names (otherwise the **Style for page breaks** setting), with the same fonts. They catch up a moment after you stop typing. A page that starts partway through a long paragraph gets its rule after the paragraph, saying so. The status bar shows the page you're on and the page count.
 - A runtime estimate, in the status bar for the whole script and in the outline for each act and scene. It goes by one of two methods, set in Fountain Stage's settings:
   - **Words spoken** (the default): dialogue at 150 words a minute, stage directions at half that, and the pauses the script asks for. A pause word (beat, moment, pause, silence) counts in any parenthetical, and in a stage direction where it stands on its own, as in "Beat.", "A long silence." or "After a pause, she sits", but not "A moment later". Each pause word has its own time, a short time (after short, brief, slight, tiny, little or quick) and a long time (after long, longer, lengthy, extended, endless or interminable). A number multiplies it, so "two beats" is twice a beat, and plurals count too. Change the times, or add words and phrases of your own (such as "lights fade"), under **Pause words** in Fountain Stage's settings.
@@ -66,6 +66,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Checks on the draft: names written two ways, stage directions an actor can't play, overlap slashes with no one to come in, repeated phrases, scenes thick with pauses, entrances and exits that don't add up, each character's voice, filler words and a map of speech lengths, in a Checks tab and, if you like, underlined in the script. See [Checks](#checks).
 - Table read: the script read aloud, a voice for each character, leaving the parts you read to you. See [Table read](#table-read).
 - Typewriter mode, which keeps the line you're writing in the middle of the screen and fades the rest, and timed writing sprints with a word count. See [Focus](#focus).
+- A story outline: story beats and action beats as sections, planned in the outline, from a framework such as Save the Cat if you like, and a beat map of the play as a timeline. See [Story outline](#story-outline).
 - Links to notes in your vault, `[[>Note]]`, which open the note, show its preview, follow it when it's renamed, and can add it to the end of the PDF. See [Linked notes](#linked-notes).
 - Rehearsal pages: lock a draft's page numbers for rehearsal, then issue only the pages that change, numbered to fit around the others (23A, 23B) and marked in the margin. See [Rehearsal pages](#rehearsal-pages).
 - PDF export in stage-play house styles, ported from fountain2pdf:
@@ -265,6 +266,43 @@ Each revised page has a header, "Rev. 1 · 22 November 2026", and an asterisk in
 
 The title page and anything before the first page of the play aren't revised. Locked pages are worked out again from the locked draft each time, so changing the style or fonts it uses moves its page breaks: leave them alone while it's locked. Changes are matched scene by scene, so cutting or merging a scene heading can mark more pages than it might.
 
+## Story outline
+
+Plan a play in its outline, and see its shape on a beat map. The structure lives in the script itself, as sections and scene headings, so the plan can't drift from what's written. Sections never print.
+
+- **Story beats** are `#` sections: the play's structure, such as Setup or Catalyst. Each holds the scenes after it, up to the next beat. Story beats needn't line up with acts.
+- **Action beats** are `##` sections inside a scene: units of action, which can start partway through it. They move with their scene.
+- Which depth is which is the **Action beats** setting: `##` and deeper by default. Set it to `###` and deeper to use `##` sections as beats inside beats.
+
+**By act and by beat.** The buttons at the top of the outline switch between the two views of the script. By act shows acts, then scenes, then action beats. By beat shows story beats, then scenes, then action beats, with each act as a divider where it starts.
+
+**Planning.** The **+** button at the top of the outline adds a beat (by beat) or a scene (by act) at the end of the script. Right-click a row, or press and hold it on a phone, for more:
+
+- **Add scene to this beat** (or act), **Add beat after**, **Add scene after** and **Add action beat** put a heading, with a synopsis if you give one, into the script in that place. A scene heading that doesn't start like INT. or EXT. is forced with a full stop.
+- **Add synopsis** or **Edit synopsis** writes the `= …` line under the heading.
+- **Create linked note** makes a note for a beat or scene in the beat notes folder (`Notes` unless you change it in settings), named like `Beat - Catalyst`, and links it under the heading as `[[>Beat - Catalyst]]`. A row with a note has an icon that opens it. **Open linked note** does the same.
+
+Drag a beat to move it with everything it holds, or a scene to move it with its action beats; drop a scene on a beat to move it into that beat. **Add beat**, **Add scene**, **Edit synopsis** and **Create or open linked note** in the command palette work on the beat or scene at the cursor.
+
+**Frameworks.** **Import framework**, in the command palette or at the top of the outline, inserts a framework's beats at the cursor (after the paragraph it's in) as empty beats, each with a short description as its synopsis, and names the framework on the title page with a `Framework:` key, which never prints. Built in: three-act structure, Freytag's pyramid, Story Spine, Story Circle, Kishōtenketsu and Save the Cat. Add your own as notes in the frameworks folder (`Fountain Stage/Frameworks` unless you change it in settings):
+
+```markdown
+# My structure
+A short description of the framework.
+
+## Opening
+Position: 0%
+What the opening does.
+
+## Turn
+Position: 50%
+What happens at the turn.
+```
+
+The `#` heading names the framework (otherwise the note does). Each `##` heading is a beat; `Position:` says where it usually falls, as a share of the runtime, and the rest is its description.
+
+**The beat map.** **Show beat map**, in the command palette or at the top of the outline, opens the script as a timeline, left to right, in a tab below it. Scenes are cards as wide as they run, with their synopsis and runtime and their action beats along the bottom. Story beats are bands above the scenes they hold, and acts are marked where they start. A beat with no scenes yet, or a scene with nothing written in it yet, gets a card of its own. Zoom in and out with the buttons, or tick **Equal widths** to make every scene the same width and use the map as a card board. **Mark beats of** marks where a framework's beats usually fall (the script's `Framework:` to start with); hover over a beat band to see where it starts against the framework. Drag cards and bands to move scenes and beats, and click one to go there. Drag and drop don't work on phones and tablets.
+
 ## Linked notes
 
 Link a script to notes in your vault, such as research, a props list or a character study, with `[[>Note]]`, or `[[>Note|display text]]` to show other words. It's the syntax of the [Fountain plugin](https://github.com/bgrundmann/obsidian-fountain), so scripts move between the two unchanged. The note is found as Obsidian finds a link's: by name or by path (`[[>Research/Ibsen]]`), with or without `.md`. Links can go anywhere: in a stage direction, on a line of their own, or in dialogue.
@@ -303,7 +341,7 @@ Run **Export to PDF** from the command palette, a script's file menu, or the but
 
 The dialog remembers your choices for next time. The PDF is saved next to the script with the same name, replacing any earlier export, and opens in a new tab.
 
-To give a script a style, add a `Style:` line to its title page. It's never printed.
+To give a script a style, add a `Style:` line to its title page. It's never printed. Nor is a `Framework:` line, which names the framework the beat map marks.
 
 ```
 Title: The Last Rehearsal

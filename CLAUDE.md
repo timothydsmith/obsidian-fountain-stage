@@ -19,6 +19,7 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - Out of scope (don't build): rehearsal mode, snippets, filtering, dual dialogue in the editor (PDF export keeps it), boneyard features.
 - **Links to vault notes** use the Fountain plugin's syntax, `[[>target]]` or `[[>target|display text]]`, so scripts move between the two plugins unchanged. Being notes to the parser, they can go anywhere, dialogue included, and print only with notes (as their display text). `src/fountain/links.ts` finds them.
 - **Sections never print**, as the Fountain spec says. `#` sections are structure only (outline, runtime, report); printed act and scene titles come from scene headings, centred text and `===`.
+- **Story beats and action beats** are sections: shallower than the **Action beats** setting (`##` by default) they're story beats, at it or deeper they're action beats, part of the scene they're in. `src/fountain/storyOutline.ts` builds the by-act and by-beat outlines; `buildOutline` in `outline.ts` stays as it was for the report, passes and checks.
 - `ROADMAP.md` holds the release plan and the decisions behind each feature.
 
 ## Parser

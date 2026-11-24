@@ -5,6 +5,7 @@ import type { FontChoice } from "./pdf/render";
 import { type Face, type PlayStyle, STANDARD_FAMILY_NAMES } from "./pdf/style";
 import { BUILT_IN_STYLES } from "./pdf/styles";
 import type { RuntimeMethod } from "./fountain/runtime";
+import { DEFAULT_ACTION_DEPTH, type OutlineBy } from "./fountain/storyOutline";
 import { defaultPauseWords, type PauseWord, readPauseWords } from "./fountain/pauses";
 import { type LoadedStyles, loadStyles } from "./pdf/userStyles";
 import { DEFAULT_TABLE_READ, type TableReadChoices } from "./tableRead";
@@ -49,6 +50,16 @@ export interface FountainStageSettings {
   castSize: number;
   /** What the export dialog was last given. */
   export: ExportChoices;
+  /** Sections this deep or deeper are action beats, inside scenes; shallower ones are story beats. */
+  actionDepth: number;
+  /** Folder that linked notes on beats and scenes are created in. */
+  beatNotesFolder: string;
+  /** Folder of framework templates of your own, as Markdown notes. */
+  frameworksFolder: string;
+  /** Whether the outline shows acts or story beats. */
+  outlineBy: OutlineBy;
+  /** The beat map shows every scene the same width, as cards, rather than by runtime. */
+  beatMapEqual: boolean;
 }
 
 /** What the export dialog asks, remembered for next time. */
@@ -84,6 +95,11 @@ export const DEFAULT_SETTINGS: FountainStageSettings = {
   tableRead: DEFAULT_TABLE_READ,
   castSize: 0,
   export: { style: "modern", watermark: "", notes: false, synopses: false, appendix: false },
+  actionDepth: DEFAULT_ACTION_DEPTH,
+  beatNotesFolder: "Notes",
+  frameworksFolder: "Fountain Stage/Frameworks",
+  outlineBy: "act",
+  beatMapEqual: false,
 };
 
 /**
@@ -119,6 +135,11 @@ export function readSettings(saved: unknown): FountainStageSettings {
     tableRead: readTableRead(s.tableRead),
     castSize: typeof s.castSize === "number" && Number.isInteger(s.castSize) && s.castSize > 0 ? s.castSize : 0,
     export: readExportChoices(s.export),
+    actionDepth: typeof s.actionDepth === "number" && [2, 3, 4].includes(s.actionDepth) ? s.actionDepth : d.actionDepth,
+    beatNotesFolder: string("beatNotesFolder", d.beatNotesFolder),
+    frameworksFolder: string("frameworksFolder", d.frameworksFolder),
+    outlineBy: s.outlineBy === "beat" ? "beat" : "act",
+    beatMapEqual: s.beatMapEqual === true,
   };
 }
 

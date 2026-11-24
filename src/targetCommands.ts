@@ -6,7 +6,7 @@ import { itemAt, buildOutline, type OutlineItem } from "./fountain/outline";
 import { formatTarget, headingTarget, headingTargetEdits, parseDuration, playTarget, playTargetEdits } from "./fountain/targets";
 import { plainTitle } from "./fountain/titlePage";
 
-const KIND_NAMES: Record<OutlineItem["kind"], string> = { act: "act", scene: "scene", section: "section" };
+const KIND_NAMES: Record<OutlineItem["kind"], string> = { act: "act", scene: "scene", section: "beat", action: "action beat" };
 
 /** Asks for a target, starting from the current one. Blank takes it off. */
 class TargetModal extends Modal {
