@@ -7,6 +7,7 @@
 
 import type { IsAct } from "./acts";
 import { insertionText } from "./insert";
+import { eolOf, lineStarts } from "./lines";
 import type { ParsedScript } from "./parser";
 import { headingLine } from "./scenes";
 import { headingNotes } from "./storyOutline";
@@ -23,12 +24,6 @@ interface Heading {
   line: number;
   kind: PlanKind;
   depth: number;
-}
-
-function lineStarts(source: string): number[] {
-  const starts = [0];
-  for (let i = source.indexOf("\n"); i >= 0; i = source.indexOf("\n", i + 1)) starts.push(i + 1);
-  return starts;
 }
 
 /** The script's headings in order: acts, story beats, scenes and action beats. */
@@ -80,7 +75,7 @@ export function blockEnd(source: string, script: ParsedScript, isAct: IsAct, lin
  * them. The cursor goes to the end of the first line put in.
  */
 export function insertParagraph(source: string, line: number, text: string[]): PlanEdit {
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   const starts = lineStarts(source);
   const body = text.join(eol);
   if (line >= starts.length) {
@@ -126,7 +121,7 @@ export function addScene(source: string, line: number, heading: string, synopsis
  * heading.
  */
 export function synopsisEdits(source: string, script: ParsedScript, line: number, text: string): TextEdit[] {
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   const starts = lineStarts(source);
   const lines = source.split("\n");
   const notes = headingNotes(lines, script, line);
@@ -146,7 +141,7 @@ export function synopsisEdits(source: string, script: ParsedScript, line: number
 
 /** Puts a link to a note under the heading on `line`, after its synopsis. None if there's a link there already. */
 export function linkEdits(source: string, script: ParsedScript, line: number, target: string): TextEdit[] {
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   const lines = source.split("\n");
   const notes = headingNotes(lines, script, line);
   if (notes.link !== undefined) return [];

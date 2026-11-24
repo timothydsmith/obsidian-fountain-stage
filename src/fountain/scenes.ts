@@ -13,6 +13,7 @@
 import { cueName } from "./characters";
 import type { IsAct } from "./acts";
 import { insertionText } from "./insert";
+import { lineStarts } from "./lines";
 import type { ParsedScript } from "./parser";
 import type { TextEdit } from "./titlePage";
 
@@ -28,12 +29,6 @@ export interface Unit {
 }
 
 const SCENE_HEADING_RE = /^(INT|EXT|EST|INT\.?\/EXT|I\/E)[.\s]/i;
-
-function lineStarts(source: string): number[] {
-  const starts = [0];
-  for (let i = 0; i < source.length; i++) if (source[i] === "\n") starts.push(i + 1);
-  return starts;
-}
 
 /** The script's units, in order. Sections `actionDepth` deep or deeper (action beats) don't start one. */
 export function scriptUnits(source: string, script: ParsedScript, isAct: IsAct, actionDepth = Infinity): Unit[] {

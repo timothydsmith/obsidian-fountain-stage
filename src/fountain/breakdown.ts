@@ -21,6 +21,7 @@
 import { cueName, listName } from "./characters";
 import { matchBreakdownHeading, type ParsedScript } from "./parser";
 import type { SceneRange } from "./report";
+import { eolOf, lineStarts } from "./lines";
 import { isPreface } from "./runtime";
 import type { TextEdit } from "./titlePage";
 
@@ -55,12 +56,6 @@ const TITLE_KEYS: Record<Kind, string[]> = {
   characters: ["characters", "character", "cast of characters", "cast"],
   "scene breakdown": ["scene breakdown", "scenes", "scene_breakdown"],
 };
-
-function lineStarts(source: string): number[] {
-  const starts = [0];
-  for (let i = 0; i < source.length; i++) if (source[i] === "\n") starts.push(i + 1);
-  return starts;
-}
 
 /** The sections a script already has. */
 function findSections(source: string, script: ParsedScript): Section[] {
@@ -120,7 +115,7 @@ function speakers(script: ParsedScript): string[] {
  * `scenes` are the script's scenes, as the report finds them.
  */
 export function breakdownEdits(source: string, script: ParsedScript, scenes: SceneRange[], headingLines: Set<number>): BreakdownResult {
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   const lines = source.split("\n").map((l) => l.replace(/\r$/, ""));
   const starts = lineStarts(source);
   const lineEnd = (line: number) => starts[line] + lines[line].length;

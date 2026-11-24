@@ -7,6 +7,7 @@
  */
 
 import { parseInline } from "./inline";
+import { lineStarts } from "./lines";
 import { findLinks } from "./links";
 import { parseFountain } from "./parser";
 
@@ -40,8 +41,7 @@ export function readingHiddenRanges(source: string, { showSections = false } = {
   for (const link of findLinks(source, script)) hidden.fill(0, link.labelFrom, link.labelTo);
 
   // Line starts, and which lines have inline emphasis or are hidden whole.
-  const starts = [0];
-  for (let i = 0; i < source.length; i++) if (source[i] === "\n") starts.push(i + 1);
+  const starts = lineStarts(source);
   const lineCount = starts.length;
   const lineFrom = (n: number) => starts[n];
   const lineTo = (n: number) => (n + 1 < lineCount ? starts[n + 1] - 1 : source.length);

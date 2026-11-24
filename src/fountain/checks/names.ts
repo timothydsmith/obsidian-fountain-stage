@@ -6,6 +6,7 @@
 
 import { cueName, listName } from "../characters";
 import { matchBreakdownHeading, type ParsedScript } from "../parser";
+import { lineStarts } from "../lines";
 import type { Finding } from "./findings";
 
 /** Cues for several people at once, which aren't characters of their own. */
@@ -171,8 +172,7 @@ function listedNames(script: ParsedScript, lines: string[]): Map<string, number>
 
 export function checkNames(source: string, script: ParsedScript): Finding[] {
   const lines = source.split("\n");
-  const starts: number[] = [];
-  lines.reduce((offset, l) => (starts.push(offset), offset + l.length + 1), 0);
+  const starts = lineStarts(source);
   const listed = listedNames(script, lines);
 
   const cued = new Map<string, Cued>();

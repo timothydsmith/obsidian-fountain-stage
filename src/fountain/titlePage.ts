@@ -3,6 +3,7 @@
  * drafts: the draft number, the draft date and the draft's notes.
  */
 
+import { eolOf, lineStarts } from "./lines";
 import type { ParsedScript } from "./parser";
 
 export interface TextEdit {
@@ -88,7 +89,7 @@ export function safeFileName(title: string): string {
  * title page gets one, starting with `Title:`.
  */
 export function titleKeyEdits(source: string, script: ParsedScript, changes: TitleKeyChange[], title: string): TextEdit[] {
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   const starts = lineStarts(source);
   /** Where a line's text ends, before its line break. */
   const lineEnd = (line: number) => {
@@ -144,10 +145,4 @@ export function applyEdits(source: string, edits: TextEdit[]): string {
     out = out.slice(0, edit.from) + edit.insert + out.slice(edit.to);
   }
   return out;
-}
-
-function lineStarts(source: string): number[] {
-  const starts = [0];
-  for (let i = 0; i < source.length; i++) if (source[i] === "\n") starts.push(i + 1);
-  return starts;
 }

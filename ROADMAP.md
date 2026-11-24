@@ -328,7 +328,7 @@ An outline tool over the script itself, not a separate outline note. Structure l
 - [x] A Fountain convention for alternate lines: a note under the live line, `[[alt: …]]` (decided for 0.4.0).
 - [x] How to detect entrances and exits: phrases (decided for 0.8.0).
 
-## Setting up (0.11.0) and the 1.0 review
+## Setting up (0.11.0)
 
 Added on 22 November 2026 and placed on 25 November.
 
@@ -344,7 +344,69 @@ Built for 0.11.0:
 - **The folders** are the drafts, beat notes, frameworks, styles and fonts folders, as settings name them; blank ones are skipped. A dialog lists each with whether it's there, then makes what's missing, parents first (`src/setupPlan.ts`, `src/setupCommand.ts`).
 - **The first script** is named from its title, without the characters file names can't have, and goes where Obsidian puts new notes. Its title page has the title, and `Credit: Written by` and `Author:` when an author is given.
 - **The notice** is shown at most once per vault: a `setupOffered` setting is set the first time the plugin loads, whether or not the vault has scripts, so existing vaults never see it.
-- **Rationalise commands** (1.0.0). Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections. Done once all the features before 1.0 are in, as part of the 1.0 review.
+
+## 1.0 review (started 25 November 2026)
+
+No new features. A review of the whole codebase, refactoring where it's needed, and rationalising commands.
+
+### Rationalise commands
+
+Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections.
+
+Decided:
+
+- [x] **No articles.** "Start sprint", not "Start a sprint", as Obsidian's own commands have it.
+- [x] **Toggles** are "Toggle …" in the palette, and the same words without "Toggle", with a tick, in menus (as Obsidian does for reading view).
+- [x] **The same name** in the palette, the More options menu, the outline's menus and the ribbon, except where a menu item depends on what it's on ("Create linked note" or "Open linked note").
+- [x] **Command ids don't change**, so hotkeys people have set keep working. Only names do.
+- [x] **The More options menu** goes in sections by area: mode; drafts; rehearsal; cast; panels; focus.
+
+Renamed (others stay as they are):
+
+| Now | Becomes |
+| --- | --- |
+| New Fountain script (ribbon) | New script |
+| Next line type, Previous line type | Change to next line type, Change to previous line type |
+| Put in a line from the line bank | Insert line from line bank |
+| Unfreeze (menu) | Unfreeze draft |
+| Start a pass | Start pass |
+| Open passes | Open passes note |
+| Keep as an alternate, Choose an alternate | Keep as alternate, Choose alternate |
+| Changes since a draft, Side by side with a draft, Checks (menu) | Show changes since a draft, Show side by side with a draft, Show checks |
+| Tint changes since a draft | Toggle change tint (menu: Change tint, ticked) |
+| Mark check findings | Toggle check marks (menu: Check marks, ticked) |
+| Start a sprint, Stop the sprint | Start sprint, Stop sprint |
+| Time a read-through | Time read-through |
+| Next scene in the read-through, Pause or resume the read-through, Finish the read-through | Go on to next scene in read-through, Pause or resume read-through, Finish read-through |
+| Start a table read, Go on in the table read, Pause or resume the table read, Stop the table read | Start table read, Go on in table read, Pause or resume table read, Stop table read |
+| Save script report as a note | Save script report as note |
+
+The More options menu, in order (items show only where they apply, as now):
+
+1. **Mode:** Reading view or Editing view, Source mode.
+2. **Drafts:** Freeze draft or Unfreeze draft, Cut from this draft or Restore cut, Show changes since a draft, Show side by side with a draft, Change tint.
+3. **Rehearsal:** Issue revised pages, Lock rehearsal script, Unlock rehearsal script.
+4. **Cast:** Rename character, Merge characters, Write cast list and scene breakdown, Show who's on stage.
+5. **Panels:** Show script outline, Show script report, Show checks, Show beat map.
+6. **Focus:** Typewriter mode, Start sprint, Time read-through, Start table read.
+
+Then Obsidian's own items, with Export to PDF among the file's.
+
+### Refactoring
+
+Found in a survey of the code (about 20,000 lines in src, 4,000 in tests). Each step keeps behaviour as it is, apart from where noted, and is tried in Obsidian before the next.
+
+1. **Shared text helpers** (done). `lineStarts` was written out five times (breakdown, planning, scenes, targets, title page), plus three times inline (compare, reading, the name check), and line-ending detection six times. They are now `lineStarts`, `lineAt` and `eolOf` in `src/fountain/lines.ts`. The longest-run search that comparison and revised pages each had is now one `longestRun` in `src/fountain/sequence.ts`.
+2. **A base for the script tabs.** The Report, Changes, Checks and beat map tabs repeat the same code to follow the script you're in, show it, and refresh soon after typing. They also disagree: when the script they show is closed, Report and the beat map go blank, while Changes and Checks pick up a script still on screen. One base class, and the Changes and Checks behaviour for all four. The plugin's four near-identical "show this tab beside the script" methods become one.
+3. **One command table.** `onload` is about 430 lines, most of it registering commands through five slightly different wrappers. A table of commands (id, name, icon, when it applies, what it does, and its menu section) drives the palette and the More options menu, so their names can't drift apart. The renames above happen here.
+4. **Small tidies.** An unused CSS class (`fountain-stage-style-description`); settings read and written through casts to a record, which can be typed; two copies of long-date formatting.
+
+Checked and fine: no TODOs, stray logging, `any` or lint suppressions; every export is used; lint is clean; dependencies are current but for patch releases.
+
+### Then
+
+- **An area-by-area read-through** for correctness: the editor, the PDF export, drafts and comparison, checks and cast, planning. Bugs found go out as fixes; anything bigger comes back here first.
+- **Documentation:** the README's command names after the renames, this roadmap's "Where things stand" (still at 0.3.0) and its release table (which misses Find and search, from 0.9.1), and CLAUDE.md.
 
 ## After 1.0: project management, alongside reporting
 
