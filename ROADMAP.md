@@ -1,6 +1,6 @@
 # Fountain Stage roadmap
 
-Last updated 22 November 2026.
+Last updated 25 November 2026.
 
 ## Where things stand
 
@@ -16,7 +16,7 @@ Working assumptions:
 
 ## Release plan
 
-Nine minor releases take the plugin from freezing drafts to a story outline, then 1.0 reviews the whole codebase. Each ships something usable on its own, and bug fixes go out as patch releases in between. The order follows dependencies: each release only needs what came before it.
+Ten minor releases take the plugin from freezing drafts to a story outline and setting up a play, then 1.0 reviews the whole codebase. Each ships something usable on its own, and bug fixes go out as patch releases in between. The order follows dependencies: each release only needs what came before it.
 
 | Release | Theme | Features | Needs |
 | --- | --- | --- | --- |
@@ -29,7 +29,8 @@ Nine minor releases take the plugin from freezing drafts to a story outline, the
 | 0.8.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check, cast list and scene breakdown, silence in the report | Doubling data from the report |
 | 0.9.0 | Linked notes | Links to vault notes, rename following, append linked notes on export | Freeze from 0.2.0 |
 | 0.10.0 | Story outline | Story beats and action beats, planning in the outline, outline by act and by beat, beat notes, framework templates, beat map | Sections from 0.2.0, outline moves from 0.3.0, linked notes from 0.9.0 |
-| 1.0.0 | Review | No new features. A review of the whole codebase, and refactoring where it's needed | Everything above |
+| 0.11.0 | Setting up | Set up a play | Folder settings from earlier releases |
+| 1.0.0 | Review | No new features. A review of the whole codebase, and refactoring where it's needed, and rationalising commands | Everything above |
 
 1.0 is about drafting, and nothing else gets in ahead of it. Between 1.0 and 2.0 come reporting and project management. Stage management follows 2.0.
 
@@ -327,12 +328,23 @@ An outline tool over the script itself, not a separate outline note. Structure l
 - [x] A Fountain convention for alternate lines: a note under the live line, `[[alt: …]]` (decided for 0.4.0).
 - [x] How to detect entrances and exits: phrases (decided for 0.8.0).
 
-## Not yet placed
+## Setting up (0.11.0) and the 1.0 review
 
-Ideas added on 22 November 2026, not yet in a release. Each notes where it might fit.
+Added on 22 November 2026 and placed on 25 November.
 
-- **Set up a play.** A command that makes the default folder structure for a new vault: the drafts folder, the styles and fonts folders under `Fountain Stage/`, and perhaps a first script. It uses the folders in settings, so it stays in step with them, and leaves alone any folder that's already there. Small enough for any release; it suits the 1.0 review, or earlier for new users.
-- **Rationalise commands.** Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections. Done once all the features before 1.0 are in, as part of the 1.0 review.
+- **Set up a play** (0.11.0). A command that makes the default folder structure for a new vault: the drafts folder, the styles and fonts folders under `Fountain Stage/`, and perhaps a first script. It uses the folders in settings, so it stays in step with them, and leaves alone any folder that's already there. Its own release, as 1.0 takes no new features.
+
+Decided for 0.11.0:
+
+- [x] Set up a play makes the folders and, in a vault with no scripts, offers a first script with a title page. No example style or framework, which would crowd the pickers.
+- [x] It's in the command palette and at the top of the settings, and a notice offers it once, the first time the plugin loads in a vault with no scripts.
+
+Built for 0.11.0:
+
+- **The folders** are the drafts, beat notes, frameworks, styles and fonts folders, as settings name them; blank ones are skipped. A dialog lists each with whether it's there, then makes what's missing, parents first (`src/setupPlan.ts`, `src/setupCommand.ts`).
+- **The first script** is named from its title, without the characters file names can't have, and goes where Obsidian puts new notes. Its title page has the title, and `Credit: Written by` and `Author:` when an author is given.
+- **The notice** is shown at most once per vault: a `setupOffered` setting is set the first time the plugin loads, whether or not the vault has scripts, so existing vaults never see it.
+- **Rationalise commands** (1.0.0). Review every command palette entry and menu item so they're named and grouped consistently: verbs first, the same name in the palette and the menus, related commands side by side, and the More options menu split into sensible sections. Done once all the features before 1.0 are in, as part of the 1.0 review.
 
 ## After 1.0: project management, alongside reporting
 

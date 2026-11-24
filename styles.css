@@ -1326,3 +1326,13 @@
 .fountain-stage-map-beat.is-drop-after {
   box-shadow: inset -3px 0 0 var(--interactive-accent);
 }
+
+/* Set up a play: each folder's status, and the button in the first-run notice. */
+.fountain-stage-setup-status {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.fountain-stage-setup-button {
+  margin-top: var(--size-4-2);
+}

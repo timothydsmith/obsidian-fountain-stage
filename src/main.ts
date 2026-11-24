@@ -41,6 +41,7 @@ import { OnStage } from "./onStage";
 import { generateBreakdown } from "./breakdownCommand";
 import type { LinkHost } from "./editor/links";
 import { followRename, resolveTarget } from "./linkedNotes";
+import { offerSetUp, setUpPlay } from "./setupCommand";
 
 /** How long after you stop typing the tint on changed lines catches up. */
 const CHANGE_TINT_DELAY_MS = 500;
@@ -297,6 +298,13 @@ export default class FountainStagePlugin extends Plugin {
       callback: () => this.newScript(),
     });
     this.addRibbonIcon("drama", "New Fountain script", () => this.newScript());
+    this.addCommand({
+      id: "set-up-play",
+      name: "Set up a play",
+      callback: () => setUpPlay(this.app, this.settings),
+    });
+    // Offered once, the first time the plugin loads in a vault with no scripts.
+    this.app.workspace.onLayoutReady(() => void offerSetUp(this.app, this.settings, () => this.saveData(this.settings)));
 
     // Obsidian's own mode commands only work in notes. Their hotkeys work
     // in scripts too (see FountainView); these are for the command palette.
