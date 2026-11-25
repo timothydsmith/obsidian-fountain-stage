@@ -6,7 +6,8 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 
 - Work on `dev`. `main` is releases only; follow the release steps in README.md.
 - Semantic versioning. Tags are the bare version (`0.1.0`), matching `manifest.json`.
-- Add a CHANGELOG.md entry under **Unreleased** for every user-visible change.
+- Add a CHANGELOG.md entry under **Unreleased** for every user-visible change, and update its page in the documentation site (`docs/src/content/docs/`): the feature's page, and `commands.md` for a new or renamed command. The README keeps a shorter account of each feature, for the community plugin listing.
+- The docs site is a separate npm project in `docs/`. `npm --prefix docs run build` must pass when it changes. Links between pages are relative (`../cuts/`), since the site is served under `/obsidian-fountain-stage/`.
 - `npm test` and `npm run build` must pass before committing.
 
 ## Constraints

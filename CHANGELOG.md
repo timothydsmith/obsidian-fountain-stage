@@ -7,6 +7,9 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Added
+- A documentation site, at [timothydsmith.github.io/obsidian-fountain-stage](https://timothydsmith.github.io/obsidian-fountain-stage/), with a page for each feature and a list of every command.
+
 ### Changed
 - Commands are named consistently: verbs first, without "a" or "the", and the same in the command palette and the menus. Among them, **Put in a line from the line bank** is now **Insert line from line bank**, **Tint changes since a draft** is **Toggle change tint**, **Mark check findings** is **Toggle check marks**, **Start a sprint** is **Start sprint**, and the ribbon's **New Fountain script** is **New script**. Hotkeys you've set keep working.
 - A script's **More options** menu is in sections: drafts, rehearsal, cast, panels and focus. It gains **Show script outline**, **Show script report**, **Show beat map**, **Show who's on stage**, **Start sprint**, **Time read-through** and **Start table read**.

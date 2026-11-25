@@ -4,6 +4,8 @@ An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](http
 
 It's in Obsidian's [community plugin directory](https://community.obsidian.md/plugins/fountain-stage): see [Install](#install).
 
+The full documentation is at **[timothydsmith.github.io/obsidian-fountain-stage](https://timothydsmith.github.io/obsidian-fountain-stage/)**.
+
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
 ## Features
@@ -441,6 +443,14 @@ npm test       # vitest
 npm run build  # type-check and production build
 ```
 
+The documentation site is a [Starlight](https://starlight.astro.build/) project of its own in `docs/`, published to GitHub Pages from `main` by the **Docs** workflow. Its pages are Markdown files in `docs/src/content/docs/`.
+
+```sh
+npm --prefix docs install
+npm --prefix docs run dev     # preview at http://localhost:4321/obsidian-fountain-stage/
+npm --prefix docs run build   # build the site into docs/dist
+```
+
 To copy every build straight into a test vault, create a `.env` file in the project folder (it's ignored by git):
 
 ```
@@ -512,6 +522,7 @@ Layout:
 | `src/pdf/markdown.ts`, `src/pdf/appendix.ts`, `src/pdf/images.ts` | The appendix of linked notes: reading Markdown, laying it out, and reading pictures' sizes |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |
 | `tests/` | vitest tests |
+| `docs/` | The documentation site (Starlight) |
 
 ## Branches and releases
 
