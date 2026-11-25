@@ -405,7 +405,7 @@ Checked and fine: no TODOs, stray logging, `any` or lint suppressions; every exp
 
 ### Then
 
-- **An area-by-area read-through** for correctness: the editor, the PDF export, drafts and comparison, checks and cast, planning. Bugs found go out as fixes; anything bigger comes back here first.
+- **An area-by-area read-through** for correctness: the editor, the PDF export, drafts and comparison, checks and cast, planning. Bugs found go out as fixes; anything bigger comes back here first. Done 25 November 2026, giving the code without tests the closest reading (the PDF layout is held by its snapshot and parity tests). It found no bugs bigger than a fix: a font file whose tables can't be read now counts as unreadable instead of failing the fonts folder, a failed unlock now says so, the frozen-draft notice names **Unfreeze draft**, and `cuts.ts` uses the shared line helpers.
 - **Documentation:** the README's command names after the renames, this roadmap's "Where things stand" (still at 0.3.0) and its release table (which misses Find and search, from 0.9.1), and CLAUDE.md.
 
 ## After 1.0: project management, alongside reporting

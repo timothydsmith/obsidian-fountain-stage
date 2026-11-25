@@ -36,13 +36,19 @@ export function describeFont(path: string, bytes: Uint8Array): FontInfo | string
     return "isn't a font file Fountain Stage can read";
   }
   if (Array.isArray(font.fonts)) return "is a font collection (.ttc), which can't be embedded. Use separate .ttf or .otf files";
-  const family = (font.getName?.("preferredFamily") || font.familyName || "").trim();
-  if (!family) return "has no family name";
-  const sub = font.subfamilyName ?? "";
-  const os2 = font["OS/2"];
-  const weight = os2?.usWeightClass || (/bold|black|heavy/i.test(sub) ? 700 : 400);
-  const italic = !!os2?.fsSelection?.italic || font.italicAngle !== 0 || /italic|oblique/i.test(sub);
-  return { path, family, weight, italic, bytes };
+  try {
+    const family = (font.getName?.("preferredFamily") || font.familyName || "").trim();
+    if (!family) return "has no family name";
+    const sub = font.subfamilyName ?? "";
+    const os2 = font["OS/2"];
+    const weight = os2?.usWeightClass || (/bold|black|heavy/i.test(sub) ? 700 : 400);
+    // A font without an italic angle isn't slanted.
+    const italic = !!os2?.fsSelection?.italic || (font.italicAngle ?? 0) !== 0 || /italic|oblique/i.test(sub);
+    return { path, family, weight, italic, bytes };
+  } catch {
+    // Its tables are read as they're asked for, so a damaged one only shows here.
+    return "isn't a font file Fountain Stage can read";
+  }
 }
 
 export interface ChosenFamily {

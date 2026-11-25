@@ -60,8 +60,12 @@ interface ModeState {
   source?: unknown;
 }
 
-/** What changed in a script, for views that follow it, such as the outline: its text, where you are, or its page layout. */
-/** "position" is the cursor moving or any scrolling; "scroll" is only scrolling you do, not scrollToPlace. */
+/**
+ * What changed in a script, for views that follow it, such as the outline:
+ * its text, where you are, or its page layout. "position" is the cursor
+ * moving or any scrolling; "scroll" is only scrolling you do, not
+ * scrollToPlace.
+ */
 export type ScriptChange = "text" | "position" | "scroll" | "pages";
 
 /** What a script's view needs from the plugin. */
@@ -223,12 +227,12 @@ export class FountainView extends TextFileView {
     this.setMode(!this.reading, this.sourceMode);
   }
 
-  /** Switches between Live Preview and source mode, from reading view too. */
   /** Changes the cursor's line to the next type (1) or the previous (-1), as Tab and Shift+Tab do. */
   cycleLineType(direction: 1 | -1): void {
     if (cycleLineType(direction)(this.editor)) this.editor.focus();
   }
 
+  /** Switches between Live Preview and source mode, from reading view too. */
   toggleSource(): void {
     if (this.refuseIfFrozen()) return;
     this.setMode(false, !this.sourceMode);
@@ -294,7 +298,7 @@ export class FountainView extends TextFileView {
   /** Says the script is frozen, if it is. True if it is, so the edit shouldn't go ahead. */
   refuseIfFrozen(): boolean {
     if (!this.isFrozen()) return false;
-    new Notice("This draft is frozen. To edit it, choose Unfreeze from its More options menu.");
+    new Notice("This draft is frozen. To edit it, choose Unfreeze draft from its More options menu.");
     return true;
   }
 

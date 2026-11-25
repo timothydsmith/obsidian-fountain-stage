@@ -234,10 +234,16 @@ export class Rehearsal {
       [`${draftLabel(chain.locked)} stops being the rehearsal script, and page breaks follow the text again. The revisions issued stay in their frozen drafts.`],
       "Unlock",
       () => {
-        void this.setKeys(chain.locked.file, [["Locked", null]]).then(() => {
-          new Notice(`Unlocked ${draftLabel(chain.locked)}.`);
-          done();
-        });
+        this.setKeys(chain.locked.file, [["Locked", null]]).then(
+          () => {
+            new Notice(`Unlocked ${draftLabel(chain.locked)}.`);
+            done();
+          },
+          (error: unknown) => {
+            console.error("[fountain-stage] couldn't unlock the rehearsal script", error);
+            new Notice(`Couldn't unlock the rehearsal script: ${error instanceof Error ? error.message : String(error)}`);
+          },
+        );
       },
     ).open();
   }
