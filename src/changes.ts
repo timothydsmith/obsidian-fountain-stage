@@ -11,7 +11,7 @@ import type { IsAct } from "./fountain/acts";
 import { type Comparison, compareScripts, type ScriptVersion } from "./fountain/compare";
 import { buildOutline } from "./fountain/outline";
 import { parseFountain } from "./fountain/parser";
-import { compareFrozenDrafts, type FrozenDraftName, parseFrozenDraftName, plainTitle, safeFileName } from "./fountain/titlePage";
+import { compareFrozenDrafts, type FrozenDraftName, longDate, parseFrozenDraftName, plainTitle, safeFileName } from "./fountain/titlePage";
 
 export interface FrozenDraft {
   file: TFile;
@@ -21,7 +21,7 @@ export interface FrozenDraft {
 /** A short name for a frozen draft, such as "Draft 3, 21 November 2026". */
 export function draftLabel({ name }: FrozenDraft): string {
   const [y, m, d] = name.date.split("-").map(Number);
-  const date = new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  const date = longDate(new Date(y, m - 1, d));
   return `Draft ${name.draft}, ${date}${name.copy > 1 ? ` (${name.copy})` : ""}`;
 }
 

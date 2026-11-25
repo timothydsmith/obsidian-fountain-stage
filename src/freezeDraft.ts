@@ -9,7 +9,7 @@ import { type App, Modal, Notice, Setting, type TFile } from "obsidian";
 import type { FountainView } from "./editor/FountainView";
 import { freeScriptPath } from "./files";
 import { keepLinkedNotes } from "./linkedNotes";
-import { applyEdits, draftNumber, formatDraftDate, frozenDraftName, plainTitle, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
+import { applyEdits, draftNumber, frozenDraftName, longDate, plainTitle, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
 
 /** What the freeze dialog asks. */
 export interface FreezeChoices {
@@ -98,7 +98,7 @@ export async function freeze(app: App, view: FountainView, folder: string, choic
 
   const frozen = applyEdits(
     source,
-    titleKeyEdits(source, script, [["Draft", String(draft)], ["Draft date", formatDraftDate(date)], ["Draft notes", notes || null], ...keys], file.basename),
+    titleKeyEdits(source, script, [["Draft", String(draft)], ["Draft date", longDate(date)], ["Draft notes", notes || null], ...keys], file.basename),
   );
   let copy: TFile;
   try {

@@ -11,7 +11,7 @@ import { buildOutline } from "./fountain/outline";
 import { addReading, calibrationFactor, clockTime, describeFactor, type Reading, readingsName, type SceneTime } from "./fountain/readings";
 import { type SceneRange, scriptScenes } from "./fountain/report";
 import { formatDuration, type Timeline } from "./fountain/runtime";
-import { formatDraftDate, plainTitle } from "./fountain/titlePage";
+import { longDate, plainTitle } from "./fountain/titlePage";
 
 export interface ReadThroughHost {
   timelineOf(view: FountainView): Timeline | undefined;
@@ -40,7 +40,7 @@ const STRIP = "read-through";
 
 /** "22 November 2026, 14:05". */
 function when(date: Date): string {
-  return `${formatDraftDate(date)}, ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return `${longDate(date)}, ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 export class ReadThroughs {

@@ -12,7 +12,7 @@
 
 import type { ParsedScript } from "./parser";
 import { insertionText } from "./insert";
-import { formatDraftDate } from "./titlePage";
+import { longDate } from "./titlePage";
 
 /** One cut: its heading line and its text. */
 export interface Cut {
@@ -49,7 +49,7 @@ export function cutHeading(script: ParsedScript, source: string, from: number, d
     headingLine = el.line;
   }
   const where = scene === 0 ? "Start" : `${scene}. ${title}`;
-  return `# ${where}, line ${line - headingLine} · ${formatDraftDate(date)}`;
+  return `# ${where}, line ${line - headingLine} · ${longDate(date)}`;
 }
 
 /** Where a cut came from, read from its heading, or undefined for a heading that's been changed out of shape. */

@@ -38,6 +38,7 @@ import { calibrate } from "./fountain/readings";
 import { playTarget, targetDelta } from "./fountain/targets";
 import { setPlayTarget, setTargetHere } from "./targetCommands";
 import { FountainStageSettingTab } from "./settings";
+import { longDate } from "./fountain/titlePage";
 import { type CommandTable, registerCommands, scriptMenuItems } from "./commands";
 import { OnStage } from "./onStage";
 import { generateBreakdown } from "./breakdownCommand";
@@ -815,7 +816,7 @@ export default class FountainStagePlugin extends Plugin {
   private async saveReport(view: FountainView): Promise<void> {
     const file = view.file;
     if (!file) return;
-    const date = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+    const date = longDate(new Date());
     const method = this.settings.runtimeMethod === "words" ? "the words spoken" : "the number of pages";
     const text = reportMarkdown(this.reportOf(view), { title: file.basename, date, method, castSize: this.settings.castSize || undefined });
     const folder = file.parent && !file.parent.isRoot() ? `${file.parent.path}/` : "";

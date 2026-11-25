@@ -16,6 +16,13 @@ const FOLDER_PLACEHOLDER = "Folder in your vault";
 const RUNTIME_METHODS = { words: "Words spoken", pages: "Pages" };
 const ACTION_DEPTHS = { "2": "## and deeper", "3": "### and deeper", "4": "#### and deeper" };
 
+/** The settings the tab's controls read and write, each by its own key. */
+const FOLDER_KEYS = ["stylesFolder", "fontsFolder", "draftsFolder", "beatNotesFolder", "frameworksFolder"] as const;
+const CONTROL_KEYS = [...FOLDER_KEYS, "showPageBreaks", "showCheckMarks", "runtimeMethod", "wordsPerMinute", "minutesPerPage", "actionDepth"] as const;
+type ControlKey = (typeof CONTROL_KEYS)[number];
+const isControlKey = (key: string): key is ControlKey => (CONTROL_KEYS as readonly string[]).includes(key);
+const isFolderKey = (key: string): key is (typeof FOLDER_KEYS)[number] => (FOLDER_KEYS as readonly string[]).includes(key);
+
 /** A positive number, or the reason it isn't. */
 const positive = (n: number): string | undefined => (Number.isFinite(n) && n > 0 ? undefined : "Enter a number more than 0.");
 
@@ -185,29 +192,36 @@ export class FountainStageSettingTab extends PluginSettingTab {
   }
 
   getControlValue(key: string): unknown {
+    if (!isControlKey(key)) return undefined;
+    // The dropdown's options are keyed by strings.
     if (key === "actionDepth") return String(this.settings.actionDepth);
-    return (this.settings as unknown as Record<string, unknown>)[key];
+    return this.settings[key];
   }
 
   async setControlValue(key: string, value: unknown): Promise<void> {
-    const settings = this.settings as unknown as Record<string, unknown>;
-    const folder = key === "stylesFolder" || key === "fontsFolder";
-    if (folder || key === "draftsFolder" || key === "beatNotesFolder" || key === "frameworksFolder") {
+    if (!isControlKey(key)) return;
+    const { settings } = this;
+    if (isFolderKey(key)) {
       const path = typeof value === "string" ? value.trim() : "";
       settings[key] = path ? normalizePath(path) : "";
     } else if (key === "runtimeMethod") {
-      settings[key] = value === "pages" ? "pages" : "words";
+      settings.runtimeMethod = value === "pages" ? "pages" : "words";
     } else if (key === "actionDepth") {
       const depth = Number(value);
-      settings[key] = [2, 3, 4].includes(depth) ? depth : 2;
+      settings.actionDepth = [2, 3, 4].includes(depth) ? depth : 2;
+    } else if (key === "showPageBreaks" || key === "showCheckMarks") {
+      settings[key] = value === true;
     } else {
-      settings[key] = value;
+      // Words per minute and minutes per page, already checked as positive.
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) return;
+      settings[key] = n;
     }
     await this.save();
     // Words per minute or minutes per page, and pause words, show by the method.
     if (key === "runtimeMethod") this.refreshDomState();
     // The styles and fonts found, once typing in a folder setting pauses.
-    if (folder) this.refreshSoon();
+    if (key === "stylesFolder" || key === "fontsFolder") this.refreshSoon();
   }
 
   hide(): void {

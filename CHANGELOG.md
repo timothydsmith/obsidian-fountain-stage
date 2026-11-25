@@ -12,6 +12,7 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 - A script's **More options** menu is in sections: drafts, rehearsal, cast, panels and focus. It gains **Show script outline**, **Show script report**, **Show beat map**, **Show who's on stage**, **Start sprint**, **Time read-through** and **Start table read**.
 - Commands have icons, for the mobile toolbar.
 - The script report and beat map, like the Changes and Checks tabs, pick up a script still on screen when the one they show is closed, rather than going blank.
+- Dates in the Changes tab's draft names and in saved script reports are written like draft dates, such as "21 November 2026", whatever your system's date format.
 
 ## [0.11.0] - 2026-11-25
 

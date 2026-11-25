@@ -31,8 +31,8 @@ export function draftNumber(script: ParsedScript): number {
   return n > 0 ? n : 1;
 }
 
-/** A date as a draft date is written, such as "21 November 2026". */
-export function formatDraftDate(date: Date): string {
+/** A date written out, such as "21 November 2026": in draft dates, cuts, reports and draft names. */
+export function longDate(date: Date): string {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
