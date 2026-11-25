@@ -9,9 +9,10 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 ## Features
 
 - **Set up a play** makes the folders Fountain Stage uses and, in a vault with no scripts, a first script. See [Setting up](#setting-up).
+- **New script**, from the command palette or the ribbon, makes an untitled script where Obsidian puts new notes, and opens it.
 - Formatting as you type, following the Fountain spec.
 - Line numbers for every line of the file, shown in the editor when Obsidian's **Show line number** setting is on.
-- Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
+- Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, the same hotkeys as notes (Ctrl/Cmd+E for reading view), or **Toggle reading view** and **Toggle source mode** in the command palette.
   - **Live Preview** formats the script as you type, with the markup shown faintly.
   - **Source mode** is the plain text, unformatted.
   - **Reading view** shows the formatted script without its markup, sections, notes, synopses or boneyard, and can't be edited. Links to notes show as links.
@@ -189,7 +190,7 @@ The script outline shows the current pass at the top, with how many scenes are d
 - **Filler words:** how often the dialogue says just, really, actually, honestly, you know and the like, and who says each most.
 - **Speech lengths:** a bar for every speech, through the play from left to right by running time, with a dashed line at 150 words (about a minute). Monologues that reach it stand out. Hover a bar for whose speech it is, and click it to go there. A table lists the ten longest.
 
-**Toggle check marks**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
+**Mark in editor** at the top of the tab, **Toggle check marks** in the command palette, or **Mark findings in the editor** in Fountain Stage's settings underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
 
 ## Cast
 
@@ -452,13 +453,22 @@ Layout:
 
 | Path | Purpose |
 |---|---|
-| `src/main.ts` | Plugin entry point: registers the view, commands and ribbon button |
+| `src/main.ts` | Plugin entry point: registers the views and ribbon button, and holds the command table |
+| `src/commands.ts` | Commands described once: registering them in the palette, and the More options menu items and sections they make |
+| `src/scriptTabView.ts` | The base of the tabs that follow a script (report, changes, checks, beat map): which script to show, and refreshing as it changes |
 | `src/editor/FountainView.ts` | The `.fountain` editor (CodeMirror 6) |
 | `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
+| `src/editor/positions.ts` | Remembering where you were in each script |
+| `src/editor/find.ts`, `src/fountain/textSearch.ts`, `src/searchView.ts` | Find and replace in a script, and Search scripts across the vault |
+| `src/fountain/lines.ts`, `src/fountain/sequence.ts`, `src/fountain/wholeWords.ts` | Shared helpers: line offsets and line endings, the longest run in order, and matching whole words |
+| `src/fountain/acts.ts` | Which scene headings are acts, by the style's pattern |
 | `src/editor/reading.ts`, `src/fountain/reading.ts` | Reading view: what it hides, and hiding it |
 | `src/editor/completion.ts`, `src/fountain/characters.ts` | Character name completion, and finding the names |
 | `src/editor/cycling.ts`, `src/fountain/lineTypes.ts` | Tab and Shift+Tab: what they do to a line, and the keys |
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
+| `src/fountain/storyOutline.ts`, `src/fountain/planning.ts`, `src/planningCommands.ts` | The story outline: beats and action beats by act and by beat, the edits that plan them, and the commands and dialogs |
+| `src/fountain/frameworks.ts` | Story frameworks: the built-in ones, and reading your own from notes |
+| `src/fountain/beatMap.ts`, `src/beatMapView.ts` | The beat map: placing beats against a framework, and the tab |
 | `src/pagination.ts`, `src/pdf/pageBreaks.ts`, `src/editor/pageRules.ts` | Page breaks in the editor: laying the script out in its style and fonts, where pages break, and the rules |
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
 | `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
@@ -490,9 +500,11 @@ Layout:
 | `src/pdf/layout.ts` | Turns a parsed script into pages, ported from fountain2pdf's engine |
 | `src/pdf/paragraph.ts`, `blocks.ts`, `flow.ts` | Line breaking and pagination, matching reportlab's so pages break where fountain2pdf's did |
 | `src/library.ts` | Plugin settings, and loading styles and fonts from the vault folders |
+| `src/setupPlan.ts`, `src/setupCommand.ts` | Set up a play: which folders to make and the first script, and the dialog and first-run notice |
 | `src/settings.ts` | The settings tab |
 | `src/pdf/userStyles.ts` | Style files of your own: the schema of every setting, validation and `extends` |
 | `src/pdf/vaultFonts.ts` | Reading font files and choosing a family's faces |
+| `src/pdf/model.ts` | The laid-out document: pages of positioned text, rules, links and pictures |
 | `src/pdf/fonts.ts`, `render.ts` | Font metrics, and drawing the pages with pdf-lib |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
 | `src/fountain/links.ts`, `src/editor/links.ts` | Links to notes: finding them, rename edits, and opening and previewing them in the editor |

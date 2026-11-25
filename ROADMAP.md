@@ -4,7 +4,7 @@ Last updated 25 November 2026.
 
 ## Where things stand
 
-Rewrites are under way, so releases focus on moving between drafts. Version 0.3.0 (moving text) shipped on 22 November 2026, after 0.2.0 (sections and freezing) earlier the same day. Fountain Stage is in Obsidian's community plugin directory.
+Every release planned before 1.0 has shipped, the last being 0.11.0 (setting up) on 25 November 2026. The 1.0 review is under way: commands are renamed and grouped, four refactors are done, and the read-through found only small fixes. Fountain Stage is in Obsidian's community plugin directory.
 
 Working assumptions:
 
@@ -28,6 +28,7 @@ Ten minor releases take the plugin from freezing drafts to a story outline and s
 | 0.7.0 | Focus and readings | Table read, calibrate runtime from a reading, runtime targets, typewriter mode, sprint timer | Nothing |
 | 0.8.0 | Cast | Merge characters, minimum cast, entrance and exit detection, who's on stage, entrances and exits check, cast list and scene breakdown, silence in the report | Doubling data from the report |
 | 0.9.0 | Linked notes | Links to vault notes, rename following, append linked notes on export | Freeze from 0.2.0 |
+| 0.9.1 | Find and search | Find and replace in a script, Search scripts across the vault (a patch release, added along the way) | Nothing |
 | 0.10.0 | Story outline | Story beats and action beats, planning in the outline, outline by act and by beat, beat notes, framework templates, beat map | Sections from 0.2.0, outline moves from 0.3.0, linked notes from 0.9.0 |
 | 0.11.0 | Setting up | Set up a play | Folder settings from earlier releases |
 | 1.0.0 | Review | No new features. A review of the whole codebase, and refactoring where it's needed, and rationalising commands | Everything above |
@@ -374,7 +375,7 @@ Renamed (others stay as they are):
 | Keep as an alternate, Choose an alternate | Keep as alternate, Choose alternate |
 | Changes since a draft, Side by side with a draft, Checks (menu) | Show changes since a draft, Show side by side with a draft, Show checks |
 | Tint changes since a draft | Toggle change tint (menu: Change tint, ticked) |
-| Mark check findings | Toggle check marks (menu: Check marks, ticked) |
+| Mark check findings | Toggle check marks (also the Mark in editor toggle at the top of the Checks tab; not in the menu) |
 | Start a sprint, Stop the sprint | Start sprint, Stop sprint |
 | Time a read-through | Time read-through |
 | Next scene in the read-through, Pause or resume the read-through, Finish the read-through | Go on to next scene in read-through, Pause or resume read-through, Finish read-through |
@@ -406,7 +407,7 @@ Checked and fine: no TODOs, stray logging, `any` or lint suppressions; every exp
 ### Then
 
 - **An area-by-area read-through** for correctness: the editor, the PDF export, drafts and comparison, checks and cast, planning. Bugs found go out as fixes; anything bigger comes back here first. Done 25 November 2026, giving the code without tests the closest reading (the PDF layout is held by its snapshot and parity tests). It found no bugs bigger than a fix: a font file whose tables can't be read now counts as unreadable instead of failing the fonts folder, a failed unlock now says so, the frozen-draft notice names **Unfreeze draft**, and `cuts.ts` uses the shared line helpers.
-- **Documentation:** the README's command names after the renames, this roadmap's "Where things stand" (still at 0.3.0) and its release table (which misses Find and search, from 0.9.1), and CLAUDE.md.
+- **Documentation** (done 25 November 2026): the README's command names after the renames, this roadmap's "Where things stand" and release table (which missed Find and search, from 0.9.1), and CLAUDE.md.
 
 ## After 1.0: project management, alongside reporting
 

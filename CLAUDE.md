@@ -22,6 +22,13 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - **Story beats and action beats** are sections: shallower than the **Action beats** setting (`##` by default) they're story beats, at it or deeper they're action beats, part of the scene they're in. `src/fountain/storyOutline.ts` builds the by-act and by-beat outlines; `buildOutline` in `outline.ts` stays as it was for the report, passes and checks.
 - `ROADMAP.md` holds the release plan and the decisions behind each feature.
 
+## Code
+
+- **Commands are rows in one table**, `commandTable` in `main.ts`, registered by `src/commands.ts`: id, name, icon, when it applies, and any More options menu section. Add a command there, not with `addCommand`, so the palette and the menu can't drift apart. Ids never change once released, so hotkeys keep working.
+- **Command names** follow the 1.0 rules: verbs first, no "a" or "the" ("Start sprint"), and toggles as "Toggle …" in the palette, shown without "Toggle" and ticked in menus. The rules and the renames are in ROADMAP.md.
+- **Tabs that follow a script** (report, changes, checks, beat map) extend `ScriptTabView`.
+- **Shared helpers:** line offsets and line endings through `src/fountain/lines.ts`, dates written out ("21 November 2026") through `longDate` in `titlePage.ts`, and whole-word matching (no regex lookbehind, for iOS) through `src/fountain/wholeWords.ts`.
+
 ## Parser
 
 - `src/fountain/parser.ts` is a port of fountain2pdf's `parser.py` and is shared by the editor and the PDF export. It must keep producing the same elements as `parser.py` (it matched it exactly on 10 real scripts when ported). The intended differences: boneyard and notes are blanked, not cut, so source positions stay true; and the preface also ends at the first character cue, so a script needn't have a scene heading (but not at a cue-like line in a breakdown section's first block, such as a list of names under `***Characters***`).
