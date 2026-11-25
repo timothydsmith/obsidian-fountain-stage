@@ -13,6 +13,7 @@
 
 import { type Comparison, compareScripts, type ScriptVersion } from "../fountain/compare";
 import type { ParsedScript } from "../fountain/parser";
+import { longestRun } from "../fountain/sequence";
 import { PAGE_BREAK, type StoryItem } from "./blocks";
 import { flow } from "./flow";
 import type { FontSet } from "./fonts";
@@ -92,29 +93,6 @@ function lastAtMost(sorted: number[], value: number): number {
     } else hi = mid - 1;
   }
   return found;
-}
-
-/** The indexes of a longest run that never decreases within `values` (undefined ones left out). */
-function longestNonDecreasing(values: (number | undefined)[]): Set<number> {
-  const index: number[] = [];
-  values.forEach((v, i) => v !== undefined && index.push(i));
-  const tails: number[] = [];
-  const previous = new Array<number>(index.length).fill(-1);
-  index.forEach((i, k) => {
-    const value = values[i]!;
-    let lo = 0;
-    let hi = tails.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (values[index[tails[mid]]]! <= value) lo = mid + 1;
-      else hi = mid;
-    }
-    if (lo > 0) previous[k] = tails[lo - 1];
-    tails[lo] = k;
-  });
-  const kept = new Set<number>();
-  for (let k = tails.length > 0 ? tails[tails.length - 1] : -1; k >= 0; k = previous[k]) kept.add(index[k]);
-  return kept;
 }
 
 /** "23" from "23–24", for a range label's first page. */
@@ -251,7 +229,7 @@ export function revise(base: RehearsalPages, later: ScriptVersion, style: PlaySt
     return undefined;
   });
   // Text that moved against the order of the pages counts as new where it is now.
-  const inOrder = longestNonDecreasing(matched);
+  const inOrder = longestRun(matched, false);
   const assigned: number[] = [];
   for (let i = 0; i < matched.length; i++) {
     if (matched[i] !== undefined && inOrder.has(i)) {

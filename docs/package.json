@@ -1,0 +1,15 @@
+{
+  "name": "fountain-stage-docs",
+  "private": true,
+  "type": "module",
+  "description": "The Fountain Stage documentation site, built with Starlight",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.43.1",
+    "astro": "7.4.13"
+  }
+}

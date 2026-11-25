@@ -1,7 +1,7 @@
 /** The script report tab: totals, characters, scenes, who's in each scene, doubling and the smallest cast, for the script you're in. */
 
-import { FileView, ItemView, type WorkspaceLeaf } from "obsidian";
-import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import type { WorkspaceLeaf } from "obsidian";
+import { FountainView, type ScriptChange } from "./editor/FountainView";
 import type { ScriptReport } from "./fountain/report";
 import {
   castSummary,
@@ -16,11 +16,9 @@ import {
   totalsRows,
 } from "./fountain/reportMarkdown";
 import { formatDuration } from "./fountain/runtime";
+import { ScriptTabView } from "./scriptTabView";
 
 export const VIEW_TYPE_REPORT = "fountain-stage-report";
-
-/** How long after you stop typing the report catches up. */
-const REFRESH_DELAY_MS = 1000;
 
 export interface ReportHost {
   reportOf(script: FountainView): ScriptReport;
@@ -30,11 +28,7 @@ export interface ReportHost {
   setCastSize(actors: number): void;
 }
 
-export class ReportView extends ItemView {
-  private script: FountainView | null = null;
-  private unsubscribe: (() => void) | null = null;
-  private refreshTimer: number | null = null;
-
+export class ReportView extends ScriptTabView {
   constructor(
     leaf: WorkspaceLeaf,
     private readonly host: ReportHost,
@@ -59,53 +53,15 @@ export class ReportView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.addClass("fountain-stage-report");
-    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
-    this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
-    this.app.workspace.onLayoutReady(() => this.follow());
+    await super.onOpen();
   }
 
-  async onClose(): Promise<void> {
-    this.setScript(null);
+  /** The text, and the pages once they're laid out, for a runtime by pages. */
+  protected refreshesOn(change: ScriptChange): boolean {
+    return change === "text" || change === "pages";
   }
 
-  /** Follows the script you're in. Another file clears the report; this tab or a sidebar leaves it as it is. */
-  private follow(): void {
-    const active = this.app.workspace.getActiveViewOfType(FountainView);
-    if (active) {
-      this.setScript(active);
-      return;
-    }
-    const stillOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).some((leaf) => leaf.view === this.script);
-    const otherFile = this.app.workspace.getActiveViewOfType(FileView);
-    if (!stillOpen || otherFile) this.setScript(null);
-  }
-
-  /** Reports on a script, until you go to another. */
-  setScript(script: FountainView | null): void {
-    if (script === this.script) return;
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-    this.cancelRefresh();
-    this.script = script;
-    if (script) this.unsubscribe = script.subscribe((change) => (change === "text" || change === "pages") && this.refreshSoon());
-    this.refresh();
-  }
-
-  /** Redraws on demand, such as when settings change. */
-  refreshSoon(): void {
-    this.cancelRefresh();
-    this.refreshTimer = window.setTimeout(() => {
-      this.refreshTimer = null;
-      this.refresh();
-    }, REFRESH_DELAY_MS);
-  }
-
-  private cancelRefresh(): void {
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = null;
-  }
-
-  private refresh(): void {
+  protected refresh(): void {
     const { contentEl } = this;
     const scrollTop = contentEl.scrollTop;
     contentEl.empty();

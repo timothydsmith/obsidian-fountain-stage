@@ -304,12 +304,6 @@
   font-style: italic;
 }
 
-/* PDF export style picker */
-.fountain-stage-style-description {
-  display: block;
-  color: var(--text-muted);
-}
-
 /* Settings: lists of styles and fonts */
 .fountain-stage-settings-list {
   margin-top: 0;

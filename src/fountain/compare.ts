@@ -12,10 +12,12 @@
  */
 
 import { isAlternateNote } from "./alternates";
+import { lineAt, lineStarts } from "./lines";
 import { isTargetNote } from "./targets";
 import type { OutlineItem } from "./outline";
 import type { ParsedScript } from "./parser";
 import { type SceneRange, scriptScenes } from "./report";
+import { longestRun } from "./sequence";
 
 export interface ScriptVersion {
   source: string;
@@ -84,19 +86,8 @@ function alternateLines(source: string, script: ParsedScript): Set<number> {
   const lines = new Set<number>();
   const notes = script.spans.filter((s) => s.kind === "note" && (isAlternateNote(source.slice(s.from + 2, s.to - 2)) || isTargetNote(source.slice(s.from + 2, s.to - 2))));
   if (notes.length === 0) return lines;
-  const starts = [0];
-  for (let i = source.indexOf("\n"); i >= 0; i = source.indexOf("\n", i + 1)) starts.push(i + 1);
-  const lineAt = (offset: number) => {
-    let lo = 0;
-    let hi = starts.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (starts[mid] <= offset) lo = mid;
-      else hi = mid - 1;
-    }
-    return lo;
-  };
-  for (const note of notes) for (let n = lineAt(note.from); n <= lineAt(note.to - 1); n++) lines.add(n);
+  const starts = lineStarts(source);
+  for (const note of notes) for (let n = lineAt(starts, note.from); n <= lineAt(starts, note.to - 1); n++) lines.add(n);
   return lines;
 }
 
@@ -150,26 +141,6 @@ function matchScenes(before: Scene[], after: Scene[]): Map<number, number> {
     taken.add(j);
   }
   return pairs;
-}
-
-/** The indexes of a longest increasing run within `values`. */
-function longestIncreasing(values: number[]): Set<number> {
-  const tails: number[] = [];
-  const previous: number[] = new Array<number>(values.length).fill(-1);
-  values.forEach((value, i) => {
-    let lo = 0;
-    let hi = tails.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (values[tails[mid]] < value) lo = mid + 1;
-      else hi = mid;
-    }
-    if (lo > 0) previous[i] = tails[lo - 1];
-    tails[lo] = i;
-  });
-  const kept = new Set<number>();
-  for (let i = tails.length > 0 ? tails[tails.length - 1] : -1; i >= 0; i = previous[i]) kept.add(i);
-  return kept;
 }
 
 /** Lines that are the same in both scenes, in order, as pairs of earlier and later line numbers. */
@@ -245,7 +216,7 @@ export function compareScripts(earlier: ScriptVersion, later: ScriptVersion): Co
 
   // Moved: matched scenes outside the longest run that keeps its order.
   const matchedLater = [...byLater.keys()].sort((x, y) => x - y);
-  const inOrder = longestIncreasing(matchedLater.map((j) => byLater.get(j)!));
+  const inOrder = longestRun(matchedLater.map((j) => byLater.get(j)!), true);
   const moved = new Set(matchedLater.filter((_, k) => !inOrder.has(k)));
 
   const changedLines: number[] = [];

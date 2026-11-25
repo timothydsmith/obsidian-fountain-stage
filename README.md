@@ -4,14 +4,17 @@ An [Obsidian](https://obsidian.md) plugin for writing scripts in [Fountain](http
 
 It's in Obsidian's [community plugin directory](https://community.obsidian.md/plugins/fountain-stage): see [Install](#install).
 
+The full documentation is at **[timothydsmith.github.io/obsidian-fountain-stage](https://timothydsmith.github.io/obsidian-fountain-stage/)**.
+
 Line numbers and line width follow Obsidian's own **Settings → Editor → Show line number** and **Readable line length**, so scripts and notes match.
 
 ## Features
 
 - **Set up a play** makes the folders Fountain Stage uses and, in a vault with no scripts, a first script. See [Setting up](#setting-up).
+- **New script**, from the command palette or the ribbon, makes an untitled script where Obsidian puts new notes, and opens it.
 - Formatting as you type, following the Fountain spec.
 - Line numbers for every line of the file, shown in the editor when Obsidian's **Show line number** setting is on.
-- Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, or the same hotkeys as notes (Ctrl/Cmd+E for reading view).
+- Live Preview, source mode and reading view, as for notes. Scripts open in the mode set by Obsidian's **Default view for new tabs** and **Default editing mode** settings. Switch with the button at the top of a script, its **More options** menu, the same hotkeys as notes (Ctrl/Cmd+E for reading view), or **Toggle reading view** and **Toggle source mode** in the command palette.
   - **Live Preview** formats the script as you type, with the markup shown faintly.
   - **Source mode** is the plain text, unformatted.
   - **Reading view** shows the formatted script without its markup, sections, notes, synopses or boneyard, and can't be edited. Links to notes show as links.
@@ -25,7 +28,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - On an empty line after a blank line, where you'd start a stage direction, Tab lists the script's character names. Type to narrow the list, then Tab or Enter to pick a name.
   - On a line of text, Tab changes it from action to character to scene heading to transition and back to action, and Shift+Tab goes the other way. The line is changed from how it was before your first Tab, so going round gives it back, and a forcing mark (`!`, `@`, `.`, `>`) is only added where the text needs it.
   - In a speech, Tab switches a line between dialogue and parenthetical, and on an empty line under a cue or dialogue, starts a parenthetical.
-  - **Next line type** and **Previous line type** do the same, for the mobile toolbar.
+  - **Change to next line type** and **Change to previous line type** do the same, for the mobile toolbar.
 - **Rename character**, from the command palette or a script's **More options** menu, renames a character throughout the script: its cues, its Characters list entry, and its name in stage directions, headings, notes and dialogue. Each is written in the case the old name was, so MARGARET becomes JANE and Margaret's becomes Jane's. A name all in lower case is left alone, so renaming WILL doesn't touch "will". The character is the one at the cursor, or one you choose. Before anything changes you see how many places of each kind will change, and where, and can leave any kind out. It's one step to undo.
 - **Merge characters** folds one character into another, as a rename to the other's name, and first lists the scenes they're both in, which need rewriting by hand. See [Cast](#cast).
 - **Write cast list and scene breakdown** writes the Characters list and Scene Breakdown from the script, keeping what's already written in them. See [Cast](#cast).
@@ -54,7 +57,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
   - **Doubling:** characters who never share a scene, so one actor could play both.
   - **Smallest cast:** the fewest actors who can play every part, and one way to share the parts out. Type a cast size to see whether it can play the script, and which scenes have too many characters for it.
 
-  The button at the top of the report, or **Save script report as a note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
+  The button at the top of the report, or **Save script report as note**, saves it as a Markdown note beside the script (`Script - Report.md`), replacing an earlier one.
 - Each script reopens where you left it.
 - Find and replace in a script, with the same hotkeys as notes (Ctrl/Cmd+F to find, Ctrl/Cmd+H to replace) or **Find in script**. A bar at the top of the script finds text, with options to match case, use a regular expression or match whole words. Enter or F3 goes to the next match, Shift+Enter or Shift+F3 to the one before, and Escape closes the bar. In reading view, and so in frozen drafts, it only finds.
 - **Search scripts** finds text in every script in the vault, since Obsidian's own search doesn't look inside .fountain files. It opens in the left sidebar and lists each line that matches, grouped by script, and catches up as scripts change. Click a line to go there, with the match selected (Ctrl/Cmd-click opens it in a new tab). Frozen drafts are left out unless you tick **Include drafts**. Text you've selected on one line of a script becomes the search.
@@ -77,6 +80,7 @@ Line numbers and line width follow Obsidian's own **Settings → Editor → Show
 - Your own styles, as JSON files in your vault that extend another style and change only what differs.
 - Your own fonts, from font files in your vault.
 - An export dialog to pick the style, add a watermark (such as DRAFT) across every page, include notes and synopses, and append linked notes. A `Style:` key on a script's title page picks its style to start with.
+- Every command is in the command palette. A script's **More options** menu has the ones you'll want most, in sections: drafts, rehearsal, cast, panels (the outline, report, checks and beat map) and focus.
 - Works on desktop and mobile.
 
 ## Setting up
@@ -97,7 +101,7 @@ A script's draft number is its title page's `Draft:` key. A script with no `Draf
 - The script itself becomes `Draft: 4 (working)`, without a draft date. Undo puts it back.
 - If the script links to notes, a copy of them goes beside the frozen draft as `Play - Draft 03 - 2026-11-21 - Linked notes.md`, so the draft's PDF can append them as they were. See [Linked notes](#linked-notes).
 
-A script with no title page gets one, with its file name as the title. Scripts in the drafts folder open read-only, in reading view. To change one, choose **Unfreeze** from its **More options** menu, or run **Unfreeze draft**. It stays editable until you close its tab.
+A script with no title page gets one, with its file name as the title. Scripts in the drafts folder open read-only, in reading view. To change one, choose **Unfreeze draft** from its **More options** menu or the command palette. It stays editable until you close its tab.
 
 The draft and its date print in the bottom right corner of the title page, so a PDF of the working script says "Draft 4 (working)". A style can put them bottom left or leave them off with `titlePage.draft`; APT leaves them off.
 
@@ -133,7 +137,7 @@ Scenes in the drafts folder can't be moved, split, merged or renumbered while th
 The line bank keeps lines you want to use but haven't placed yet. It's a file beside the script, named after the play's title (or the script's file name, if it has no title): `Play - Line bank.fountain`. It's made the first time you add to it.
 
 - **Add to line bank** asks for the line, starting from any text selected in the script, and adds it to the end of the bank. The script isn't changed. Ctrl/Cmd+Enter adds it. An entry can be several lines, such as a cue and its speech.
-- **Put in a line from the line bank** lists the bank's entries. Type to narrow them, and pick one to put it in at the cursor. It's taken out of the bank, and undo in the script puts it back. It goes in the way a restored cut does: as it is partway along a line, or as a paragraph of its own on a blank line. Like restoring a cut, it needs the script in editing view, so you can see where the cursor is.
+- **Insert line from line bank** lists the bank's entries. Type to narrow them, and pick one to put it in at the cursor. It's taken out of the bank, and undo in the script puts it back. It goes in the way a restored cut does: as it is partway along a line, or as a paragraph of its own on a blank line. Like restoring a cut, it needs the script in editing view, so you can see where the cursor is.
 
 The bank is an ordinary script, so you can also open it and edit it, or add lines on your phone. Entries are separated by blank lines.
 
@@ -145,7 +149,7 @@ These compare a script with one of its frozen drafts: the latest, unless you cho
   - **Totals:** the change in runtime and words spoken, and how many scenes were added, cut, moved and changed.
   - **Scenes:** every scene, in the script's order, with any cut scene where it used to be: whether it's the same, changed, added, cut or moved, the lines added and taken out, and the change in its runtime and words. Click a scene to go there, in the script or, for a cut scene, in the draft.
   - **Characters:** each one's words then and now, and the change in their speeches.
-- **Tint changes since a draft**, also in a script's **More options** menu, tints lines that are new or changed since the draft, in Live Preview and reading view. It's off to start with, and stays as you leave it.
+- **Toggle change tint** (**Change tint** in a script's **More options** menu) tints lines that are new or changed since the draft, in Live Preview and reading view. It's off to start with, and stays as you leave it.
 - **Show side by side with a draft**, also in a script's **More options** menu and at the top of the Changes tab, opens the draft in a pane to the left of the script. The two scroll together, keeping lines that match level. Open another frozen draft in that pane to compare with it instead. Closing either pane stops them scrolling together. Not on phones, which have no room for two panes.
 
 Scenes are matched by their text, not their headings, so a scene keeps its match when it's renumbered or retitled, and a scene that's moved shows as moved. Title pages, blank lines and alternate lines aren't compared.
@@ -162,17 +166,17 @@ Not before coffee. Never before coffee.
 
 Notes never print, so the file stays ordinary Fountain, and a PDF shows only the live version, even with notes included. With the cursor in a speech (its cue or any of its lines), an action paragraph, or one of its alternates:
 
-- **Keep as an alternate** saves a copy of the live version as an alternate, so you can rewrite the live one.
+- **Keep as alternate** saves a copy of the live version as an alternate, so you can rewrite the live one.
 - **Switch to next alternate** makes the next alternate live, and the live version becomes the last alternate, so switching again and again goes round every version.
-- **Choose an alternate** lists the alternates, to make one live.
+- **Choose alternate** lists the alternates, to make one live.
 
 An alternate is of the whole speech, so its notes go after the speech's last line: a note between a speech's lines would end the speech there. A speech with a note inside it can't be kept as an alternate.
 
 ## Passes
 
-A pass is a run through the play with one thing in mind, such as a dialogue pass. **Start a pass** asks for its name, and adds a checklist of every scene to a Markdown note beside the script, `Play - Passes.md`, made the first time. Each pass is a heading in the note, and the last one is the current pass.
+A pass is a run through the play with one thing in mind, such as a dialogue pass. **Start pass** asks for its name, and adds a checklist of every scene to a Markdown note beside the script, `Play - Passes.md`, made the first time. Each pass is a heading in the note, and the last one is the current pass.
 
-The script outline shows the current pass at the top, with how many scenes are done, and a tick box beside each scene. Tick scenes there or in the note. A scene you change during the pass, so that it differs from the latest frozen draft, ticks itself. Scenes that already differed when the pass started don't, and neither does a scene you've unticked. A scene written since the pass started is added to its list when it's ticked. **Open passes** opens the note.
+The script outline shows the current pass at the top, with how many scenes are done, and a tick box beside each scene. Tick scenes there or in the note. A scene you change during the pass, so that it differs from the latest frozen draft, ticks itself. Scenes that already differed when the pass started don't, and neither does a scene you've unticked. A scene written since the pass started is added to its list when it's ticked. **Open passes note** opens the note.
 
 ## Checks
 
@@ -188,7 +192,7 @@ The script outline shows the current pass at the top, with how many scenes are d
 - **Filler words:** how often the dialogue says just, really, actually, honestly, you know and the like, and who says each most.
 - **Speech lengths:** a bar for every speech, through the play from left to right by running time, with a dashed line at 150 words (about a minute). Monologues that reach it stand out. Hover a bar for whose speech it is, and click it to go there. A table lists the ten longest.
 
-**Mark check findings**, the toggle at the top of the tab, or **Mark findings in the editor** in Fountain Stage's settings, underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
+**Mark in editor** at the top of the tab, **Toggle check marks** in the command palette, or **Mark findings in the editor** in Fountain Stage's settings underlines what the checks find in the script, such as a phrase in a stage direction. Hover a mark to see why. It's off to start with. In settings, **Phrases to check in stage directions** takes your own phrases, one a line, and **Dismissed findings** brings back every dismissed finding at once.
 
 ## Cast
 
@@ -224,14 +228,14 @@ Each goes where the script already has it, as a title-page key or a section such
 
 ## Table read
 
-**Start a table read** reads the script aloud from the cursor's line, with the device's built-in speech. It works on desktop and on most phones, with whatever voices the device has. A dialog first asks:
+**Start table read** reads the script aloud from the cursor's line, with the device's built-in speech. It works on desktop and on most phones, with whatever voices the device has. A dialog first asks:
 
 - **Read stage directions:** scene headings, stage directions and parentheticals, in the narrator's voice, or left out.
 - **Narrator:** the narrator's voice.
 - **Speed.**
 - **Parts:** a voice for each character, given out in turn to start with. Parts that share a voice are read at different pitches. The play button beside a voice lets you hear it. Turn a part on to read it yourself.
 
-The lines being read are highlighted and kept in view. When it comes to a part you're reading, it highlights your line and waits: tap **Next** when you've said it. A strip at the top of the script has **Pause**, **Skip** and **Stop**. **Go on in the table read**, **Pause or resume the table read** and **Stop the table read** are commands too, so you can give them hotkeys. The dialog remembers your choices.
+The lines being read are highlighted and kept in view. When it comes to a part you're reading, it highlights your line and waits: tap **Next** when you've said it. A strip at the top of the script has **Pause**, **Skip** and **Stop**. **Go on in table read**, **Pause or resume table read** and **Stop table read** are commands too, so you can give them hotkeys. The dialog remembers your choices.
 
 ## Runtime targets and read-throughs
 
@@ -245,14 +249,14 @@ Targets live in the script, so they move with a scene and survive a renamed head
 
 ### Read-throughs
 
-**Time a read-through** times a reading scene by scene, starting at the scene the cursor is in. A strip at the top of the script shows the scene and how long it's taken. Tap **Next scene** as each scene ends (it brings the next scene's heading to the top), **Pause** for a break, and **Finish** at the end. **Next scene in the read-through**, **Pause or resume the read-through** and **Finish the read-through** are commands too, for hotkeys.
+**Time read-through** times a reading scene by scene, starting at the scene the cursor is in. A strip at the top of the script shows the scene and how long it's taken. Tap **Next scene** as each scene ends (it brings the next scene's heading to the top), **Pause** for a break, and **Finish** at the end. **Go on to next scene in read-through**, **Pause or resume read-through** and **Finish read-through** are commands too, for hotkeys.
 
 At the end, the times go in a note beside the script, `Play - Readings.md`, one section for each reading: the date, the draft, and each scene's time read against its estimate. Then you can adjust the runtime estimate to match. It scales the estimate by one factor: how much longer or shorter the scenes read than estimated. By words spoken, that changes words per minute and every pause word's times; by pages, minutes per page. Every script's runtime changes with it, and you can change the numbers back in Fountain Stage's settings.
 
 ## Focus
 
 - **Typewriter mode**, from the command palette (**Toggle typewriter mode**) or a script's **More options** menu, keeps the cursor's line in the middle of the screen as you type and move with the keys, and fades everything but the paragraph you're in. Clicking doesn't scroll, so the text stays under the pointer. It stays on, in every script, until you turn it off.
-- **Start a sprint** asks how many minutes to write for, then counts down in a strip at the top of the script, with the words you've added since it started. When the time's up it says how many words you wrote. **Stop the sprint** ends it early.
+- **Start sprint** asks how many minutes to write for, then counts down in a strip at the top of the script, with the words you've added since it started. When the time's up it says how many words you wrote. **Stop sprint** ends it early.
 
 ## Rehearsal pages
 
@@ -439,6 +443,14 @@ npm test       # vitest
 npm run build  # type-check and production build
 ```
 
+The documentation site is a [Starlight](https://starlight.astro.build/) project of its own in `docs/`, published to GitHub Pages from `main` by the **Docs** workflow. Its pages are Markdown files in `docs/src/content/docs/`.
+
+```sh
+npm --prefix docs install
+npm --prefix docs run dev     # preview at http://localhost:4321/obsidian-fountain-stage/
+npm --prefix docs run build   # build the site into docs/dist
+```
+
 To copy every build straight into a test vault, create a `.env` file in the project folder (it's ignored by git):
 
 ```
@@ -451,13 +463,22 @@ Layout:
 
 | Path | Purpose |
 |---|---|
-| `src/main.ts` | Plugin entry point: registers the view, commands and ribbon button |
+| `src/main.ts` | Plugin entry point: registers the views and ribbon button, and holds the command table |
+| `src/commands.ts` | Commands described once: registering them in the palette, and the More options menu items and sections they make |
+| `src/scriptTabView.ts` | The base of the tabs that follow a script (report, changes, checks, beat map): which script to show, and refreshing as it changes |
 | `src/editor/FountainView.ts` | The `.fountain` editor (CodeMirror 6) |
 | `src/editor/formatting.ts` | Formatting as you type: re-parses on each change and styles each line |
+| `src/editor/positions.ts` | Remembering where you were in each script |
+| `src/editor/find.ts`, `src/fountain/textSearch.ts`, `src/searchView.ts` | Find and replace in a script, and Search scripts across the vault |
+| `src/fountain/lines.ts`, `src/fountain/sequence.ts`, `src/fountain/wholeWords.ts` | Shared helpers: line offsets and line endings, the longest run in order, and matching whole words |
+| `src/fountain/acts.ts` | Which scene headings are acts, by the style's pattern |
 | `src/editor/reading.ts`, `src/fountain/reading.ts` | Reading view: what it hides, and hiding it |
 | `src/editor/completion.ts`, `src/fountain/characters.ts` | Character name completion, and finding the names |
 | `src/editor/cycling.ts`, `src/fountain/lineTypes.ts` | Tab and Shift+Tab: what they do to a line, and the keys |
 | `src/outlineView.ts`, `src/fountain/outline.ts` | The script outline sidebar, and building the outline |
+| `src/fountain/storyOutline.ts`, `src/fountain/planning.ts`, `src/planningCommands.ts` | The story outline: beats and action beats by act and by beat, the edits that plan them, and the commands and dialogs |
+| `src/fountain/frameworks.ts` | Story frameworks: the built-in ones, and reading your own from notes |
+| `src/fountain/beatMap.ts`, `src/beatMapView.ts` | The beat map: placing beats against a framework, and the tab |
 | `src/pagination.ts`, `src/pdf/pageBreaks.ts`, `src/editor/pageRules.ts` | Page breaks in the editor: laying the script out in its style and fonts, where pages break, and the rules |
 | `src/fountain/runtime.ts` | The runtime estimate, from words spoken or pages |
 | `src/reportView.ts`, `src/fountain/report.ts`, `src/fountain/reportMarkdown.ts` | The script report: the tab, working out the report, and the Markdown note |
@@ -489,9 +510,11 @@ Layout:
 | `src/pdf/layout.ts` | Turns a parsed script into pages, ported from fountain2pdf's engine |
 | `src/pdf/paragraph.ts`, `blocks.ts`, `flow.ts` | Line breaking and pagination, matching reportlab's so pages break where fountain2pdf's did |
 | `src/library.ts` | Plugin settings, and loading styles and fonts from the vault folders |
+| `src/setupPlan.ts`, `src/setupCommand.ts` | Set up a play: which folders to make and the first script, and the dialog and first-run notice |
 | `src/settings.ts` | The settings tab |
 | `src/pdf/userStyles.ts` | Style files of your own: the schema of every setting, validation and `extends` |
 | `src/pdf/vaultFonts.ts` | Reading font files and choosing a family's faces |
+| `src/pdf/model.ts` | The laid-out document: pages of positioned text, rules, links and pictures |
 | `src/pdf/fonts.ts`, `render.ts` | Font metrics, and drawing the pages with pdf-lib |
 | `src/files.ts` | File helpers, such as picking a name for a new script |
 | `src/fountain/links.ts`, `src/editor/links.ts` | Links to notes: finding them, rename edits, and opening and previewing them in the editor |
@@ -499,6 +522,7 @@ Layout:
 | `src/pdf/markdown.ts`, `src/pdf/appendix.ts`, `src/pdf/images.ts` | The appendix of linked notes: reading Markdown, laying it out, and reading pictures' sizes |
 | `src/obsidianConfig.ts` | Reads Obsidian's editor settings, such as **Show line number** |
 | `tests/` | vitest tests |
+| `docs/` | The documentation site (Starlight) |
 
 ## Branches and releases
 

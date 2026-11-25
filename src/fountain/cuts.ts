@@ -12,7 +12,8 @@
 
 import type { ParsedScript } from "./parser";
 import { insertionText } from "./insert";
-import { formatDraftDate } from "./titlePage";
+import { lineAt, lineStarts } from "./lines";
+import { longDate } from "./titlePage";
 
 /** One cut: its heading line and its text. */
 export interface Cut {
@@ -37,7 +38,7 @@ const HEADING_RE = /^#[ \t]+(?:(\d+)\.[ \t]+.*?|Start), line (\d+) · \S.*$/;
 
 /** The heading for text cut from a script, starting at `from`. */
 export function cutHeading(script: ParsedScript, source: string, from: number, date: Date): Cut["heading"] {
-  const line = lineAt(source, from);
+  const line = lineAt(lineStarts(source), from);
   let scene = 0;
   let title = "";
   let headingLine = 0;
@@ -49,7 +50,7 @@ export function cutHeading(script: ParsedScript, source: string, from: number, d
     headingLine = el.line;
   }
   const where = scene === 0 ? "Start" : `${scene}. ${title}`;
-  return `# ${where}, line ${line - headingLine} · ${formatDraftDate(date)}`;
+  return `# ${where}, line ${line - headingLine} · ${longDate(date)}`;
 }
 
 /** Where a cut came from, read from its heading, or undefined for a heading that's been changed out of shape. */
@@ -140,10 +141,4 @@ export function parseCutsFileName(basename: string): { prefix: string } | undefi
 /** Whether a file name (without extension) is that of the frozen draft a cuts file belongs to. */
 export function isFrozenDraftOf(basename: string, prefix: string): boolean {
   return basename.startsWith(prefix) && /^\d{4}-\d{2}-\d{2}(?: \d+)?$/.test(basename.slice(prefix.length));
-}
-
-function lineAt(source: string, offset: number): number {
-  let line = 0;
-  for (let i = 0; i < offset && i < source.length; i++) if (source[i] === "\n") line++;
-  return line;
 }

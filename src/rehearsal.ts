@@ -15,7 +15,7 @@ import { actMatcher } from "./fountain/acts";
 import type { ScriptVersion } from "./fountain/compare";
 import { buildOutline } from "./fountain/outline";
 import { type ParsedScript, parseFountain } from "./fountain/parser";
-import { applyEdits, formatDraftDate, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
+import { applyEdits, longDate, type TitleKeyChange, titleKeyEdits } from "./fountain/titlePage";
 import type { Library } from "./library";
 import type { PaginatedScript, Paginator } from "./pagination";
 import type { FontSet } from "./pdf/fonts";
@@ -210,7 +210,7 @@ export class Rehearsal {
             if (d.file === target.file) continue;
             if (value((await this.read(d.file)).script, "locked")) await this.setKeys(d.file, [["Locked", null]]);
           }
-          await this.setKeys(target.file, [["Locked", formatDraftDate(new Date())], ...(style ? ([["Style", style.id]] as TitleKeyChange[]) : [])]);
+          await this.setKeys(target.file, [["Locked", longDate(new Date())], ...(style ? ([["Style", style.id]] as TitleKeyChange[]) : [])]);
           new Notice(`Locked ${draftLabel(target)} as the rehearsal script.`);
           done();
         } catch (error) {
@@ -234,10 +234,16 @@ export class Rehearsal {
       [`${draftLabel(chain.locked)} stops being the rehearsal script, and page breaks follow the text again. The revisions issued stay in their frozen drafts.`],
       "Unlock",
       () => {
-        void this.setKeys(chain.locked.file, [["Locked", null]]).then(() => {
-          new Notice(`Unlocked ${draftLabel(chain.locked)}.`);
-          done();
-        });
+        this.setKeys(chain.locked.file, [["Locked", null]]).then(
+          () => {
+            new Notice(`Unlocked ${draftLabel(chain.locked)}.`);
+            done();
+          },
+          (error: unknown) => {
+            console.error("[fountain-stage] couldn't unlock the rehearsal script", error);
+            new Notice(`Couldn't unlock the rehearsal script: ${error instanceof Error ? error.message : String(error)}`);
+          },
+        );
       },
     ).open();
   }
@@ -280,7 +286,7 @@ export class Rehearsal {
 
   private async writeRevision(view: FountainView, file: TFile, chain: RehearsalChain, current: ScriptVersion, number: number, done: () => void): Promise<void> {
     try {
-      const date = formatDraftDate(new Date());
+      const date = longDate(new Date());
       const { choice, notice } = await this.library.fontsFor(chain.style);
       if (notice) new Notice(notice);
       const { bytes, layout } = await drawPdf(choice, (fonts) => {

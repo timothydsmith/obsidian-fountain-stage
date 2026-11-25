@@ -3,7 +3,7 @@ import { parseFountain } from "../src/fountain/parser";
 import {
   applyEdits,
   draftNumber,
-  formatDraftDate,
+  longDate,
   frozenDraftName,
   plainTitle,
   titleKeyEdits,
@@ -30,8 +30,8 @@ describe("dates and names", () => {
   const date = new Date(2026, 10, 21);
 
   it("writes the draft date in words", () => {
-    expect(formatDraftDate(date)).toBe("21 November 2026");
-    expect(formatDraftDate(new Date(2027, 0, 5))).toBe("5 January 2027");
+    expect(longDate(date)).toBe("21 November 2026");
+    expect(longDate(new Date(2027, 0, 5))).toBe("5 January 2027");
   });
 
   it("names a frozen draft from the title, draft and date", () => {

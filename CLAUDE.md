@@ -6,7 +6,8 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 
 - Work on `dev`. `main` is releases only; follow the release steps in README.md.
 - Semantic versioning. Tags are the bare version (`0.1.0`), matching `manifest.json`.
-- Add a CHANGELOG.md entry under **Unreleased** for every user-visible change.
+- Add a CHANGELOG.md entry under **Unreleased** for every user-visible change, and update its page in the documentation site (`docs/src/content/docs/`): the feature's page, and `commands.md` for a new or renamed command. The README keeps a shorter account of each feature, for the community plugin listing.
+- The docs site is a separate npm project in `docs/`. `npm --prefix docs run build` must pass when it changes. Links between pages are relative (`../cuts/`), since the site is served under `/obsidian-fountain-stage/`.
 - `npm test` and `npm run build` must pass before committing.
 
 ## Constraints
@@ -21,6 +22,13 @@ Obsidian plugin for Fountain (.fountain) scripts: formatted editing, line number
 - **Sections never print**, as the Fountain spec says. `#` sections are structure only (outline, runtime, report); printed act and scene titles come from scene headings, centred text and `===`.
 - **Story beats and action beats** are sections: shallower than the **Action beats** setting (`##` by default) they're story beats, at it or deeper they're action beats, part of the scene they're in. `src/fountain/storyOutline.ts` builds the by-act and by-beat outlines; `buildOutline` in `outline.ts` stays as it was for the report, passes and checks.
 - `ROADMAP.md` holds the release plan and the decisions behind each feature.
+
+## Code
+
+- **Commands are rows in one table**, `commandTable` in `main.ts`, registered by `src/commands.ts`: id, name, icon, when it applies, and any More options menu section. Add a command there, not with `addCommand`, so the palette and the menu can't drift apart. Ids never change once released, so hotkeys keep working.
+- **Command names** follow the 1.0 rules: verbs first, no "a" or "the" ("Start sprint"), and toggles as "Toggle …" in the palette, shown without "Toggle" and ticked in menus. The rules and the renames are in ROADMAP.md.
+- **Tabs that follow a script** (report, changes, checks, beat map) extend `ScriptTabView`.
+- **Shared helpers:** line offsets and line endings through `src/fountain/lines.ts`, dates written out ("21 November 2026") through `longDate` in `titlePage.ts`, and whole-word matching (no regex lookbehind, for iOS) through `src/fountain/wholeWords.ts`.
 
 ## Parser
 

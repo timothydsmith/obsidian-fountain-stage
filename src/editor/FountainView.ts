@@ -15,8 +15,7 @@ import type { PositionStore, ScriptPosition } from "./positions";
 import { pageRuleDisplay, pageRuleField, setPages } from "./pageRules";
 import type { ParsedScript } from "../fountain/parser";
 import type { PaginatedScript } from "../pagination";
-import { generateBreakdown } from "../breakdownCommand";
-import { mergeCharacters, renameCharacter } from "../renameCharacterModal";
+import { addScriptMenuItems, type ScriptMenuItem } from "../commands";
 import { changeTint, setChangedLines } from "./changeTint";
 import { type CheckMark, checkMarks, setCheckMarks } from "./checkMarks";
 import { cutHistory, cutsFileEffect, type CutsFileChange } from "./cutHistory";
@@ -61,8 +60,12 @@ interface ModeState {
   source?: unknown;
 }
 
-/** What changed in a script, for views that follow it, such as the outline: its text, where you are, or its page layout. */
-/** "position" is the cursor moving or any scrolling; "scroll" is only scrolling you do, not scrollToPlace. */
+/**
+ * What changed in a script, for views that follow it, such as the outline:
+ * its text, where you are, or its page layout. "position" is the cursor
+ * moving or any scrolling; "scroll" is only scrolling you do, not
+ * scrollToPlace.
+ */
 export type ScriptChange = "text" | "position" | "scroll" | "pages";
 
 /** What a script's view needs from the plugin. */
@@ -75,28 +78,15 @@ export interface FountainHost {
   inDraftsFolder(file: TFile): boolean;
   /** Whether a file is read-only until unfrozen: a frozen draft, or the cuts file of one. */
   isFrozen(file: TFile): boolean;
-  freezeDraft(view: FountainView): void;
   /** Adds a cut to its cuts file, or takes one out, as a cut or restore is made, undone or redone. */
   changeCutsFile(change: CutsFileChange): void;
   /** Whether a file is a cuts file, in the drafts folder. */
   isCutsFile(file: TFile): boolean;
   isLineBank(file: TFile): boolean;
-  cutFromDraft(view: FountainView): void;
-  restoreCut(view: FountainView): void;
-  /** Opens the Changes tab on a script. */
-  showChanges(view: FountainView): void;
-  /** Opens the draft a script is compared with beside it, scrolling with it. */
-  showSideBySide(view: FountainView): void;
-  /** Opens the Checks tab on a script. */
-  showChecks(view: FountainView): void;
-  /** Whether lines changed since a draft are tinted. */
-  tintingChanges(): boolean;
-  /** The rehearsal script commands that apply to a script: locking, unlocking and issuing revised pages. */
-  rehearsalActions(view: FountainView): { title: string; icon: string; run: () => void }[];
-  toggleChangeTint(): void;
+  /** The commands for a script's More options menu, after its modes. */
+  menuItems(view: FountainView): ScriptMenuItem[];
   /** Whether typewriter mode is on. */
   typewriterMode(): boolean;
-  toggleTypewriter(): void;
   /** Sections this deep or deeper are action beats, which belong to the scene they're in. */
   actionDepth(): number;
   /** Links to vault notes in a script. */
@@ -237,12 +227,12 @@ export class FountainView extends TextFileView {
     this.setMode(!this.reading, this.sourceMode);
   }
 
-  /** Switches between Live Preview and source mode, from reading view too. */
   /** Changes the cursor's line to the next type (1) or the previous (-1), as Tab and Shift+Tab do. */
   cycleLineType(direction: 1 | -1): void {
     if (cycleLineType(direction)(this.editor)) this.editor.focus();
   }
 
+  /** Switches between Live Preview and source mode, from reading view too. */
   toggleSource(): void {
     if (this.refuseIfFrozen()) return;
     this.setMode(false, !this.sourceMode);
@@ -308,7 +298,7 @@ export class FountainView extends TextFileView {
   /** Says the script is frozen, if it is. True if it is, so the edit shouldn't go ahead. */
   refuseIfFrozen(): boolean {
     if (!this.isFrozen()) return false;
-    new Notice("This draft is frozen. To edit it, choose Unfreeze from its More options menu.");
+    new Notice("This draft is frozen. To edit it, choose Unfreeze draft from its More options menu.");
     return true;
   }
 
@@ -343,105 +333,7 @@ export class FountainView extends TextFileView {
         .setChecked(!this.reading && this.sourceMode)
         .onClick(() => this.toggleSource()),
     );
-    if (this.isFrozen()) {
-      menu.addItem((item) =>
-        item
-          .setSection("action")
-          .setTitle("Unfreeze")
-          .setIcon("lock-open")
-          .onClick(() => this.unfreeze()),
-      );
-    } else if (!this.isDraft() && !this.isLineBank()) {
-      menu.addItem((item) =>
-        item
-          .setSection("action")
-          .setTitle("Freeze draft")
-          .setIcon("snowflake")
-          .onClick(() => this.host.freezeDraft(this)),
-      );
-    }
-    if (!this.isDraft() && !this.isLineBank()) {
-      menu.addItem((item) =>
-        item
-          .setSection("action")
-          .setTitle("Cut from this draft")
-          .setIcon("scissors")
-          .onClick(() => this.host.cutFromDraft(this)),
-      );
-    } else if (this.file && this.host.isCutsFile(this.file)) {
-      menu.addItem((item) =>
-        item
-          .setSection("action")
-          .setTitle("Restore cut")
-          .setIcon("undo-2")
-          .onClick(() => this.host.restoreCut(this)),
-      );
-    }
-    for (const action of this.host.rehearsalActions(this)) {
-      menu.addItem((item) => item.setSection("action").setTitle(action.title).setIcon(action.icon).onClick(action.run));
-    }
-    menu.addItem((item) =>
-      item
-        .setSection("action")
-        .setTitle("Rename character")
-        .setIcon("users")
-        .onClick(() => renameCharacter(this.app, this)),
-    );
-    menu.addItem((item) =>
-      item
-        .setSection("action")
-        .setTitle("Merge characters")
-        .setIcon("merge")
-        .onClick(() => mergeCharacters(this.app, this)),
-    );
-    menu.addItem((item) =>
-      item
-        .setSection("action")
-        .setTitle("Write cast list and scene breakdown")
-        .setIcon("list-plus")
-        .onClick(() => generateBreakdown(this)),
-    );
-    if (!this.isLineBank() && !(this.file && this.host.isCutsFile(this.file))) {
-      menu.addItem((item) =>
-        item
-          .setSection("view")
-          .setTitle("Changes since a draft")
-          .setIcon("git-compare")
-          .onClick(() => this.host.showChanges(this)),
-      );
-      if (!Platform.isPhone) {
-        menu.addItem((item) =>
-          item
-            .setSection("view")
-            .setTitle("Side by side with a draft")
-            .setIcon("columns-2")
-            .onClick(() => this.host.showSideBySide(this)),
-        );
-      }
-      menu.addItem((item) =>
-        item
-          .setSection("view")
-          .setTitle("Checks")
-          .setIcon("list-checks")
-          .onClick(() => this.host.showChecks(this)),
-      );
-      menu.addItem((item) =>
-        item
-          .setSection("view")
-          .setTitle("Tint changes since a draft")
-          .setIcon("highlighter")
-          .setChecked(this.host.tintingChanges())
-          .onClick(() => this.host.toggleChangeTint()),
-      );
-    }
-    menu.addItem((item) =>
-      item
-        .setSection("view")
-        .setTitle("Typewriter mode")
-        .setIcon("type")
-        .setChecked(this.host.typewriterMode())
-        .onClick(() => this.host.toggleTypewriter()),
-    );
+    addScriptMenuItems(menu, this.host.menuItems(this));
     super.onPaneMenu(menu, source);
   }
 

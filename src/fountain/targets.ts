@@ -12,6 +12,7 @@
  * ("12:30") or hours, minutes and seconds ("1:30:00").
  */
 
+import { eolOf, lineStarts } from "./lines";
 import type { ParsedScript } from "./parser";
 import { type TextEdit, titleKeyEdits } from "./titlePage";
 
@@ -109,18 +110,11 @@ export function headingTargets(source: string, script: ParsedScript, headingLine
   return out;
 }
 
-/** Offsets of the start of each line. */
-function lineStarts(source: string): number[] {
-  const starts = [0];
-  for (let i = source.indexOf("\n"); i >= 0; i = source.indexOf("\n", i + 1)) starts.push(i + 1);
-  return starts;
-}
-
 /** Edits that set a heading's target, or take it out with null. */
 export function headingTargetEdits(source: string, script: ParsedScript, headingLine: number, seconds: number | null): TextEdit[] {
   const lines = source.split("\n");
   const starts = lineStarts(source);
-  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  const eol = eolOf(source);
   /** Where a line's text ends, before any \r. */
   const textEnd = (n: number) => starts[n] + lines[n].replace(/\r$/, "").length;
   const existing = headingTarget(lines, script, headingLine);

@@ -1,0 +1,46 @@
+---
+title: Fountain Stage
+description: An Obsidian plugin for writing stage plays in Fountain, with formatting as you type, tools for rewriting, and export to PDFs in stage-play house styles.
+template: splash
+hero:
+  tagline: Write stage plays in Obsidian, in Fountain. Formatting as you type, tools for every rewrite, and PDFs in the house style a theatre asks for.
+  actions:
+    - text: Install
+      link: install/
+      icon: right-arrow
+    - text: Set up a play
+      link: setting-up/
+      variant: minimal
+    - text: View on GitHub
+      link: https://github.com/timothydsmith/obsidian-fountain-stage
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+Fountain Stage is an [Obsidian](https://obsidian.md) plugin for scripts written in [Fountain](https://fountain.io/syntax/), the plain-text format for scripts. It's made for plays: acts and scenes, entrances and exits, doubling, rehearsal pages, and PDFs in stage-play formats. It works on desktop and mobile, and it's in Obsidian's [community plugin directory](https://community.obsidian.md/plugins/fountain-stage).
+
+<CardGrid>
+  <Card title="Writing" icon="pencil">
+    Formatting as you type, character names that complete themselves, Tab to change a line's type, page breaks as they'll print, and an outline with each scene's runtime.
+  </Card>
+  <Card title="Rewriting" icon="document">
+    Freeze drafts, keep what you cut, see what's changed since a draft, keep alternate lines, and work through rewrite passes scene by scene.
+  </Card>
+  <Card title="Checking" icon="approve-check">
+    Names written two ways, stage directions an actor can't play, entrances and exits that don't add up, each character's voice, and the smallest cast that can play it.
+  </Card>
+  <Card title="Printing" icon="open-book">
+    PDFs in Modern Play Format, APT or Samuel French style, or a style of your own, in your own fonts, with locked pages and revised pages for rehearsal.
+  </Card>
+</CardGrid>
+
+## Where to start
+
+<CardGrid>
+  <LinkCard title="Install" description="From Obsidian's community plugins, or by hand." href="install/" />
+  <LinkCard title="Set up a play" description="The folders Fountain Stage uses, and a first script." href="setting-up/" />
+  <LinkCard title="Writing in the editor" description="Modes, character names, Tab, page breaks and finding text." href="editor/" />
+  <LinkCard title="Commands" description="Every command, and where it is in the menus." href="commands/" />
+</CardGrid>

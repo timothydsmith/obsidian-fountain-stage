@@ -7,6 +7,24 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-25
+
+The first stable release. It reviews the whole plugin rather than adding to it: commands are renamed and grouped consistently, the code is tidied, and the documentation moves to a site of its own.
+
+### Added
+- A documentation site, at [timothydsmith.github.io/obsidian-fountain-stage](https://timothydsmith.github.io/obsidian-fountain-stage/), with a page for each feature and a list of every command.
+
+### Changed
+- Commands are named consistently: verbs first, without "a" or "the", and the same in the command palette and the menus. Among them, **Put in a line from the line bank** is now **Insert line from line bank**, **Tint changes since a draft** is **Toggle change tint**, **Mark check findings** is **Toggle check marks**, **Start a sprint** is **Start sprint**, and the ribbon's **New Fountain script** is **New script**. Hotkeys you've set keep working.
+- A script's **More options** menu is in sections: drafts, rehearsal, cast, panels and focus. It gains **Show script outline**, **Show script report**, **Show beat map**, **Show who's on stage**, **Start sprint**, **Time read-through** and **Start table read**.
+- Commands have icons, for the mobile toolbar.
+- The script report and beat map, like the Changes and Checks tabs, pick up a script still on screen when the one they show is closed, rather than going blank.
+- Dates in the Changes tab's draft names and in saved script reports are written like draft dates, such as "21 November 2026", whatever your system's date format.
+
+### Fixed
+- A font file that's damaged, or doesn't give its slant, no longer stops the fonts folder being read or counts as italic. A damaged one is listed in settings as unreadable.
+- If unlocking the rehearsal script fails, a notice says so.
+
 ## [0.11.0] - 2026-11-25
 
 ### Added
@@ -175,7 +193,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.11.0...1.0.0
 [0.11.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...0.10.0
 [0.9.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...0.9.1

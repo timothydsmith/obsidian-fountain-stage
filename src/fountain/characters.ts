@@ -32,7 +32,7 @@ export function listName(entry: string): string | undefined {
   return capitals || (separator && titleCase) ? name.toUpperCase() : undefined;
 }
 
-/** A name worth offering: has letters, and no lower case once upper-cased. */
+/** A name worth offering: has letters, and isn't too long to be a name. */
 const isName = (name: string) => /\p{L}/u.test(name) && name.length <= 40;
 
 /**
