@@ -7,6 +7,10 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-25
+
+The first stable release. It reviews the whole plugin rather than adding to it: commands are renamed and grouped consistently, the code is tidied, and the documentation moves to a site of its own.
+
 ### Added
 - A documentation site, at [timothydsmith.github.io/obsidian-fountain-stage](https://timothydsmith.github.io/obsidian-fountain-stage/), with a page for each feature and a list of every command.
 
@@ -189,7 +193,8 @@ The first release.
 - Settings for the styles and fonts folders, which also list the styles and font families Fountain Stage found and any problems with them.
 - Fountain Stage's settings appear in Obsidian's settings search, in Obsidian 1.13 and later.
 
-[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.11.0...1.0.0
 [0.11.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.1...0.10.0
 [0.9.1]: https://github.com/timothydsmith/obsidian-fountain-stage/compare/0.9.0...0.9.1

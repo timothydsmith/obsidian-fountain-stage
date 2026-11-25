@@ -4,7 +4,7 @@ Last updated 25 November 2026.
 
 ## Where things stand
 
-Every release planned before 1.0 has shipped, the last being 0.11.0 (setting up) on 25 November 2026. The 1.0 review is under way: commands are renamed and grouped, four refactors are done, and the read-through found only small fixes. Fountain Stage is in Obsidian's community plugin directory.
+Version 1.0.0 shipped on 25 November 2026, after a review of the whole codebase: commands renamed and grouped, four refactors, a read-through that found only small fixes, and a documentation site. Next come reporting and project management, between 1.0 and 2.0. Fountain Stage is in Obsidian's community plugin directory.
 
 Working assumptions:
 
@@ -346,7 +346,7 @@ Built for 0.11.0:
 - **The first script** is named from its title, without the characters file names can't have, and goes where Obsidian puts new notes. Its title page has the title, and `Credit: Written by` and `Author:` when an author is given.
 - **The notice** is shown at most once per vault: a `setupOffered` setting is set the first time the plugin loads, whether or not the vault has scripts, so existing vaults never see it.
 
-## 1.0 review (started 25 November 2026)
+## 1.0 review (released in 1.0.0, 25 November 2026)
 
 No new features. A review of the whole codebase, refactoring where it's needed, and rationalising commands.
 
