@@ -38,6 +38,7 @@ import { calibrate } from "./fountain/readings";
 import { playTarget, targetDelta } from "./fountain/targets";
 import { setPlayTarget, setTargetHere } from "./targetCommands";
 import { FountainStageSettingTab } from "./settings";
+import { type CommandTable, registerCommands, scriptMenuItems } from "./commands";
 import { OnStage } from "./onStage";
 import { generateBreakdown } from "./breakdownCommand";
 import type { LinkHost } from "./editor/links";
@@ -52,6 +53,8 @@ const POSITIONS_KEY = "fountain-stage-positions";
 /** Page preview sources: links hovered in reading view, and while editing (with Ctrl or Cmd, unless changed). */
 const HOVER_READING = "fountain-stage-reading";
 const HOVER_EDITING = "fountain-stage-editing";
+
+type RehearsalAction = "lock" | "unlock" | "issue";
 
 export default class FountainStagePlugin extends Plugin {
   private positions!: PositionStore;
@@ -68,6 +71,8 @@ export default class FountainStagePlugin extends Plugin {
   private readonly onStage = new OnStage();
   private readThroughs!: ReadThroughs;
   private tableReads!: TableReads;
+  /** Every command, for the palette and the More options menu. */
+  private commands!: CommandTable;
   /** Brings the tint on changed lines up to date in every open script. */
   private retint: () => void = () => undefined;
 
@@ -165,6 +170,7 @@ export default class FountainStagePlugin extends Plugin {
     });
     this.registerEvent(this.app.vault.on("delete", (file) => this.positions.delete(file.path)));
 
+    this.commands = this.commandTable();
     this.registerView(
       VIEW_TYPE_FOUNTAIN,
       (leaf) =>
@@ -176,18 +182,9 @@ export default class FountainStagePlugin extends Plugin {
           isFrozen: (file) => this.cuts.isFrozen(file),
           isCutsFile: (file) => this.cuts.isCutsFile(file),
           isLineBank: (file) => this.cuts.isLineBank(file),
-          freezeDraft: (view) => this.freezeDraft(view),
           changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
-          cutFromDraft: (view) => void this.cuts.cut(view),
-          restoreCut: (view) => this.cuts.restore(view),
-          showChanges: (view) => void this.showScriptTab(VIEW_TYPE_CHANGES, view),
-          showSideBySide: (view) => void this.sideBySide.open(view),
-          tintingChanges: () => this.settings.showChanges,
-          toggleChangeTint: () => this.toggleChangeTint(),
-          showChecks: (view) => void this.showScriptTab(VIEW_TYPE_CHECKS, view),
-          rehearsalActions: (view) => this.rehearsalActions(view),
+          menuItems: (view) => scriptMenuItems(this.commands, view),
           typewriterMode: () => this.settings.typewriter,
-          toggleTypewriter: () => this.toggleTypewriter(),
           actionDepth: () => this.settings.actionDepth,
           links: (view) => this.linkHost(view),
           noteNames: (view) => {
@@ -256,11 +253,6 @@ export default class FountainStagePlugin extends Plugin {
       VIEW_TYPE_CHECKS,
       (leaf) => new ChecksView(leaf, { checks: this.checks, settings: () => this.settings, setMarks: (on) => this.setCheckMarks(on) }),
     );
-    this.addCommand({
-      id: "show-outline",
-      name: "Show script outline",
-      callback: () => void this.showOutline(),
-    });
     this.registerView(VIEW_TYPE_SEARCH, (leaf) => new SearchView(leaf, { draftsFolder: () => this.draftsFolder() }));
     this.registerView(
       VIEW_TYPE_BEAT_MAP,
@@ -278,11 +270,6 @@ export default class FountainStagePlugin extends Plugin {
           frameworksFolder: () => this.settings.frameworksFolder,
         }),
     );
-    this.addCommand({
-      id: "search-scripts",
-      name: "Search scripts",
-      callback: () => void this.showSearch(),
-    });
 
     try {
       this.registerExtensions([FOUNTAIN_EXTENSION], VIEW_TYPE_FOUNTAIN);
@@ -293,201 +280,10 @@ export default class FountainStagePlugin extends Plugin {
       new Notice("Fountain Stage can't open .fountain files because another plugin already does. Turn that plugin off, then reload Fountain Stage.", 0);
     }
 
-    this.addCommand({
-      id: "new-script",
-      name: "New script",
-      callback: () => this.newScript(),
-    });
-    this.addRibbonIcon("drama", "New Fountain script", () => this.newScript());
-    this.addCommand({
-      id: "set-up-play",
-      name: "Set up a play",
-      callback: () => setUpPlay(this.app, this.settings),
-    });
+    registerCommands(this, this.commands);
+    this.addRibbonIcon("drama", "New script", () => this.newScript());
     // Offered once, the first time the plugin loads in a vault with no scripts.
     this.app.workspace.onLayoutReady(() => void offerSetUp(this.app, this.settings, () => this.saveData(this.settings)));
-
-    // Obsidian's own mode commands only work in notes. Their hotkeys work
-    // in scripts too (see FountainView); these are for the command palette.
-    const viewCommand = (id: string, name: string, run: (view: FountainView) => void) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          const view = this.app.workspace.getActiveViewOfType(FountainView);
-          if (!view) return false;
-          if (!checking) run(view);
-          return true;
-        },
-      });
-    viewCommand("toggle-reading-view", "Toggle reading view", (view) => view.toggleReading());
-    viewCommand("toggle-source-mode", "Toggle source mode", (view) => view.toggleSource());
-    // Obsidian's hotkeys for searching in a file open the search bar too (see FountainView).
-    viewCommand("find-in-script", "Find in script", (view) => view.find());
-    // For touch keyboards, which have no Tab key: these can go on the mobile toolbar.
-    viewCommand("next-line-type", "Next line type", (view) => view.cycleLineType(1));
-    viewCommand("previous-line-type", "Previous line type", (view) => view.cycleLineType(-1));
-    viewCommand("rename-character", "Rename character", (view) => renameCharacter(this.app, view));
-    viewCommand("merge-characters", "Merge characters", (view) => mergeCharacters(this.app, view));
-    viewCommand("show-on-stage", "Show who's on stage", (view) => this.onStage.show(view));
-    viewCommand("generate-breakdown", "Write cast list and scene breakdown", (view) => generateBreakdown(view));
-    // Story outline: planning beats and scenes, and the beat map.
-    viewCommand("show-beat-map", "Show beat map", (view) => void this.showScriptTab(VIEW_TYPE_BEAT_MAP, view));
-    viewCommand("import-framework", "Import framework", (view) => void importFramework(this.app, view, this.settings.frameworksFolder));
-    viewCommand("add-beat", "Add beat", (view) => addBeatAfter(this.app, view, itemAtCursor(view)));
-    viewCommand("add-scene", "Add scene", (view) => addSceneTo(this.app, view, itemAtCursor(view)));
-    viewCommand("edit-synopsis", "Edit synopsis", (view) => {
-      const item = itemAtCursor(view);
-      if (item) editSynopsis(this.app, view, item);
-      else new Notice("Put the cursor in a beat, scene or act to write its synopsis.");
-    });
-    viewCommand("create-linked-note", "Create or open linked note", (view) => {
-      const item = itemAtCursor(view);
-      if (item) void openLinkedNote(this.app, view, item, this.settings.beatNotesFolder);
-      else new Notice("Put the cursor in a beat, scene or act to link a note to it.");
-    });
-    this.addCommand({
-      id: "freeze-draft",
-      name: "Freeze draft",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
-        if (!checking) this.freezeDraft(view);
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "unfreeze-draft",
-      name: "Unfreeze draft",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view?.isFrozen()) return false;
-        if (!checking) view.unfreeze();
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "cut-from-draft",
-      name: "Cut from this draft",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
-        if (!checking) void this.cuts.cut(view);
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "restore-cut",
-      name: "Restore cut",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (!view?.file || !this.cuts.isCutsFile(view.file)) return false;
-        if (!checking) this.cuts.restore(view);
-        return true;
-      },
-    });
-    // The line bank goes with a script, not with its drafts or with itself.
-    const scriptCommand = (id: string, name: string, run: (view: FountainView) => void) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          const view = this.app.workspace.getActiveViewOfType(FountainView);
-          if (!view?.file || view.isDraft() || this.cuts.isLineBank(view.file)) return false;
-          if (!checking) run(view);
-          return true;
-        },
-      });
-    scriptCommand("add-to-line-bank", "Add to line bank", (view) => addToLineBank(this.app, this.cuts, view));
-    scriptCommand("drop-from-line-bank", "Put in a line from the line bank", (view) => void dropFromLineBank(this.app, this.cuts, view));
-    viewCommand("next-scene", "Go to next scene", (view) => jumpToScene(view, 1));
-    viewCommand("previous-scene", "Go to previous scene", (view) => jumpToScene(view, -1));
-    viewCommand("next-speech", "Go to this character's next speech", (view) => jumpToSpeech(view, 1));
-    viewCommand("previous-speech", "Go to this character's previous speech", (view) => jumpToSpeech(view, -1));
-    viewCommand("move-scene-up", "Move scene up", (view) => moveSceneBy(view, -1));
-    viewCommand("move-scene-down", "Move scene down", (view) => moveSceneBy(view, 1));
-    viewCommand("split-scene", "Split scene", (view) => splitSceneAtCursor(this.app, view));
-    viewCommand("merge-scene", "Merge with previous scene", (view) => mergeWithPreviousScene(view));
-    viewCommand("renumber-scenes", "Renumber scenes", (view) => this.renumberScenes(view));
-    scriptCommand("start-pass", "Start a pass", (view) => this.passes.start(view));
-    scriptCommand("open-passes", "Open passes", (view) => void this.passes.open(view));
-    viewCommand("keep-alternate", "Keep as an alternate", (view) => keepAsAlternate(view));
-    viewCommand("next-alternate", "Switch to next alternate", (view) => nextAlternate(view));
-    viewCommand("choose-alternate", "Choose an alternate", (view) => chooseAlternate(this.app, view));
-    viewCommand("show-changes", "Show changes since a draft", (view) => void this.showScriptTab(VIEW_TYPE_CHANGES, view));
-    viewCommand("tint-changes", "Tint changes since a draft", () => this.toggleChangeTint());
-    if (!Platform.isPhone) viewCommand("side-by-side", "Show side by side with a draft", (view) => void this.sideBySide.open(view));
-    const rehearsalCommand = (id: string, name: string, title: string) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          const view = this.app.workspace.getActiveViewOfType(FountainView);
-          const action = view && this.rehearsalActions(view).find((a) => a.title === title);
-          if (!action) return false;
-          if (!checking) action.run();
-          return true;
-        },
-      });
-    rehearsalCommand("lock-rehearsal-script", "Lock rehearsal script", "Lock rehearsal script");
-    rehearsalCommand("unlock-rehearsal-script", "Unlock rehearsal script", "Unlock rehearsal script");
-    rehearsalCommand("issue-revised-pages", "Issue revised pages", "Issue revised pages");
-    scriptCommand("set-play-target", "Set runtime target for the play", (view) => setPlayTarget(this.app, view));
-    scriptCommand("set-target", "Set runtime target for this scene", (view) => setTargetHere(this.app, view));
-    viewCommand("toggle-typewriter", "Toggle typewriter mode", () => this.toggleTypewriter());
-    scriptCommand("start-sprint", "Start a sprint", (view) => this.sprints.start(view));
-    viewCommand("time-read-through", "Time a read-through", (view) => this.readThroughs.start(view));
-    viewCommand("table-read", "Start a table read", (view) => void this.tableReads.start(view));
-    const tableReadCommand = (id: string, name: string, run: () => void) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          if (!this.tableReads.running()) return false;
-          if (!checking) run();
-          return true;
-        },
-      });
-    tableReadCommand("table-read-next", "Go on in the table read", () => this.tableReads.next());
-    tableReadCommand("table-read-pause", "Pause or resume the table read", () => this.tableReads.pause());
-    tableReadCommand("table-read-stop", "Stop the table read", () => this.tableReads.stop());
-    const readThroughCommand = (id: string, name: string, run: () => void) =>
-      this.addCommand({
-        id,
-        name,
-        checkCallback: (checking) => {
-          if (!this.readThroughs.running()) return false;
-          if (!checking) run();
-          return true;
-        },
-      });
-    readThroughCommand("read-through-next-scene", "Next scene in the read-through", () => this.readThroughs.next());
-    readThroughCommand("read-through-pause", "Pause or resume the read-through", () => this.readThroughs.pause());
-    readThroughCommand("read-through-finish", "Finish the read-through", () => void this.readThroughs.finish());
-    this.addCommand({
-      id: "stop-sprint",
-      name: "Stop the sprint",
-      checkCallback: (checking) => {
-        if (!this.sprints.running()) return false;
-        if (!checking) void this.sprints.stop();
-        return true;
-      },
-    });
-    viewCommand("show-checks", "Show checks", (view) => void this.showScriptTab(VIEW_TYPE_CHECKS, view));
-    viewCommand("mark-check-findings", "Mark check findings", () => this.setCheckMarks(!this.settings.showCheckMarks, true));
-    viewCommand("show-report", "Show script report", (view) => void this.showScriptTab(VIEW_TYPE_REPORT, view));
-    viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
-
-    this.addCommand({
-      id: "export-pdf",
-      name: "Export to PDF",
-      checkCallback: (checking) => {
-        const file = this.app.workspace.getActiveFile();
-        if (file?.extension !== FOUNTAIN_EXTENSION) return false;
-        if (!checking) void this.exportPdf(file);
-        return true;
-      },
-    });
 
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
@@ -500,6 +296,138 @@ export default class FountainStagePlugin extends Plugin {
         );
       }),
     );
+  }
+
+  /**
+   * Every command, in the order the palette's search finds them among
+   * themselves and the menu shows them. Ids never change; names follow the
+   * rules in ROADMAP.md (verbs first, no articles, toggles as "Toggle …").
+   */
+  private commandTable(): CommandTable {
+    const { app } = this;
+    const { cuts } = this;
+    /** A script you're writing: not a frozen draft, cuts file or line bank. */
+    const working = (view: FountainView) => !!view.file && !view.isDraft() && !cuts.isLineBank(view.file);
+    /** A script with drafts to compare: not a line bank or cuts file. */
+    const comparable = (view: FountainView) => !!view.file && !cuts.isLineBank(view.file) && !cuts.isCutsFile(view.file);
+    const rehearsal = (action: RehearsalAction) => ({
+      appliesTo: (view: FountainView) => this.rehearsalActions(view).includes(action),
+      run: (view: FountainView) => this.rehearse(view, action),
+    });
+    return {
+      app: [
+        { id: "new-script", name: "New script", icon: "file-plus", run: () => void this.newScript() },
+        { id: "set-up-play", name: "Set up a play", icon: "folder-plus", run: () => setUpPlay(app, this.settings) },
+        { id: "show-outline", name: "Show script outline", icon: "list-tree", menu: "panels", run: () => void this.showOutline() },
+        { id: "search-scripts", name: "Search scripts", icon: "search", run: () => void this.showSearch() },
+        { id: "stop-sprint", name: "Stop sprint", icon: "square", available: () => this.sprints.running(), run: () => void this.sprints.stop() },
+        { id: "read-through-next-scene", name: "Go on to next scene in read-through", icon: "skip-forward", available: () => this.readThroughs.running(), run: () => this.readThroughs.next() },
+        { id: "read-through-pause", name: "Pause or resume read-through", icon: "pause", available: () => this.readThroughs.running(), run: () => this.readThroughs.pause() },
+        { id: "read-through-finish", name: "Finish read-through", icon: "flag", available: () => this.readThroughs.running(), run: () => void this.readThroughs.finish() },
+        { id: "table-read-next", name: "Go on in table read", icon: "skip-forward", available: () => this.tableReads.running(), run: () => this.tableReads.next() },
+        { id: "table-read-pause", name: "Pause or resume table read", icon: "pause", available: () => this.tableReads.running(), run: () => this.tableReads.pause() },
+        { id: "table-read-stop", name: "Stop table read", icon: "square", available: () => this.tableReads.running(), run: () => this.tableReads.stop() },
+      ],
+      script: [
+        // Modes and editing. Obsidian's own mode commands only work in notes;
+        // their hotkeys work in scripts too (see FountainView).
+        { id: "toggle-reading-view", name: "Toggle reading view", icon: "book-open", run: (view) => view.toggleReading() },
+        { id: "toggle-source-mode", name: "Toggle source mode", icon: "code", run: (view) => view.toggleSource() },
+        { id: "find-in-script", name: "Find in script", icon: "search", run: (view) => view.find() },
+        // For touch keyboards, which have no Tab key: these can go on the mobile toolbar.
+        { id: "next-line-type", name: "Change to next line type", icon: "chevrons-right", run: (view) => view.cycleLineType(1) },
+        { id: "previous-line-type", name: "Change to previous line type", icon: "chevrons-left", run: (view) => view.cycleLineType(-1) },
+
+        // Drafts.
+        { id: "freeze-draft", name: "Freeze draft", icon: "snowflake", menu: "drafts", appliesTo: working, run: (view) => this.freezeDraft(view) },
+        { id: "unfreeze-draft", name: "Unfreeze draft", icon: "lock-open", menu: "drafts", appliesTo: (view) => view.isFrozen(), run: (view) => view.unfreeze() },
+        { id: "cut-from-draft", name: "Cut from this draft", icon: "scissors", menu: "drafts", appliesTo: working, run: (view) => void cuts.cut(view) },
+        { id: "restore-cut", name: "Restore cut", icon: "undo-2", menu: "drafts", appliesTo: (view) => !!view.file && cuts.isCutsFile(view.file), run: (view) => cuts.restore(view) },
+        { id: "show-changes", name: "Show changes since a draft", icon: "git-compare", menu: "drafts", appliesTo: comparable, run: (view) => void this.showScriptTab(VIEW_TYPE_CHANGES, view) },
+        {
+          id: "side-by-side",
+          name: "Show side by side with a draft",
+          icon: "columns-2",
+          menu: "drafts",
+          // Phones have no room for two scripts side by side.
+          appliesTo: (view) => !Platform.isPhone && comparable(view),
+          run: (view) => void this.sideBySide.open(view),
+        },
+        { id: "tint-changes", name: "Toggle change tint", icon: "highlighter", menu: "drafts", appliesTo: comparable, isOn: () => this.settings.showChanges, run: () => this.toggleChangeTint() },
+        { id: "add-to-line-bank", name: "Add to line bank", icon: "archive", appliesTo: working, run: (view) => addToLineBank(app, cuts, view) },
+        { id: "drop-from-line-bank", name: "Insert line from line bank", icon: "archive-restore", appliesTo: working, run: (view) => void dropFromLineBank(app, cuts, view) },
+        { id: "keep-alternate", name: "Keep as alternate", icon: "copy-plus", run: (view) => keepAsAlternate(view) },
+        { id: "next-alternate", name: "Switch to next alternate", icon: "repeat", run: (view) => nextAlternate(view) },
+        { id: "choose-alternate", name: "Choose alternate", icon: "list", run: (view) => chooseAlternate(app, view) },
+        { id: "start-pass", name: "Start pass", icon: "square-check", appliesTo: working, run: (view) => this.passes.start(view) },
+        { id: "open-passes", name: "Open passes note", icon: "file-check", appliesTo: working, run: (view) => void this.passes.open(view) },
+
+        // Rehearsal.
+        { id: "issue-revised-pages", name: "Issue revised pages", icon: "file-stack", menu: "rehearsal", ...rehearsal("issue") },
+        { id: "lock-rehearsal-script", name: "Lock rehearsal script", icon: "lock", menu: "rehearsal", ...rehearsal("lock") },
+        { id: "unlock-rehearsal-script", name: "Unlock rehearsal script", icon: "lock-open", menu: "rehearsal", ...rehearsal("unlock") },
+
+        // Scenes and structure.
+        { id: "next-scene", name: "Go to next scene", icon: "chevrons-down", run: (view) => jumpToScene(view, 1) },
+        { id: "previous-scene", name: "Go to previous scene", icon: "chevrons-up", run: (view) => jumpToScene(view, -1) },
+        { id: "next-speech", name: "Go to this character's next speech", icon: "chevron-down", run: (view) => jumpToSpeech(view, 1) },
+        { id: "previous-speech", name: "Go to this character's previous speech", icon: "chevron-up", run: (view) => jumpToSpeech(view, -1) },
+        { id: "move-scene-up", name: "Move scene up", icon: "arrow-up", run: (view) => moveSceneBy(view, -1) },
+        { id: "move-scene-down", name: "Move scene down", icon: "arrow-down", run: (view) => moveSceneBy(view, 1) },
+        { id: "split-scene", name: "Split scene", icon: "split", run: (view) => splitSceneAtCursor(app, view) },
+        { id: "merge-scene", name: "Merge with previous scene", icon: "merge", run: (view) => mergeWithPreviousScene(view) },
+        { id: "renumber-scenes", name: "Renumber scenes", icon: "list-ordered", run: (view) => this.renumberScenes(view) },
+        { id: "set-play-target", name: "Set runtime target for the play", icon: "timer", appliesTo: working, run: (view) => setPlayTarget(app, view) },
+        { id: "set-target", name: "Set runtime target for this scene", icon: "timer", appliesTo: working, run: (view) => setTargetHere(app, view) },
+
+        // The story outline: planning beats and scenes.
+        { id: "import-framework", name: "Import framework", icon: "layout-template", run: (view) => void importFramework(app, view, this.settings.frameworksFolder) },
+        { id: "add-beat", name: "Add beat", icon: "plus", run: (view) => addBeatAfter(app, view, itemAtCursor(view)) },
+        { id: "add-scene", name: "Add scene", icon: "plus", run: (view) => addSceneTo(app, view, itemAtCursor(view)) },
+        {
+          id: "edit-synopsis",
+          name: "Edit synopsis",
+          icon: "text",
+          run: (view) => {
+            const item = itemAtCursor(view);
+            if (item) editSynopsis(app, view, item);
+            else new Notice("Put the cursor in a beat, scene or act to write its synopsis.");
+          },
+        },
+        {
+          id: "create-linked-note",
+          name: "Create or open linked note",
+          icon: "file-text",
+          run: (view) => {
+            const item = itemAtCursor(view);
+            if (item) void openLinkedNote(app, view, item, this.settings.beatNotesFolder);
+            else new Notice("Put the cursor in a beat, scene or act to link a note to it.");
+          },
+        },
+
+        // Cast.
+        { id: "rename-character", name: "Rename character", icon: "users", menu: "cast", run: (view) => renameCharacter(app, view) },
+        { id: "merge-characters", name: "Merge characters", icon: "merge", menu: "cast", run: (view) => mergeCharacters(app, view) },
+        { id: "generate-breakdown", name: "Write cast list and scene breakdown", icon: "list-plus", menu: "cast", run: (view) => generateBreakdown(view) },
+        { id: "show-on-stage", name: "Show who's on stage", icon: "users-round", menu: "cast", run: (view) => this.onStage.show(view) },
+
+        // Panels.
+        { id: "show-report", name: "Show script report", icon: "table", menu: "panels", run: (view) => void this.showScriptTab(VIEW_TYPE_REPORT, view) },
+        { id: "save-report", name: "Save script report as note", icon: "file-text", run: (view) => void this.saveReport(view) },
+        { id: "show-checks", name: "Show checks", icon: "list-checks", menu: "panels", appliesTo: comparable, run: (view) => void this.showScriptTab(VIEW_TYPE_CHECKS, view) },
+        { id: "mark-check-findings", name: "Toggle check marks", icon: "underline", isOn: () => this.settings.showCheckMarks, run: () => this.setCheckMarks(!this.settings.showCheckMarks, true) },
+        { id: "show-beat-map", name: "Show beat map", icon: "gantt-chart", menu: "panels", run: (view) => void this.showScriptTab(VIEW_TYPE_BEAT_MAP, view) },
+
+        // Focus and readings.
+        { id: "toggle-typewriter", name: "Toggle typewriter mode", icon: "type", menu: "focus", isOn: () => this.settings.typewriter, run: () => this.toggleTypewriter() },
+        { id: "start-sprint", name: "Start sprint", icon: "hourglass", menu: "focus", appliesTo: working, run: (view) => this.sprints.start(view) },
+        { id: "time-read-through", name: "Time read-through", icon: "clock", menu: "focus", run: (view) => this.readThroughs.start(view) },
+        { id: "table-read", name: "Start table read", icon: "volume-2", menu: "focus", run: (view) => void this.tableReads.start(view) },
+
+        // Export. The file's own menu has it, so not this one.
+        { id: "export-pdf", name: "Export to PDF", icon: "file-down", appliesTo: (view) => !!view.file, run: (view) => view.file && void this.exportPdf(view.file) },
+      ],
+    };
   }
 
   /** Exports a script, using unsaved changes if it's open. */
@@ -758,19 +686,24 @@ export default class FountainStagePlugin extends Plugin {
     return this.paginator.paginate(script);
   }
 
-  /** Locking and unlocking the rehearsal script, and issuing revised pages, as they apply to a script. */
-  private rehearsalActions(view: FountainView): { title: string; icon: string; run: () => void }[] {
+  /** Which of locking and unlocking the rehearsal script, and issuing revised pages, apply to a script. */
+  private rehearsalActions(view: FountainView): RehearsalAction[] {
     const file = view.file;
     if (!file || this.cuts.isLineBank(file) || this.cuts.isCutsFile(file)) return [];
+    if (view.isDraft()) return (view.script().titleValues.locked ?? []).join("").trim() ? ["unlock"] : ["lock"];
+    if (!this.rehearsal.isLocked(view)) return ["lock"];
+    return ["issue", "lock", "unlock"];
+  }
+
+  /** Locks or unlocks a script's rehearsal script, or issues revised pages, then shows the pages as they now are. */
+  private rehearse(view: FountainView, action: RehearsalAction): void {
     const done = () => {
       this.changes.changed();
       for (const v of this.scriptViews()) v.refreshPages();
     };
-    const lock = { title: "Lock rehearsal script", icon: "lock", run: () => void this.rehearsal.lock(view, done) };
-    const unlock = { title: "Unlock rehearsal script", icon: "lock-open", run: () => void this.rehearsal.unlock(view, done) };
-    if (view.isDraft()) return (view.script().titleValues.locked ?? []).join("").trim() ? [unlock] : [lock];
-    if (!this.rehearsal.isLocked(view)) return [lock];
-    return [{ title: "Issue revised pages", icon: "file-stack", run: () => void this.rehearsal.issue(view, done) }, lock, unlock];
+    if (action === "lock") void this.rehearsal.lock(view, done);
+    else if (action === "unlock") void this.rehearsal.unlock(view, done);
+    else void this.rehearsal.issue(view, done);
   }
 
   /** Turns the marks on what the checks find on or off, in every script. */

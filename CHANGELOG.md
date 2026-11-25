@@ -7,6 +7,12 @@ Add new entries under **Unreleased** as you work on `dev`, grouped as Added, Cha
 
 ## [Unreleased]
 
+### Changed
+- Commands are named consistently: verbs first, without "a" or "the", and the same in the command palette and the menus. Among them, **Put in a line from the line bank** is now **Insert line from line bank**, **Tint changes since a draft** is **Toggle change tint**, **Mark check findings** is **Toggle check marks**, **Start a sprint** is **Start sprint**, and the ribbon's **New Fountain script** is **New script**. Hotkeys you've set keep working.
+- A script's **More options** menu is in sections: drafts, rehearsal, cast, panels and focus. It gains **Show script outline**, **Show script report**, **Show beat map**, **Show who's on stage**, **Start sprint**, **Time read-through** and **Start table read**.
+- Commands have icons, for the mobile toolbar.
+- The script report and beat map, like the Changes and Checks tabs, pick up a script still on screen when the one they show is closed, rather than going blank.
+
 ## [0.11.0] - 2026-11-25
 
 ### Added
