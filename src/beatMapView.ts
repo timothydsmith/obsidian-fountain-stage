@@ -6,17 +6,19 @@
  * move it, or a beat band to move the beat. Click anything to go there.
  */
 
-import { FileView, ItemView, Platform, setIcon, type WorkspaceLeaf } from "obsidian";
-import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import { Platform, setIcon, type WorkspaceLeaf } from "obsidian";
+import type { FountainView, ScriptChange } from "./editor/FountainView";
 import { type BeatMapLayout, layoutBeatMap, type MapBeat, type MapScene } from "./fountain/beatMap";
 import type { Framework } from "./fountain/frameworks";
 import type { OutlineItem } from "./fountain/outline";
 import { formatDuration, outlineRuntimes, type Timeline } from "./fountain/runtime";
 import { buildStoryOutline } from "./fountain/storyOutline";
 import { loadFrameworks, scriptFramework } from "./planningCommands";
+import { ScriptTabView } from "./scriptTabView";
 
 export const VIEW_TYPE_BEAT_MAP = "fountain-stage-beat-map";
 
+/** The map catches up sooner than the other tabs, as dragging on it changes the script. */
 const REFRESH_DELAY_MS = 400;
 /** How wide the average scene is drawn, by runtime, before zooming. */
 const AVERAGE_SCENE_WIDTH = 160;
@@ -24,10 +26,8 @@ const ZOOMS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4];
 const NO_FRAMEWORK = "";
 const TARGET_ROW_HEIGHT = 18;
 
-export class BeatMapView extends ItemView {
-  private script: FountainView | null = null;
-  private unsubscribe: (() => void) | null = null;
-  private refreshTimer: number | null = null;
+export class BeatMapView extends ScriptTabView {
+  protected refreshDelay = REFRESH_DELAY_MS;
   private zoom = 3;
   /** The framework marked, by id: the script's own (its Framework key) until you choose another. */
   private frameworkId: string | null = null;
@@ -62,29 +62,18 @@ export class BeatMapView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.addClass("fountain-stage-beat-map");
-    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
-    this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
-    this.app.workspace.onLayoutReady(() => this.follow());
+    await super.onOpen();
     void this.reloadFrameworks();
   }
 
-  async onClose(): Promise<void> {
-    this.setScript(null);
+  /** The text and its layout, but not scrolling or moving the cursor. */
+  protected refreshesOn(change: ScriptChange): boolean {
+    return change !== "scroll" && change !== "position";
   }
 
-  /** Shows a script's beat map. */
-  setScript(script: FountainView | null): void {
-    if (script === this.script) return;
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = null;
-    this.script = script;
+  /** Another script marks its own framework to start with. */
+  protected scriptChanged(): void {
     this.frameworkId = null;
-    if (script) this.unsubscribe = script.subscribe((change) => (change === "scroll" || change === "position" ? undefined : this.refreshSoon()));
-    this.refresh();
-    // The tab's title names the script.
-    (this.leaf as WorkspaceLeaf & { updateHeader?: () => void }).updateHeader?.();
   }
 
   /** Draws the map again, such as after a setting changes, reading the frameworks folder again too. */
@@ -97,27 +86,7 @@ export class BeatMapView extends ItemView {
     this.refresh();
   }
 
-  /** Follows the script you're in. Another file, or a sidebar, leaves the map as it is. */
-  private follow(): void {
-    const active = this.app.workspace.getActiveViewOfType(FountainView);
-    if (active) {
-      this.setScript(active);
-      return;
-    }
-    const stillOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).some((leaf) => leaf.view === this.script);
-    const otherFile = this.app.workspace.getActiveViewOfType(FileView);
-    if (!stillOpen || otherFile) this.setScript(null);
-  }
-
-  private refreshSoon(): void {
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = window.setTimeout(() => {
-      this.refreshTimer = null;
-      this.refresh();
-    }, REFRESH_DELAY_MS);
-  }
-
-  private refresh(): void {
+  protected refresh(): void {
     const el = this.contentEl;
     const scroll = el.querySelector(".fountain-stage-map-scroller")?.scrollLeft ?? 0;
     el.empty();

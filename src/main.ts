@@ -19,6 +19,7 @@ import { buildReport, type ScriptReport } from "./fountain/report";
 import { reportMarkdown } from "./fountain/reportMarkdown";
 import { formatDuration, pagePositions, type Timeline, timeline } from "./fountain/runtime";
 import { OutlineView, VIEW_TYPE_OUTLINE } from "./outlineView";
+import { ScriptTabView } from "./scriptTabView";
 import { SearchView, VIEW_TYPE_SEARCH } from "./searchView";
 import { BeatMapView, VIEW_TYPE_BEAT_MAP } from "./beatMapView";
 import { addBeatAfter, addSceneTo, editSynopsis, importFramework, itemAtCursor, openLinkedNote } from "./planningCommands";
@@ -179,11 +180,11 @@ export default class FountainStagePlugin extends Plugin {
           changeCutsFile: (change) => void this.cuts.change(change).catch(() => undefined),
           cutFromDraft: (view) => void this.cuts.cut(view),
           restoreCut: (view) => this.cuts.restore(view),
-          showChanges: (view) => void this.showChanges(view),
+          showChanges: (view) => void this.showScriptTab(VIEW_TYPE_CHANGES, view),
           showSideBySide: (view) => void this.sideBySide.open(view),
           tintingChanges: () => this.settings.showChanges,
           toggleChangeTint: () => this.toggleChangeTint(),
-          showChecks: (view) => void this.showChecks(view),
+          showChecks: (view) => void this.showScriptTab(VIEW_TYPE_CHECKS, view),
           rehearsalActions: (view) => this.rehearsalActions(view),
           typewriterMode: () => this.settings.typewriter,
           toggleTypewriter: () => this.toggleTypewriter(),
@@ -216,7 +217,7 @@ export default class FountainStagePlugin extends Plugin {
           },
           beatNotesFolder: () => this.settings.beatNotesFolder,
           frameworksFolder: () => this.settings.frameworksFolder,
-          showBeatMap: (view) => void this.showBeatMap(view),
+          showBeatMap: (view) => void this.showScriptTab(VIEW_TYPE_BEAT_MAP, view),
           passOf: (view, outline) => {
             const pass = view.isDraft() ? undefined : this.passes.current(view);
             // A pass lists scenes as the report does, whichever way the outline shows them.
@@ -331,7 +332,7 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("show-on-stage", "Show who's on stage", (view) => this.onStage.show(view));
     viewCommand("generate-breakdown", "Write cast list and scene breakdown", (view) => generateBreakdown(view));
     // Story outline: planning beats and scenes, and the beat map.
-    viewCommand("show-beat-map", "Show beat map", (view) => void this.showBeatMap(view));
+    viewCommand("show-beat-map", "Show beat map", (view) => void this.showScriptTab(VIEW_TYPE_BEAT_MAP, view));
     viewCommand("import-framework", "Import framework", (view) => void importFramework(this.app, view, this.settings.frameworksFolder));
     viewCommand("add-beat", "Add beat", (view) => addBeatAfter(this.app, view, itemAtCursor(view)));
     viewCommand("add-scene", "Add scene", (view) => addSceneTo(this.app, view, itemAtCursor(view)));
@@ -413,7 +414,7 @@ export default class FountainStagePlugin extends Plugin {
     viewCommand("keep-alternate", "Keep as an alternate", (view) => keepAsAlternate(view));
     viewCommand("next-alternate", "Switch to next alternate", (view) => nextAlternate(view));
     viewCommand("choose-alternate", "Choose an alternate", (view) => chooseAlternate(this.app, view));
-    viewCommand("show-changes", "Show changes since a draft", (view) => void this.showChanges(view));
+    viewCommand("show-changes", "Show changes since a draft", (view) => void this.showScriptTab(VIEW_TYPE_CHANGES, view));
     viewCommand("tint-changes", "Tint changes since a draft", () => this.toggleChangeTint());
     if (!Platform.isPhone) viewCommand("side-by-side", "Show side by side with a draft", (view) => void this.sideBySide.open(view));
     const rehearsalCommand = (id: string, name: string, title: string) =>
@@ -472,9 +473,9 @@ export default class FountainStagePlugin extends Plugin {
         return true;
       },
     });
-    viewCommand("show-checks", "Show checks", (view) => void this.showChecks(view));
+    viewCommand("show-checks", "Show checks", (view) => void this.showScriptTab(VIEW_TYPE_CHECKS, view));
     viewCommand("mark-check-findings", "Mark check findings", () => this.setCheckMarks(!this.settings.showCheckMarks, true));
-    viewCommand("show-report", "Show script report", (view) => void this.showReport(view));
+    viewCommand("show-report", "Show script report", (view) => void this.showScriptTab(VIEW_TYPE_REPORT, view));
     viewCommand("save-report", "Save script report as a note", (view) => void this.saveReport(view));
 
     this.addCommand({
@@ -603,15 +604,19 @@ export default class FountainStagePlugin extends Plugin {
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_BEAT_MAP)) if (leaf.view instanceof BeatMapView) leaf.view.redraw();
   }
 
-  /** Shows the beat map of a script in a tab beside it, opening one if there isn't one. */
-  private async showBeatMap(view: FountainView): Promise<void> {
+  /**
+   * Shows a script in one of its tabs (the report, changes, checks or beat
+   * map) beside it, opening the tab if it isn't open: to the right, or
+   * below for the beat map, which is wide.
+   */
+  private async showScriptTab(type: string, view: FountainView): Promise<void> {
     const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_BEAT_MAP)[0];
+    let leaf = workspace.getLeavesOfType(type)[0];
     if (!leaf) {
-      leaf = workspace.getLeaf("split", "horizontal");
-      await leaf.setViewState({ type: VIEW_TYPE_BEAT_MAP, active: false });
+      leaf = workspace.getLeaf("split", type === VIEW_TYPE_BEAT_MAP ? "horizontal" : "vertical");
+      await leaf.setViewState({ type, active: false });
     }
-    if (leaf.view instanceof BeatMapView) leaf.view.setScript(view);
+    if (leaf.view instanceof ScriptTabView) leaf.view.setScript(view);
     await workspace.revealLeaf(leaf);
   }
 
@@ -729,18 +734,6 @@ export default class FountainStagePlugin extends Plugin {
     });
   }
 
-  /** Shows the report on a script in a tab beside it, opening one if there isn't one. */
-  private async showReport(view: FountainView): Promise<void> {
-    const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_REPORT)[0];
-    if (!leaf) {
-      leaf = workspace.getLeaf("split", "vertical");
-      await leaf.setViewState({ type: VIEW_TYPE_REPORT, active: false });
-    }
-    if (leaf.view instanceof ReportView) leaf.view.setScript(view);
-    await workspace.revealLeaf(leaf);
-  }
-
   /** The report on a script that isn't open, such as a frozen draft, laying it out first for a runtime by pages. */
   private async reportOfVersion(version: ScriptVersion): Promise<ScriptReport> {
     const { runtimeMethod, wordsPerMinute, minutesPerPage, pauseWords } = this.settings;
@@ -752,18 +745,6 @@ export default class FountainStagePlugin extends Plugin {
       pageCount: pages?.pageCount,
       pauses: pauseWords,
     });
-  }
-
-  /** Shows the changes in a script since a frozen draft, in a tab beside it, opening one if there isn't one. */
-  private async showChanges(view: FountainView): Promise<void> {
-    const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHANGES)[0];
-    if (!leaf) {
-      leaf = workspace.getLeaf("split", "vertical");
-      await leaf.setViewState({ type: VIEW_TYPE_CHANGES, active: false });
-    }
-    if (leaf.view instanceof ChangesView) leaf.view.setScript(view);
-    await workspace.revealLeaf(leaf);
   }
 
   /** A script's pages: as its locked rehearsal script has them, if its play has one, otherwise as its PDF would. */
@@ -790,18 +771,6 @@ export default class FountainStagePlugin extends Plugin {
     if (view.isDraft()) return (view.script().titleValues.locked ?? []).join("").trim() ? [unlock] : [lock];
     if (!this.rehearsal.isLocked(view)) return [lock];
     return [{ title: "Issue revised pages", icon: "file-stack", run: () => void this.rehearsal.issue(view, done) }, lock, unlock];
-  }
-
-  /** Shows the checks on a script in a tab beside it, opening one if there isn't one. */
-  private async showChecks(view: FountainView): Promise<void> {
-    const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHECKS)[0];
-    if (!leaf) {
-      leaf = workspace.getLeaf("split", "vertical");
-      await leaf.setViewState({ type: VIEW_TYPE_CHECKS, active: false });
-    }
-    if (leaf.view instanceof ChecksView) leaf.view.setScript(view);
-    await workspace.revealLeaf(leaf);
   }
 
   /** Turns the marks on what the checks find on or off, in every script. */

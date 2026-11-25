@@ -5,18 +5,16 @@
  * lost, and the words each character gained or lost.
  */
 
-import { FileView, ItemView, Platform, type TFile, type WorkspaceLeaf } from "obsidian";
+import { Platform, type TFile, type WorkspaceLeaf } from "obsidian";
 import { type Changes, draftLabel, type FrozenDraft } from "./changes";
-import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
+import { FountainView, type ScriptChange, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import { type Comparison, compareScripts, type SceneComparison, type ScriptVersion } from "./fountain/compare";
 import type { ScriptReport } from "./fountain/report";
 import { formatCount } from "./fountain/reportMarkdown";
 import { formatDuration } from "./fountain/runtime";
+import { ScriptTabView } from "./scriptTabView";
 
 export const VIEW_TYPE_CHANGES = "fountain-stage-changes";
-
-/** How long after you stop typing the comparison catches up. */
-const REFRESH_DELAY_MS = 1000;
 
 export interface ChangesHost {
   changes: Changes;
@@ -40,10 +38,7 @@ function statusLabel(scene: SceneComparison): string {
   return scene.status === "same" ? "Moved" : `Moved, ${status.toLowerCase()}`;
 }
 
-export class ChangesView extends ItemView {
-  private script: FountainView | null = null;
-  private unsubscribe: (() => void) | null = null;
-  private refreshTimer: number | null = null;
+export class ChangesView extends ScriptTabView {
   /** Each refresh's number, so an older one that finishes late is dropped. */
   private refreshing = 0;
   /** The later side when comparing two drafts; null for the script itself. */
@@ -72,54 +67,21 @@ export class ChangesView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.addClass("fountain-stage-report", "fountain-stage-changes");
-    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
-    this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
     this.register(this.host.changes.onChange((view) => (view === null || view === this.script) && this.refreshSoon(0)));
-    this.app.workspace.onLayoutReady(() => this.follow());
-    this.refreshSoon(0);
+    await super.onOpen();
   }
 
-  async onClose(): Promise<void> {
-    this.setScript(null);
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = null;
+  /** Typing changes the script itself, not when two drafts are compared. */
+  protected refreshesOn(change: ScriptChange): boolean {
+    return change === "text" && this.later === null;
   }
 
-  /** Follows the script you're in. Another file clears the tab; this tab or a sidebar leaves it as it is. */
-  private follow(): void {
-    const active = this.app.workspace.getActiveViewOfType(FountainView);
-    if (active) {
-      this.setScript(active);
-      return;
-    }
-    const scripts = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).map((leaf) => leaf.view);
-    const stillOpen = scripts.some((view) => view === this.script);
-    const otherFile = this.app.workspace.getActiveViewOfType(FileView);
-    if (otherFile) this.setScript(null);
-    // Opened with this tab active, as Obsidian starts: a script on screen.
-    else if (!stillOpen) this.setScript(scripts.find((view): view is FountainView => view instanceof FountainView && view.containerEl.isShown()) ?? null);
-  }
-
-  /** Shows the changes in a script, until you go to another. */
-  setScript(script: FountainView | null): void {
-    if (script === this.script) return;
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-    this.script = script;
+  /** Another script starts comparing itself with its latest draft. */
+  protected scriptChanged(): void {
     this.later = this.earlier = null;
-    if (script) this.unsubscribe = script.subscribe((change) => change === "text" && this.later === null && this.refreshSoon(REFRESH_DELAY_MS));
-    this.refreshSoon(0);
   }
 
-  private refreshSoon(delay: number): void {
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = window.setTimeout(() => {
-      this.refreshTimer = null;
-      void this.refresh();
-    }, delay);
-  }
-
-  private async refresh(): Promise<void> {
+  protected async refresh(): Promise<void> {
     const run = ++this.refreshing;
     const script = this.script;
     const { changes } = this.host;

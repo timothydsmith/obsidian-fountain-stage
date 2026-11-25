@@ -7,19 +7,17 @@
  * character's voice, filler words, and a map of how long the speeches are.
  */
 
-import { FileView, ItemView, setIcon, ToggleComponent, type WorkspaceLeaf } from "obsidian";
+import { setIcon, ToggleComponent, type WorkspaceLeaf } from "obsidian";
 import type { Checks } from "./checks";
-import { FountainView, VIEW_TYPE_FOUNTAIN } from "./editor/FountainView";
 import type { CheckKind, CheckResults, Finding } from "./fountain/checks";
 import { MONOLOGUE_WORDS, type SpeechLength } from "./fountain/checks/speeches";
 import { VOICE_MIN_SPEECHES } from "./fountain/checks/voice";
 import { formatCount } from "./fountain/reportMarkdown";
 import type { FountainStageSettings } from "./library";
+import { ScriptTabView } from "./scriptTabView";
 
 export const VIEW_TYPE_CHECKS = "fountain-stage-checks";
 
-/** How long after you stop typing the checks run again. */
-const REFRESH_DELAY_MS = 1000;
 
 export interface ChecksHost {
   checks: Checks;
@@ -44,10 +42,7 @@ const SECTIONS: { check: CheckKind; heading: string; about: string }[] = [
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 120;
 
-export class ChecksView extends ItemView {
-  private script: FountainView | null = null;
-  private unsubscribe: (() => void) | null = null;
-  private refreshTimer: number | null = null;
+export class ChecksView extends ScriptTabView {
   private showDismissed = false;
 
   constructor(
@@ -71,53 +66,11 @@ export class ChecksView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.addClass("fountain-stage-report", "fountain-stage-checks");
-    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.follow()));
-    this.registerEvent(this.app.workspace.on("layout-change", () => this.follow()));
     this.register(this.host.checks.onChange(() => this.refreshSoon(0)));
-    this.app.workspace.onLayoutReady(() => this.follow());
-    this.refreshSoon(0);
+    await super.onOpen();
   }
 
-  async onClose(): Promise<void> {
-    this.setScript(null);
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = null;
-  }
-
-  /** Follows the script you're in. Another file clears the tab; this tab or a sidebar leaves it as it is. */
-  private follow(): void {
-    const active = this.app.workspace.getActiveViewOfType(FountainView);
-    if (active) {
-      this.setScript(active);
-      return;
-    }
-    const scripts = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN).map((leaf) => leaf.view);
-    const stillOpen = scripts.some((view) => view === this.script);
-    const otherFile = this.app.workspace.getActiveViewOfType(FileView);
-    if (otherFile) this.setScript(null);
-    // Opened with this tab active, as Obsidian starts: a script on screen.
-    else if (!stillOpen) this.setScript(scripts.find((view): view is FountainView => view instanceof FountainView && view.containerEl.isShown()) ?? null);
-  }
-
-  /** Shows the checks on a script, until you go to another. */
-  setScript(script: FountainView | null): void {
-    if (script === this.script) return;
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-    this.script = script;
-    if (script) this.unsubscribe = script.subscribe((change) => change === "text" && this.refreshSoon(REFRESH_DELAY_MS));
-    this.refreshSoon(0);
-  }
-
-  private refreshSoon(delay: number): void {
-    if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = window.setTimeout(() => {
-      this.refreshTimer = null;
-      this.refresh();
-    }, delay);
-  }
-
-  private refresh(): void {
+  protected refresh(): void {
     const { contentEl } = this;
     const script = this.script;
     if (!script?.file) {
